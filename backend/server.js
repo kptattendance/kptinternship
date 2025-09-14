@@ -16,11 +16,23 @@ app.use(express.json());
 app.use(clerkMiddleware());
 
 // MongoDB connection
-mongoose
-  .connect(process.env.MONGO_URI)
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error(" MongoDB connection error:", err));
 
+mongoose
+  .connect(process.env.MONGO_URI, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+  })
+  .then(() => console.log("✅ MongoDB connected"))
+  .catch((err) => console.error("❌ MongoDB connection error:", err));
+
+app.get("/api/db-test", async (req, res) => {
+  try {
+    await mongoose.connection.db.admin().ping();
+    res.json({ connected: true });
+  } catch (err) {
+    res.status(500).json({ connected: false, error: err.message });
+  }
+});
 // Example protected route
 app.get("/api/protected", (req, res) => {
   const auth = req.auth(); // ✅ call it as a function now

@@ -1,5 +1,7 @@
 import Application from "../../model/Application.js";
 import PDFDocument from "pdfkit";
+import path from "path";
+import { fileURLToPath } from "url";
 
 function toTitleCase(str = "") {
   return str
@@ -11,6 +13,13 @@ function toTitleCase(str = "") {
 
 export const generateInternshipLetter = async (req, res) => {
   try {
+    const __filename = fileURLToPath(import.meta.url);
+    const __dirname = path.dirname(__filename);
+
+    const logo3 = path.join(__dirname, "../../public/assets/logo3.jpg");
+    const logo4 = path.join(__dirname, "../../public/assets/logo4.png");
+    const logo5 = path.join(__dirname, "../../public/assets/logo5.png");
+
     const app = await Application.findById(req.params.id);
     if (!app) return res.status(404).json({ error: "Application not found" });
 
@@ -27,11 +36,11 @@ export const generateInternshipLetter = async (req, res) => {
     );
     doc.pipe(res);
 
-    doc.image("assets/logo3.jpg", 30, 40, { width: 60 });
+    doc.image(logo3, 30, 40, { width: 60 });
 
     // Add right logo
-    doc.image("assets/logo4.png", 500, 40, { width: 60 });
-    doc.image("assets/logo5.png", 300, 40, { width: 20 });
+    doc.image(logo4, 500, 40, { width: 60 });
+    doc.image(logo5, 300, 40, { width: 20 });
     doc.moveDown(0.8);
     // ✅ Header
     doc

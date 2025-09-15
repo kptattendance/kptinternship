@@ -6,17 +6,15 @@ import StatsCards from "../components/homeDashboard/StatsCards";
 import DeptOverview from "../components/homeDashboard/DeptOverview";
 import ApplicationsTable from "../components/homeDashboard/ApplicationsTable";
 
-// src/pages/Home.jsx
-// src/pages/Home.jsx
 const DEPARTMENTS = [
-  { value: "at", label: "Automobile Engineering", total: 60 },
-  { value: "ch", label: "Chemical Engineering", total: 50 },
-  { value: "ce", label: "Civil Engineering", total: 60 },
+  { value: "at", label: "Automobile Engineering", total: 57 },
+  { value: "ch", label: "Chemical Engineering", total: 60 },
+  { value: "civil", label: "Civil Engineering", total: 48 },
   { value: "cs", label: "Computer Science Engineering", total: 63 },
-  { value: "ec", label: "Electronics & Communication Engineering", total: 100 },
-  { value: "eee", label: "Electrical & Electronics Engineering", total: 80 },
-  { value: "me", label: "Mechanical Engineering", total: 90 },
-  { value: "po", label: "Polymer Engineering", total: 40 },
+  { value: "ec", label: "Electronics & Communication Engineering", total: 55 },
+  { value: "eee", label: "Electrical & Electronics Engineering", total: 55 },
+  { value: "me", label: "Mechanical Engineering", total: 62 },
+  { value: "po", label: "Polymer Engineering", total: 36 },
 ].sort((a, b) => a.label.localeCompare(b.label));
 
 export default function Home() {

@@ -9,7 +9,7 @@ import "react-toastify/dist/ReactToastify.css";
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering" },
   { value: "ch", label: "Chemical Engineering" },
-  { value: "ce", label: "Civil Engineering" },
+  { value: "civil", label: "Civil Engineering" },
   { value: "cs", label: "Computer Science Engineering" },
   { value: "ec", label: "Electronics & Communication Engineering" },
   { value: "eee", label: "Electrical & Electronics Engineering" },

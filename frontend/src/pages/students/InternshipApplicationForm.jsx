@@ -140,7 +140,7 @@ export default function InternshipApplicationForm() {
                 <option value="">Select Department</option>
                 <option value="at">Automobile Engineering</option>
                 <option value="ch">Chemical Engineering</option>
-                <option value="ce">Civil Engineering</option>
+                <option value="civil">Civil Engineering</option>
                 <option value="cs">Computer Science Engineering</option>
                 <option value="ec">
                   Electronics & Communication Engineering

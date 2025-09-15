@@ -9,10 +9,10 @@ import ApplicationsTable from "../components/homeDashboard/ApplicationsTable";
 // src/pages/Home.jsx
 // src/pages/Home.jsx
 const DEPARTMENTS = [
-  { value: "at", label: "Automobile Engineering", total: 40 },
+  { value: "at", label: "Automobile Engineering", total: 60 },
   { value: "ch", label: "Chemical Engineering", total: 50 },
   { value: "ce", label: "Civil Engineering", total: 60 },
-  { value: "cs", label: "Computer Science Engineering", total: 120 },
+  { value: "cs", label: "Computer Science Engineering", total: 63 },
   { value: "ec", label: "Electronics & Communication Engineering", total: 100 },
   { value: "eee", label: "Electrical & Electronics Engineering", total: 80 },
   { value: "me", label: "Mechanical Engineering", total: 90 },

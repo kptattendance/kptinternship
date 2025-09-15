@@ -10,42 +10,57 @@ export default function InternshipApplicationStatus() {
   const [loading, setLoading] = useState(true);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     const fetchMyApplications = async () => {
       try {
+        setLoading(true);
         const token = await getToken();
         const res = await axios.get(
-          backendUrl + "/api/students/myApplications",
+          `${backendUrl}/api/students/myApplications`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        if (res.data.success) setApps(res.data.data);
+        if (res.data.success) {
+          setApps(res.data.data);
+        } else {
+          setApps([]);
+        }
       } catch (err) {
         console.error("❌ Failed to fetch:", err.response?.data || err.message);
+        setApps([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchMyApplications();
-  }, [getToken]);
+  }, [getToken, backendUrl]);
 
-  const StatusBadge = ({ status }) => {
+  const StatusWithComment = ({ reviewer }) => {
+    if (!reviewer) return <span className="text-gray-500">Pending</span>;
+
     let color =
-      status === "approved"
+      reviewer.status === "approved"
         ? "bg-green-100 text-green-700"
-        : status === "rejected"
+        : reviewer.status === "rejected"
         ? "bg-red-100 text-red-700"
         : "bg-gray-100 text-gray-700";
+
     return (
-      <span className={`px-2 py-1 text-xs rounded font-medium ${color}`}>
-        {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending"}
-      </span>
+      <div className="flex flex-col gap-1">
+        <span className={`px-2 py-0.5 text-xs rounded font-medium ${color}`}>
+          {reviewer.status
+            ? reviewer.status.charAt(0).toUpperCase() + reviewer.status.slice(1)
+            : "Pending"}
+        </span>
+        {reviewer.comment && (
+          <span className="text-xs text-gray-600 italic break-words">
+            “{reviewer.comment}”
+          </span>
+        )}
+      </div>
     );
   };
-
-  if (loading) {
-    return <div className="p-6 text-center">Loading your application…</div>;
-  }
 
   return (
     <>
@@ -55,7 +70,14 @@ export default function InternshipApplicationStatus() {
           My Internship Application
         </h2>
 
-        {apps.length === 0 ? (
+        {loading ? (
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-blue-600 font-medium animate-pulse">
+              Loading your applications…
+            </p>
+          </div>
+        ) : apps.length === 0 ? (
           <p className="text-gray-600">
             You haven’t submitted any applications yet.
           </p>
@@ -77,32 +99,35 @@ export default function InternshipApplicationStatus() {
               </thead>
               <tbody>
                 {apps.map((app) => (
-                  <tr key={app._id} className="hover:bg-gray-50 text-sm">
+                  <tr
+                    key={app._id}
+                    className="hover:bg-gray-50 text-sm align-top"
+                  >
                     <td className="p-3 border">{app.regNumber}</td>
                     <td className="p-3 border">{app.name}</td>
                     <td className="p-3 border uppercase">{app.department}</td>
                     <td className="p-3 border">{app.companyName}</td>
                     <td className="p-3 border">
-                      <StatusBadge status={app.cohortOwner?.status} />
+                      <StatusWithComment reviewer={app.cohortOwner} />
                     </td>
                     <td className="p-3 border">
-                      <StatusBadge status={app.hod?.status} />
+                      <StatusWithComment reviewer={app.hod} />
                     </td>
                     <td className="p-3 border">
-                      <StatusBadge status={app.placement?.status} />
+                      <StatusWithComment reviewer={app.placement} />
                     </td>
                     <td className="p-3 border">
-                      <StatusBadge status={app.principal?.status} />
+                      <StatusWithComment reviewer={app.principal} />
                     </td>
                     <td className="p-3 border">
                       {app.principal?.status === "approved" ? (
                         <a
-                          href={`http://localhost:5000/api/students/download/${app._id}`}
+                          href={`${backendUrl}/api/students/download/${app._id}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="bg-green-300 hover:bg-green-500 text-white px-3 py-1 rounded"
+                          className="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded"
                         >
-                          Download
+                          View / Print
                         </a>
                       ) : (
                         <button

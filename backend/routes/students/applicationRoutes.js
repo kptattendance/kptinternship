@@ -41,6 +41,6 @@ router.delete(
 router.get("/myApplications", requireAuthMiddleware, getMyApplications);
 
 // Download internship letter (PDF)
-router.get("/download/:id", requireAuthMiddleware, generateInternshipLetter);
+router.get("/download/:id", generateInternshipLetter);
 
 export default router;

@@ -13,12 +13,24 @@ export default function ReviewModal({
   const [actionLoading, setActionLoading] = useState(false);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const handleAction = async (actionType) => {
     if (!selected) return;
+
+    const isPlacementOrPrincipal = role === "placement" || role === "principal";
     if (actionType === "reject" && comment.trim() === "") {
       toast.error("Please add a comment when rejecting");
       return;
     }
+    if (
+      actionType === "approve" &&
+      !isPlacementOrPrincipal &&
+      comment.trim() === ""
+    ) {
+      toast.error("Please add a comment before approving");
+      return;
+    }
+
     try {
       setActionLoading(true);
       const token = await getToken();
@@ -29,8 +41,11 @@ export default function ReviewModal({
       );
 
       if (resp.data?.success) {
-        toast.success(resp.data.message || "Updated");
+        toast.success(resp.data.message || "Review updated");
+
+        // ✅ remove the reviewed application from the list
         setApps((prev) => prev.filter((a) => a._id !== selected._id));
+
         setSelected(null);
       } else {
         toast.error(resp.data?.message || "Could not update");
@@ -57,6 +72,7 @@ export default function ReviewModal({
       });
       toast.success("Application deleted");
       setApps((prev) => prev.filter((a) => a._id !== id));
+
       setSelected(null);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
@@ -65,11 +81,11 @@ export default function ReviewModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white max-w-4xl w-full rounded-2xl shadow-2xl overflow-auto max-h-[90vh]">
+      <div className="bg-white max-w-5xl w-full rounded-2xl shadow-2xl overflow-auto max-h-[90vh]">
         {/* Header */}
         <div className="p-5 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
           <h3 className="text-xl font-semibold text-gray-800">
-            Internship Application
+            Internship Application Review
           </h3>
           <button
             className="text-gray-500 hover:text-gray-700 transition"
@@ -81,7 +97,7 @@ export default function ReviewModal({
 
         {/* Content */}
         <div className="p-6 space-y-6">
-          {/* Student info */}
+          {/* Student Info */}
           <div className="flex flex-col items-center">
             {selected.image && (
               <img
@@ -102,76 +118,95 @@ export default function ReviewModal({
             </p>
           </div>
 
-          {/* Company + Internship */}
+          {/* Company Info + Internship Info */}
           <div className="grid md:grid-cols-2 gap-6">
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h4 className="font-semibold text-gray-700 mb-2">🏢 Company</h4>
-              <p>
-                <strong>Name:</strong> {selected.companyName}
-              </p>
-              <p>
-                <strong>Village:</strong> {selected.companyVillage}
-              </p>
-              <p>
-                <strong>City:</strong> {selected.companyCity}
-              </p>
-              <p>
-                <strong>Taluk:</strong> {selected.companyTaluk}
-              </p>
-              <p>
-                <strong>District:</strong> {selected.companyDistrict}
-              </p>
-              <p>
-                <strong>State:</strong> {selected.companyState}
-              </p>
-              <p>
-                <strong>Contact:</strong> {selected.companyContact}
-              </p>
-              <p>
-                <strong>Email:</strong> {selected.companyEmail}
-              </p>
-              <p className="mt-2">
-                <strong>Profile:</strong> {selected.companyProfile}
-              </p>
+              <ul className="text-sm space-y-1">
+                <li>
+                  <strong>Name:</strong> {selected.companyName}
+                </li>
+                <li>
+                  <strong>Village:</strong> {selected.companyVillage}
+                </li>
+                <li>
+                  <strong>City:</strong> {selected.companyCity}
+                </li>
+                <li>
+                  <strong>Taluk:</strong> {selected.companyTaluk}
+                </li>
+                <li>
+                  <strong>District:</strong> {selected.companyDistrict}
+                </li>
+                <li>
+                  <strong>State:</strong> {selected.companyState}
+                </li>
+                <li>
+                  <strong>Contact:</strong> {selected.companyContact}
+                </li>
+                <li>
+                  <strong>Email:</strong> {selected.companyEmail}
+                </li>
+                <li>
+                  <strong>Profile:</strong> {selected.companyProfile}
+                </li>
+              </ul>
             </div>
 
             <div className="bg-gray-50 p-4 rounded-lg border">
               <h4 className="font-semibold text-gray-700 mb-2">
                 📄 Internship
               </h4>
-              <p>
-                <strong>Start:</strong>{" "}
-                {selected.startDate
-                  ? new Date(selected.startDate).toLocaleDateString()
-                  : "-"}
-              </p>
-              <p>
-                <strong>End:</strong>{" "}
-                {selected.endDate
-                  ? new Date(selected.endDate).toLocaleDateString()
-                  : "-"}
-              </p>
-              <p>
-                <strong>Working Hours:</strong> {selected.workingHours}
-              </p>
-              <p>
-                <strong>Duties:</strong> {selected.duties}
-              </p>
-              <p>
-                <strong>Tasks:</strong> {selected.tasks}
-              </p>
+              <ul className="text-sm space-y-1">
+                <li>
+                  <strong>Start:</strong>{" "}
+                  {selected.startDate
+                    ? new Date(selected.startDate).toLocaleDateString()
+                    : "-"}
+                </li>
+                <li>
+                  <strong>End:</strong>{" "}
+                  {selected.endDate
+                    ? new Date(selected.endDate).toLocaleDateString()
+                    : "-"}
+                </li>
+                <li>
+                  <strong>Working Hours:</strong> {selected.workingHours}
+                </li>
+                <li>
+                  <strong>Duties:</strong> {selected.duties}
+                </li>
+                <li>
+                  <strong>Tasks:</strong> {selected.tasks}
+                </li>
+                <li>
+                  <strong>Skills:</strong> {selected.expectedSkills}
+                </li>
+                <li>
+                  <strong>Tools:</strong> {selected.expectedTools}
+                </li>
+                <li>
+                  <strong>Challenges:</strong> {selected.expectedChallenges}
+                </li>
+                <li>
+                  <strong>Outcomes:</strong> {selected.learningOutcomes}
+                </li>
+                <li>
+                  <strong>Job Opportunity:</strong> {selected.jobOpportunity}
+                </li>
+              </ul>
             </div>
           </div>
 
-          {/* Reviewer statuses */}
+          {/* Reviewer Statuses */}
           <div className="bg-gray-50 p-4 rounded-lg border">
             <h4 className="font-semibold text-gray-700 mb-2">
-              👥 Reviewer Statuses
+              👥 Reviewer Pipeline
             </h4>
-            <div className="grid grid-cols-2 gap-3 text-sm">
+            <div className="grid md:grid-cols-2 gap-4 text-sm">
               {["cohortOwner", "hod", "placement", "principal"].map(
                 (roleKey) => (
-                  <div key={roleKey}>
+                  <div key={roleKey} className="p-2 border rounded">
                     <span className="capitalize font-medium">{roleKey}:</span>{" "}
                     <span
                       className={`px-2 py-0.5 rounded text-white text-xs ${
@@ -184,8 +219,8 @@ export default function ReviewModal({
                     >
                       {selected[roleKey]?.status}
                     </span>
-                    <p className="text-xs text-gray-500">
-                      {selected[roleKey]?.comment || "-"}
+                    <p className="text-xs text-gray-500 mt-1">
+                      {selected[roleKey]?.comment || "No comments yet"}
                     </p>
                   </div>
                 )
@@ -193,10 +228,15 @@ export default function ReviewModal({
             </div>
           </div>
 
-          {/* Reviewer comment */}
+          {/* Reviewer Comment Input */}
           <div>
             <label className="block font-medium text-gray-700 mb-1">
-              Comment (required when Reject)
+              Your Comment{" "}
+              <span className="text-red-500">
+                {role === "placement" || role === "principal"
+                  ? "(Required only when Rejecting)"
+                  : "(Required for Approve/Reject)"}
+              </span>
             </label>
             <textarea
               value={comment}

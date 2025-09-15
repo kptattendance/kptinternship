@@ -4,7 +4,6 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import ReviewerNavbar from "../../components/ReviewerNavbar"; // HOD navbar
 import { toast } from "react-toastify";
-import ReviewModal from "../reviewers/ReviewModal";
 import HodReviewModal from "./HodReviewModal";
 
 export default function AllApplications() {
@@ -12,7 +11,9 @@ export default function AllApplications() {
   const { user } = useUser();
   const [apps, setApps] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [selected, setSelected] = useState(null); // ⬅️ selected app for modal
+  const [selected, setSelected] = useState(null); // selected app for modal
+  const [search, setSearch] = useState(""); // 🔍 search box
+  const [sortAsc, setSortAsc] = useState(true); // ⬆️⬇️ sort toggle
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const hodDepartment = user?.publicMetadata?.department;
@@ -73,19 +74,56 @@ export default function AllApplications() {
     );
   };
 
-  if (loading) {
-    return <div className="p-6 text-center">Loading applications…</div>;
-  }
+  // 🔍 Filter + sort logic
+  const filteredApps = apps
+    .filter((app) => {
+      const q = search.toLowerCase();
+      return (
+        app.regNumber.toLowerCase().includes(q) ||
+        app.name.toLowerCase().includes(q) ||
+        app.companyName.toLowerCase().includes(q)
+      );
+    })
+    .sort((a, b) =>
+      sortAsc
+        ? a.regNumber.localeCompare(b.regNumber)
+        : b.regNumber.localeCompare(a.regNumber)
+    );
 
   return (
     <>
+      {/* ✅ Navbar always visible */}
       <ReviewerNavbar />
+
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-4">
           Applications ({hodDepartment?.toUpperCase()})
         </h2>
 
-        {apps.length === 0 ? (
+        {/* 🔍 Search + sort controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 mb-4">
+          <input
+            type="text"
+            placeholder="Search by Reg No, Name, or Company"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300 w-full sm:w-64"
+          />
+          <button
+            onClick={() => setSortAsc(!sortAsc)}
+            className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+          >
+            Sort by Reg No {sortAsc ? "↑" : "↓"}
+          </button>
+        </div>
+
+        {loading ? (
+          // ✅ Centered spinner while fetching
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+            <p className="mt-4 text-gray-600">Fetching applications...</p>
+          </div>
+        ) : filteredApps.length === 0 ? (
           <p className="text-gray-600">
             No applications found for your department.
           </p>
@@ -106,7 +144,7 @@ export default function AllApplications() {
                 </tr>
               </thead>
               <tbody>
-                {apps.map((app) => (
+                {filteredApps.map((app) => (
                   <tr
                     key={app._id}
                     className="hover:bg-gray-50 border-b text-gray-700"
@@ -154,7 +192,7 @@ export default function AllApplications() {
         <HodReviewModal
           selected={selected}
           setSelected={setSelected}
-          role="hod" // pass reviewer role
+          role="hod"
           setApps={setApps}
           getToken={getToken}
         />

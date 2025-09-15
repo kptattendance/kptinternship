@@ -21,7 +21,7 @@ export default function Home() {
   const [selectedDept, setSelectedDept] = useState("all");
   const [sortAsc, setSortAsc] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
-  const [search, setSearch] = useState(""); // ✅ new search state
+  const [search, setSearch] = useState("");
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const pageSize = 10;
@@ -47,12 +47,10 @@ export default function Home() {
   useEffect(() => {
     let data = [...applications];
 
-    // Filter by dept
     if (selectedDept !== "all") {
       data = data.filter((app) => app.department === selectedDept);
     }
 
-    // Search by regNumber or name
     if (search.trim() !== "") {
       const query = search.toLowerCase();
       data = data.filter(
@@ -62,7 +60,6 @@ export default function Home() {
       );
     }
 
-    // Sort by regNumber
     data.sort((a, b) =>
       sortAsc
         ? a.regNumber.localeCompare(b.regNumber)
@@ -70,10 +67,10 @@ export default function Home() {
     );
 
     setFiltered(data);
-    setCurrentPage(1); // reset to first page
+    setCurrentPage(1);
   }, [selectedDept, sortAsc, search, applications]);
 
-  // Pagination logic
+  // Pagination
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = filtered.slice(
     (currentPage - 1) * pageSize,
@@ -89,144 +86,149 @@ export default function Home() {
         : "bg-gray-100 text-gray-700";
     return (
       <span className={`px-2 py-1 text-xs rounded font-medium ${color}`}>
-        {status.charAt(0).toUpperCase() + status.slice(1)}
+        {status ? status.charAt(0).toUpperCase() + status.slice(1) : "Pending"}
       </span>
     );
   };
 
-  if (loading) {
-    return (
-      <div className="p-6 text-center">
-        <p className="text-gray-600">Loading applications...</p>
-      </div>
-    );
-  }
-
   return (
     <>
+      {/* Navbar always visible */}
       <Navbar />
+
       <div className="p-6 space-y-4">
-        {/* Header and filter controls */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-          <h2 className="text-2xl font-semibold">
-            All Internship Applications
-          </h2>
-          <div className="flex flex-wrap gap-3">
-            {/* Department filter */}
-            <select
-              value={selectedDept}
-              onChange={(e) => setSelectedDept(e.target.value)}
-              className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300"
-            >
-              <option value="all">All Departments</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
-
-            {/* Search bar */}
-            <input
-              type="text"
-              placeholder="Search by Reg No or Name"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300"
-            />
-
-            {/* Sort button */}
-            <button
-              onClick={() => setSortAsc(!sortAsc)}
-              className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
-            >
-              Sort by Reg No {sortAsc ? "↑" : "↓"}
-            </button>
+        {loading ? (
+          // ✅ Loading animation
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+            <p className="mt-4 text-gray-600">Fetching applications...</p>
           </div>
-        </div>
+        ) : (
+          <>
+            {/* Header + filter controls */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+              <h2 className="text-2xl font-semibold">
+                All Internship Applications
+              </h2>
+              <div className="flex flex-wrap gap-3">
+                <select
+                  value={selectedDept}
+                  onChange={(e) => setSelectedDept(e.target.value)}
+                  className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300"
+                >
+                  <option value="all">All Departments</option>
+                  {DEPARTMENTS.map((d) => (
+                    <option key={d.value} value={d.value}>
+                      {d.label}
+                    </option>
+                  ))}
+                </select>
 
-        {/* Applications table */}
-        <div className="overflow-x-auto rounded-lg shadow">
-          <table className="min-w-full border-collapse">
-            <thead>
-              <tr className="bg-blue-50 text-left text-sm font-semibold text-gray-700">
-                <th className="p-3 border">Sl. No</th>
-                <th className="p-3 border">Reg No</th>
-                <th className="p-3 border">Name</th>
-                <th className="p-3 border">Department</th>
-                <th className="p-3 border">Phone</th>
-                <th className="p-3 border">Date</th>
-                <th className="p-3 border">Cohort Owner</th>
-                <th className="p-3 border">HOD</th>
-                <th className="p-3 border">Placement</th>
-                <th className="p-3 border">Principal</th>
-              </tr>
-            </thead>
-            <tbody>
-              {paginated.length > 0 ? (
-                paginated.map((app, idx) => (
-                  <tr
-                    key={app._id}
-                    className="hover:bg-gray-50 text-sm even:bg-gray-100"
-                  >
-                    <td className="p-3 border">
-                      {(currentPage - 1) * pageSize + idx + 1}
-                    </td>
-                    <td className="p-3 border">{app.regNumber}</td>
-                    <td className="p-3 border">{app.name}</td>
-                    <td className="p-3 border uppercase">{app.department}</td>
-                    <td className="p-3 border">{app.phoneNumber}</td>
-                    <td className="p-3 border">
-                      {new Date(app.dateOfApplication).toLocaleDateString()}
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.cohortOwner?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.hod?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.placement?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.principal?.status} />
-                    </td>
+                <input
+                  type="text"
+                  placeholder="Search by Reg No or Name"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300"
+                />
+
+                <button
+                  onClick={() => setSortAsc(!sortAsc)}
+                  className="px-3 py-2 bg-blue-600 text-white rounded shadow hover:bg-blue-700"
+                >
+                  Sort by Reg No {sortAsc ? "↑" : "↓"}
+                </button>
+              </div>
+            </div>
+
+            {/* Applications table */}
+            <div className="overflow-x-auto rounded-lg shadow">
+              <table className="min-w-full border-collapse">
+                <thead>
+                  <tr className="bg-blue-50 text-left text-sm font-semibold text-gray-700">
+                    <th className="p-3 border">Sl. No</th>
+                    <th className="p-3 border">Reg No</th>
+                    <th className="p-3 border">Name</th>
+                    <th className="p-3 border">Department</th>
+                    <th className="p-3 border">Phone</th>
+                    <th className="p-3 border">Date</th>
+                    <th className="p-3 border">Cohort Owner</th>
+                    <th className="p-3 border">HOD</th>
+                    <th className="p-3 border">Placement</th>
+                    <th className="p-3 border">Principal</th>
                   </tr>
-                ))
-              ) : (
-                <tr>
-                  <td
-                    colSpan="11"
-                    className="text-center p-4 text-gray-500 italic"
-                  >
-                    No applications found.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                </thead>
+                <tbody>
+                  {paginated.length > 0 ? (
+                    paginated.map((app, idx) => (
+                      <tr
+                        key={app._id}
+                        className="hover:bg-gray-50 text-sm even:bg-gray-100"
+                      >
+                        <td className="p-3 border">
+                          {(currentPage - 1) * pageSize + idx + 1}
+                        </td>
+                        <td className="p-3 border">{app.regNumber}</td>
+                        <td className="p-3 border">{app.name}</td>
+                        <td className="p-3 border uppercase">
+                          {app.department}
+                        </td>
+                        <td className="p-3 border">{app.phoneNumber}</td>
+                        <td className="p-3 border">
+                          {new Date(app.dateOfApplication).toLocaleDateString()}
+                        </td>
+                        <td className="p-3 border">
+                          <StatusBadge status={app.cohortOwner?.status} />
+                        </td>
+                        <td className="p-3 border">
+                          <StatusBadge status={app.hod?.status} />
+                        </td>
+                        <td className="p-3 border">
+                          <StatusBadge status={app.placement?.status} />
+                        </td>
+                        <td className="p-3 border">
+                          <StatusBadge status={app.principal?.status} />
+                        </td>
+                      </tr>
+                    ))
+                  ) : (
+                    <tr>
+                      <td
+                        colSpan="11"
+                        className="text-center p-4 text-gray-500 italic"
+                      >
+                        No applications found.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
 
-        {/* Pagination controls */}
-        <div className="flex justify-center items-center gap-3 mt-4">
-          <button
-            onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
-            disabled={currentPage === 1}
-            className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
-          >
-            Previous
-          </button>
-          <span>
-            Page {currentPage} of {totalPages}
-          </span>
-          <button
-            onClick={() => setCurrentPage((p) => Math.min(p + 1, totalPages))}
-            disabled={currentPage === totalPages}
-            className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
-          >
-            Next
-          </button>
-        </div>
+            {/* Pagination */}
+            <div className="flex justify-center items-center gap-3 mt-4">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+              >
+                Next
+              </button>
+            </div>
+          </>
+        )}
       </div>
     </>
   );

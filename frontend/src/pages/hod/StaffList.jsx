@@ -9,12 +9,12 @@ export default function StaffList() {
   const { getToken } = useAuth();
   const [staff, setStaff] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [editRow, setEditRow] = useState(null); // track which row is being edited
-  const [editData, setEditData] = useState({}); // track editable row data
+  const [editRow, setEditRow] = useState(null);
+  const [editData, setEditData] = useState({});
 
   const hodDepartment = user?.publicMetadata?.department;
-
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     const fetchStaff = async () => {
       try {
@@ -55,7 +55,7 @@ export default function StaffList() {
 
   const handleEdit = (user) => {
     setEditRow(user._id);
-    setEditData({ ...user }); // preload current row values
+    setEditData({ ...user });
   };
 
   const handleCancel = () => {
@@ -74,7 +74,6 @@ export default function StaffList() {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      // update frontend state
       setStaff(
         staff.map((u) => (u._id === id ? { ...u, ...res.data.user } : u))
       );
@@ -86,17 +85,23 @@ export default function StaffList() {
     }
   };
 
-  if (loading) return <p className="text-center text-gray-500">Loading...</p>;
-
   return (
     <>
+      {/* ✅ Navbar always shows */}
       <ReviewerNavbar />
+
       <div className="p-4 sm:p-6">
         <h2 className="text-xl sm:text-2xl font-bold text-gray-800 mb-4 sm:mb-6">
-          Staff List ({hodDepartment?.toUpperCase()})
+          Staff List ({hodDepartment?.toUpperCase() || "N/A"})
         </h2>
 
-        {staff.length === 0 ? (
+        {loading ? (
+          // ✅ Centered spinner while fetching
+          <div className="flex flex-col items-center justify-center py-20">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
+            <p className="mt-4 text-gray-600">Fetching staff list...</p>
+          </div>
+        ) : staff.length === 0 ? (
           <p className="text-gray-500">No staff found for your department.</p>
         ) : (
           <div className="overflow-x-auto shadow-lg rounded-2xl border border-gray-200">

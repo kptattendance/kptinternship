@@ -1,3 +1,4 @@
+// src/pages/students/Dashboard.jsx
 import { useUser, useAuth } from "@clerk/clerk-react";
 import { useEffect, useState } from "react";
 import axios from "axios";
@@ -7,12 +8,13 @@ import { useNavigate } from "react-router-dom";
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
   const { getToken } = useAuth();
-
   const navigate = useNavigate();
+
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   useEffect(() => {
     if (!isLoaded) return;
 
@@ -21,9 +23,7 @@ export default function Dashboard() {
         const token = await getToken();
         const res = await axios.get(
           backendUrl + "/api/students/myApplications",
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
+          { headers: { Authorization: `Bearer ${token}` } }
         );
 
         if (res.data.success && res.data.data.length > 0) {
@@ -39,24 +39,23 @@ export default function Dashboard() {
     fetchStudent();
   }, [isLoaded, getToken]);
 
-  if (!isLoaded || loading) {
-    return (
-      <div className="flex flex-col items-center justify-center h-screen space-y-4">
-        <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        <p className="text-blue-600 font-medium animate-pulse">
-          Loading profile...
-        </p>
-      </div>
-    );
-  }
-
   const email = user?.primaryEmailAddress?.emailAddress || "-";
 
   return (
     <>
+      {/* ✅ Navbar always visible */}
       <StudentNavbar />
+
       <div className="max-w-3xl mx-auto p-4 sm:p-6">
-        {student ? (
+        {!isLoaded || loading ? (
+          // ✅ Loading spinner shown in content area (not full screen)
+          <div className="flex flex-col items-center justify-center py-20 space-y-4">
+            <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="text-blue-600 font-medium animate-pulse">
+              Loading profile...
+            </p>
+          </div>
+        ) : student ? (
           <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
             {/* Profile Section */}
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">

@@ -21,7 +21,6 @@
     "multer": "^2.0.2",
     "multer-storage-cloudinary": "^4.0.0",
     "nodemon": "^3.1.10",
-    "nstall": "^0.2.0",
     "pdfkit": "^0.17.2",
     "validator": "^13.15.15"
   }

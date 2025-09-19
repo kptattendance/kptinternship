@@ -99,10 +99,11 @@ export default function ApplicationsTable({ applications, departments }) {
           <thead>
             <tr className="bg-blue-50 text-left text-sm font-semibold text-gray-700">
               <th className="p-3 border">Sl. No</th>
+              {/* <th className="p-3 border">Image</th> */}
               <th className="p-3 border">Reg No</th>
               <th className="p-3 border">Name</th>
               <th className="p-3 border">Department</th>
-              <th className="p-3 border">Phone</th>
+              {/* <th className="p-3 border">Phone</th> */}
               <th className="p-3 border">Date</th>
               <th className="p-3 border">Cohort Owner</th>
               <th className="p-3 border">HOD</th>
@@ -120,10 +121,22 @@ export default function ApplicationsTable({ applications, departments }) {
                   <td className="p-3 border">
                     {(currentPage - 1) * pageSize + idx + 1}
                   </td>
+                  {/* <td className="p-3 border">
+                    {app.image ? (
+                      <img
+                        src={app.image}
+                        alt={app.name}
+                        className="h-12 w-12 object-cover rounded-full border"
+                      />
+                    ) : (
+                      <span className="text-gray-400 text-xs">No Image</span>
+                    )}
+                  </td> */}
+
                   <td className="p-3 border">{app.regNumber}</td>
                   <td className="p-3 border">{app.name}</td>
                   <td className="p-3 border uppercase">{app.department}</td>
-                  <td className="p-3 border">{app.phoneNumber}</td>
+                  {/* <td className="p-3 border">{app.phoneNumber}</td> */}
                   <td className="p-3 border">
                     {new Date(app.dateOfApplication).toLocaleDateString()}
                   </td>

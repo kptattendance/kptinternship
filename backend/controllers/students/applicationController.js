@@ -100,10 +100,18 @@ export const updateApplication = async (req, res) => {
 /**
  * Delete application (admin use-case)
  */
+import cloudinary from "../../config/cloudinary.js";
+
 export const deleteApplication = async (req, res) => {
   try {
     const app = await Application.findByIdAndDelete(req.params.id);
     if (!app) return res.status(404).json({ error: "Not found" });
+
+    // ✅ If you stored public_id, clean up Cloudinary
+    if (app.imagePublicId) {
+      await cloudinary.uploader.destroy(app.imagePublicId);
+    }
+
     res.json({ message: "Application deleted" });
   } catch (err) {
     res.status(500).json({ error: err.message });

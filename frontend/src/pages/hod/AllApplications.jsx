@@ -15,6 +15,9 @@ export default function AllApplications() {
   const [search, setSearch] = useState(""); // 🔍 search box
   const [sortAsc, setSortAsc] = useState(true); // ⬆️⬇️ sort toggle
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
   const hodDepartment = user?.publicMetadata?.department;
 
@@ -90,6 +93,13 @@ export default function AllApplications() {
         : b.regNumber.localeCompare(a.regNumber)
     );
 
+  // 🔹 Pagination logic
+  const totalPages = Math.ceil(filteredApps.length / pageSize);
+  const paginatedApps = filteredApps.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
   return (
     <>
       {/* ✅ Navbar always visible */}
@@ -128,62 +138,107 @@ export default function AllApplications() {
             No applications found for your department.
           </p>
         ) : (
-          <div className="overflow-x-auto rounded-lg shadow">
-            <table className="min-w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-blue-50 text-left font-semibold text-gray-700">
-                  <th className="p-3 border">Reg No</th>
-                  <th className="p-3 border">Name</th>
-                  <th className="p-3 border">Department</th>
-                  <th className="p-3 border">Company</th>
-                  <th className="p-3 border">Cohort Owner</th>
-                  <th className="p-3 border">HOD</th>
-                  <th className="p-3 border">Placement</th>
-                  <th className="p-3 border">Principal</th>
-                  <th className="p-3 border text-center">Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredApps.map((app) => (
-                  <tr
-                    key={app._id}
-                    className="hover:bg-gray-50 border-b text-gray-700"
-                  >
-                    <td className="p-3 border">{app.regNumber}</td>
-                    <td className="p-3 border">{app.name}</td>
-                    <td className="p-3 border uppercase">{app.department}</td>
-                    <td className="p-3 border">{app.companyName}</td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.cohortOwner?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.hod?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.placement?.status} />
-                    </td>
-                    <td className="p-3 border">
-                      <StatusBadge status={app.principal?.status} />
-                    </td>
-                    <td className="p-3 border text-right space-x-2">
-                      <button
-                        onClick={() => setSelected(app)} // ⬅️ opens modal
-                        className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
-                      >
-                        View
-                      </button>
-                      <button
-                        onClick={() => handleDelete(app._id)}
-                        className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
-                      >
-                        Delete
-                      </button>
-                    </td>
+          <>
+            <div className="overflow-x-auto rounded-lg shadow">
+              <table className="min-w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-blue-50 text-left font-semibold text-gray-700">
+                    <th className="p-3 border">Sl. No</th>
+                    <th className="p-3 border">Photo</th>
+                    <th className="p-3 border">Reg No</th>
+                    <th className="p-3 border">Name</th>
+                    <th className="p-3 border">Phone</th>
+                    <th className="p-3 border">Department</th>
+                    <th className="p-3 border">Company</th>
+                    <th className="p-3 border">Cohort Owner</th>
+                    <th className="p-3 border">HOD</th>
+                    <th className="p-3 border">Placement</th>
+                    <th className="p-3 border">Principal</th>
+                    <th className="p-3 border text-center">Actions</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {paginatedApps.map((app, index) => (
+                    <tr
+                      key={app._id}
+                      className="hover:bg-gray-50 border-b text-gray-700"
+                    >
+                      <td className="p-3 border text-center">
+                        {(currentPage - 1) * pageSize + index + 1}
+                      </td>
+                      <td className="p-3 border text-center">
+                        {app.image ? (
+                          <img
+                            src={app.image}
+                            alt={app.name}
+                            className="h-12 w-12 object-cover rounded-full border mx-auto"
+                          />
+                        ) : (
+                          <span className="text-gray-400 text-xs">
+                            No Image
+                          </span>
+                        )}
+                      </td>
+                      <td className="p-3 border">{app.regNumber}</td>
+                      <td className="p-3 border">{app.name}</td>
+                      <td className="p-3 border">{app.phoneNumber}</td>
+                      <td className="p-3 border uppercase">{app.department}</td>
+                      <td className="p-3 border">{app.companyName}</td>
+                      <td className="p-3 border">
+                        <StatusBadge status={app.cohortOwner?.status} />
+                      </td>
+                      <td className="p-3 border">
+                        <StatusBadge status={app.hod?.status} />
+                      </td>
+                      <td className="p-3 border">
+                        <StatusBadge status={app.placement?.status} />
+                      </td>
+                      <td className="p-3 border">
+                        <StatusBadge status={app.principal?.status} />
+                      </td>
+                      <td className="p-3 border text-right space-x-2">
+                        <button
+                          onClick={() => setSelected(app)}
+                          className="px-3 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600"
+                        >
+                          View
+                        </button>
+                        <button
+                          onClick={() => handleDelete(app._id)}
+                          className="px-3 py-1 text-sm bg-red-500 text-white rounded hover:bg-red-600"
+                        >
+                          Delete
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* 🔹 Pagination Controls */}
+            <div className="flex justify-center items-center gap-3 mt-4">
+              <button
+                onClick={() => setCurrentPage((p) => Math.max(p - 1, 1))}
+                disabled={currentPage === 1}
+                className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+              >
+                Previous
+              </button>
+              <span>
+                Page {currentPage} of {totalPages}
+              </span>
+              <button
+                onClick={() =>
+                  setCurrentPage((p) => Math.min(p + 1, totalPages))
+                }
+                disabled={currentPage === totalPages}
+                className="px-3 py-1 border rounded disabled:opacity-50 bg-gray-100 hover:bg-gray-200"
+              >
+                Next
+              </button>
+            </div>
+          </>
         )}
       </div>
 

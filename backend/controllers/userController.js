@@ -6,41 +6,54 @@ import User from "../model/User.js";
  */
 export const syncUser = async (req, res) => {
   try {
-    const { userId } = req.auth();
+    const { userId } = req.auth;
     if (!userId) return res.status(401).json({ message: "Unauthenticated" });
 
     const clerkUser = await clerkClient.users.getUser(userId);
+
     const email = clerkUser.primaryEmailAddress?.emailAddress || "";
     const name = clerkUser.fullName || "";
+
+    // 👇 Pull role/department directly from Clerk metadata
+    const roleFromClerk = clerkUser.publicMetadata?.role || "student";
+    const departmentFromClerk = clerkUser.publicMetadata?.department || null;
 
     let userDoc = await User.findOne({ email });
 
     if (!userDoc) {
-      // never invited before → student
+      // ✅ When creating new user, use Clerk's role/department if available
       userDoc = await User.create({
         clerkUserId: userId,
         email,
         name,
-        role: "student",
-        department: null,
+        role: roleFromClerk,
+        department: departmentFromClerk,
       });
     } else {
-      // invited before login
+      // ✅ If invited before login, sync Clerk ID
       if (!userDoc.clerkUserId) {
         userDoc.clerkUserId = userId;
         await userDoc.save();
       }
+
+      // ✅ Ensure Mongo role matches Clerk’s role (priority is Clerk metadata)
+      if (
+        userDoc.role !== roleFromClerk ||
+        userDoc.department !== departmentFromClerk
+      ) {
+        userDoc.role = roleFromClerk;
+        userDoc.department = departmentFromClerk;
+        await userDoc.save();
+      }
     }
 
-    // ✅ Sync Clerk metadata
-    if (userDoc.role && userDoc.role !== clerkUser.publicMetadata.role) {
-      await clerkClient.users.updateUser(userId, {
-        publicMetadata: {
-          role: userDoc.role,
-          department: userDoc.department,
-        },
-      });
-    }
+    // ✅ Also ensure Clerk is up-to-date if role in Mongo changes later
+    await clerkClient.users.updateUser(userId, {
+      publicMetadata: {
+        role: userDoc.role,
+        department: userDoc.department,
+      },
+    });
 
     return res.json({ ok: true, user: userDoc });
   } catch (err) {
@@ -176,15 +189,27 @@ export const deleteUser = async (req, res) => {
     if (!userDoc)
       return res.status(404).json({ ok: false, message: "User not found" });
 
-    // Delete from Clerk too (if Clerk ID exists)
+    // ✅ Delete Clerk account
     if (userDoc.clerkUserId) {
       try {
         await clerkClient.users.deleteUser(userDoc.clerkUserId);
       } catch (err) {
-        console.warn(
-          "⚠️ Failed to delete Clerk user, maybe already gone:",
-          err.message
-        );
+        console.warn("⚠️ Failed to delete Clerk user:", err.message);
+      }
+    }
+
+    // ✅ Delete Cloudinary assets (if any public IDs stored in userDoc)
+    if (userDoc.cloudinaryAssets && userDoc.cloudinaryAssets.length > 0) {
+      for (const publicId of userDoc.cloudinaryAssets) {
+        try {
+          await cloudinary.uploader.destroy(publicId);
+        } catch (err) {
+          console.warn(
+            "⚠️ Failed to delete Cloudinary asset:",
+            publicId,
+            err.message
+          );
+        }
       }
     }
 

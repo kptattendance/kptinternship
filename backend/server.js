@@ -7,6 +7,7 @@ import { clerkMiddleware } from "@clerk/express";
 import applicationRoutes from "./routes/students/applicationRoutes.js";
 import reviewRoutes from "./routes/reviewers/reviewRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
+import companyRoutes from "./routes/companyRoutes.js";
 import "./config/cloudinary.js";
 import connectDB from "./config/db.js";
 
@@ -30,6 +31,7 @@ app.get("/", (req, res) => {
 app.use("/api/users", userRoutes);
 app.use("/api/students", applicationRoutes);
 app.use("/api/reviewers", reviewRoutes);
+app.use("/api/company", companyRoutes);
 
 const PORT = process.env.PORT || 5000;
 

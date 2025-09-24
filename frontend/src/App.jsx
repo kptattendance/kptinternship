@@ -10,6 +10,12 @@ import Review from "./pages/reviewers/Review";
 import AddStaff from "./pages/hod/AddStaff";
 import StaffList from "./pages/hod/StaffList";
 import AllApplications from "./pages/hod/AllApplications";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PlacementAddUser from "./pages/placement/PlacementAddUser";
+import MembersList from "./pages/placement/MembersList";
+import PlacementAddCompany from "./pages/placement/PlacementAddCompany";
+import CompanyDashboard from "./pages/company/CompanyDashboard";
+import InternalMark from "./pages/cohort/InternalMark";
 
 export default function App() {
   return (
@@ -19,10 +25,38 @@ export default function App() {
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/review" element={<Review />} />
+        <Route path="/company" element={<CompanyDashboard />} />
         <Route path="/redirect" element={<RedirectAfterLogin />} />
         <Route path="/hod/add-staffs" element={<AddStaff />} />
+        <Route path="/redirect" element={<RedirectAfterLogin />} />
         <Route path="/hod/list-staff" element={<StaffList />} />
         <Route path="/hod/applications" element={<AllApplications />} />
+        <Route path="/cohortOwner/internal-mark" element={<InternalMark />} />
+
+        <Route
+          path="/placement/add-hod"
+          element={
+            <ProtectedRoute allowedRoles={["placement"]}>
+              <PlacementAddUser />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/placement/add-company"
+          element={
+            <ProtectedRoute allowedRoles={["placement"]}>
+              <PlacementAddCompany />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/placement/list-hod"
+          element={
+            <ProtectedRoute allowedRoles={["placement"]}>
+              <MembersList />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/internship-application-submit"
           element={<InternshipApplicationForm />}

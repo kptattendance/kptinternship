@@ -1,3 +1,4 @@
+// src/components/ProtectedRoute.jsx
 import { useUser } from "@clerk/clerk-react";
 import { Navigate } from "react-router-dom";
 
@@ -6,7 +7,8 @@ export default function ProtectedRoute({ children, allowedRoles }) {
 
   if (!isLoaded) return <p>Loading...</p>;
 
-  const role = user?.privateMetadata?.role || "student";
+  // 👇 read role from Clerk metadata
+  const role = user?.publicMetadata?.role || "student";
 
   if (!allowedRoles.includes(role)) {
     return <Navigate to="/" replace />;

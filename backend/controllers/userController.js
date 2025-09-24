@@ -1,81 +1,77 @@
 import { clerkClient } from "@clerk/express";
 import User from "../model/User.js";
+import cloudinary from "../config/cloudinary.js";
+import mongoose from "mongoose";
 
-/**
- * Sync logged-in Clerk user into MongoDB
- */
 export const syncUser = async (req, res) => {
   try {
-    const { userId } = req.auth;
-    if (!userId) return res.status(401).json({ message: "Unauthenticated" });
-
-    const clerkUser = await clerkClient.users.getUser(userId);
-
-    const email = clerkUser.primaryEmailAddress?.emailAddress || "";
-    const name = clerkUser.fullName || "";
-
-    // 👇 Pull role/department directly from Clerk metadata
-    const roleFromClerk = clerkUser.publicMetadata?.role || "student";
-    const departmentFromClerk = clerkUser.publicMetadata?.department || null;
-
-    let userDoc = await User.findOne({ email });
-
-    if (!userDoc) {
-      // ✅ When creating new user, use Clerk's role/department if available
-      userDoc = await User.create({
-        clerkUserId: userId,
-        email,
-        name,
-        role: roleFromClerk,
-        department: departmentFromClerk,
-      });
-    } else {
-      // ✅ If invited before login, sync Clerk ID
-      if (!userDoc.clerkUserId) {
-        userDoc.clerkUserId = userId;
-        await userDoc.save();
-      }
-
-      // ✅ Ensure Mongo role matches Clerk’s role (priority is Clerk metadata)
-      if (
-        userDoc.role !== roleFromClerk ||
-        userDoc.department !== departmentFromClerk
-      ) {
-        userDoc.role = roleFromClerk;
-        userDoc.department = departmentFromClerk;
-        await userDoc.save();
-      }
+    const clerkUserId = req.userId; // from middleware
+    if (!clerkUserId) {
+      return res.status(400).json({ message: "No Clerk user ID found" });
     }
 
-    // ✅ Also ensure Clerk is up-to-date if role in Mongo changes later
-    await clerkClient.users.updateUser(userId, {
-      publicMetadata: {
-        role: userDoc.role,
-        department: userDoc.department,
+    // 1️⃣ Get Clerk user first
+    const clerkUser = await clerkClient.users.getUser(clerkUserId);
+
+    // Extract email + metadata from Clerk
+    const email = clerkUser?.emailAddresses?.[0]?.emailAddress || null;
+    const role = clerkUser?.publicMetadata?.role || "student";
+    const department = clerkUser?.publicMetadata?.department || null;
+    const name = clerkUser?.firstName || "";
+
+    // 2️⃣ Check MongoDB for existing user
+    let userDoc = await User.findOne({ clerkUserId });
+
+    // 3️⃣ If not found, auto-create minimal entry in Mongo
+    if (!userDoc) {
+      userDoc = await User.create({
+        clerkUserId,
+        email,
+        role,
+        department,
+        name,
+      });
+    }
+
+    // 4️⃣ Respond with unified data
+    res.json({
+      ok: true,
+      user: {
+        clerkUserId,
+        role: userDoc.role || role,
+        department: userDoc.department || department,
+        name: userDoc.name || name,
+        email: userDoc.email || email,
+        // add other fields if you want
       },
     });
-
-    return res.json({ ok: true, user: userDoc });
   } catch (err) {
-    console.error("Error syncing user:", err);
-    return res.status(500).json({ ok: false, error: err.message });
+    console.error("❌ Sync user error:", err);
+    res.status(500).json({ message: "Server error" });
   }
 };
 
 /**
- * HOD adds staff → invite or update
+ * ✅ Create user
  */
-export const createStaffUser = async (req, res) => {
+export const createUser = async (req, res) => {
   try {
-    const { email, role, department } = req.body;
+    const { email, role, department, name, phoneNumber } = req.body;
 
     if (!email || !role) {
       return res
         .status(400)
-        .json({ ok: false, message: "Email and role required" });
+        .json({ ok: false, message: "Email and role are required" });
     }
 
-    // Check if user already exists in Clerk
+    // Handle uploaded file
+    let photoUrl, photoPublicId;
+    if (req.file) {
+      photoUrl = req.file.path; // Cloudinary URL
+      photoPublicId = req.file.filename; // Cloudinary public_id
+    }
+
+    // Clerk user
     let existingUsers;
     try {
       existingUsers = await clerkClient.users.getUserList({ query: email });
@@ -83,113 +79,106 @@ export const createStaffUser = async (req, res) => {
       existingUsers = { data: [] };
     }
 
+    let clerkUser;
     if (existingUsers?.data?.length > 0) {
-      const existingUser = existingUsers.data[0];
-
-      await clerkClient.users.updateUser(existingUser.id, {
+      clerkUser = existingUsers.data[0];
+      await clerkClient.users.updateUser(clerkUser.id, {
         publicMetadata: { role, department },
       });
-
-      const userDoc = await User.findOneAndUpdate(
-        { email },
-        { clerkUserId: existingUser.id, email, role, department },
-        { upsert: true, new: true }
-      );
-
-      return res.json({
-        ok: true,
-        message: "User already exists, role updated.",
-        user: userDoc,
+    } else {
+      clerkUser = await clerkClient.users.createUser({
+        emailAddress: [email],
+        publicMetadata: { role, department },
       });
     }
 
-    // Send invitation if Clerk doesn’t know this email
-    const invitation = await clerkClient.invitations.createInvitation({
-      emailAddress: email,
-    });
-
+    // Upsert MongoDB
     const userDoc = await User.findOneAndUpdate(
       { email },
-      { email, role, department },
+      {
+        clerkUserId: clerkUser.id,
+        email,
+        role,
+        department,
+        name,
+        phoneNumber,
+        photoUrl: photoUrl || undefined,
+        photoPublicId: photoPublicId || undefined,
+      },
       { upsert: true, new: true, setDefaultsOnInsert: true }
     );
 
-    return res.json({ ok: true, invitation, user: userDoc });
+    return res.json({
+      ok: true,
+      message: "User created successfully",
+      user: userDoc,
+    });
   } catch (err) {
-    console.error("❌ Error creating staff user:", err);
+    console.error("❌ Error creating user:", err);
     return res.status(500).json({ ok: false, error: err.message });
   }
 };
 
 /**
- * GET all users
- */
-export const getAllUsers = async (req, res) => {
-  try {
-    const users = await User.find().sort({ createdAt: -1 });
-    return res.json({ ok: true, users });
-  } catch (err) {
-    console.error("Error fetching users:", err);
-    return res.status(500).json({ ok: false, error: err.message });
-  }
-};
-
-/**
- * GET single user by ID
- */
-export const getUserById = async (req, res) => {
-  try {
-    const user = await User.findById(req.params.id);
-    if (!user)
-      return res.status(404).json({ ok: false, message: "User not found" });
-    return res.json({ ok: true, user });
-  } catch (err) {
-    console.error("Error fetching user:", err);
-    return res.status(500).json({ ok: false, error: err.message });
-  }
-};
-
-/**
- * UPDATE user
+ * ✅ Update user
  */
 export const updateUser = async (req, res) => {
   try {
     const { role, department, name, phoneNumber } = req.body;
-
-    const userDoc = await User.findByIdAndUpdate(
-      req.params.id,
-      { role, department, name, phoneNumber },
-      { new: true }
-    );
+    const userDoc = await User.findById(req.params.id);
 
     if (!userDoc)
       return res.status(404).json({ ok: false, message: "User not found" });
 
-    // Update Clerk metadata if Clerk ID exists
+    // Handle new photo
+    if (req.file) {
+      if (userDoc.photoPublicId) {
+        try {
+          await cloudinary.uploader.destroy(userDoc.photoPublicId);
+        } catch (err) {
+          console.warn(
+            "⚠️ Failed to delete old Cloudinary image:",
+            err.message
+          );
+        }
+      }
+      userDoc.photoUrl = req.file.path;
+      userDoc.photoPublicId = req.file.filename;
+    }
+
+    userDoc.role = role || userDoc.role;
+    userDoc.department = department || userDoc.department;
+    userDoc.name = name || userDoc.name;
+    userDoc.phoneNumber = phoneNumber || userDoc.phoneNumber;
+
+    await userDoc.save();
+
     if (userDoc.clerkUserId) {
       await clerkClient.users.updateUser(userDoc.clerkUserId, {
-        publicMetadata: { role: userDoc.role, department: userDoc.department },
+        publicMetadata: {
+          role: userDoc.role,
+          department: userDoc.department,
+        },
       });
     }
 
-    return res.json({ ok: true, user: userDoc });
+    return res.json({ ok: true, message: "User updated", user: userDoc });
   } catch (err) {
-    console.error("Error updating user:", err);
+    console.error("❌ Error updating user:", err);
     return res.status(500).json({ ok: false, error: err.message });
   }
 };
 
 /**
- * DELETE user
+ * ✅ Delete user
  */
 export const deleteUser = async (req, res) => {
   try {
     const userDoc = await User.findByIdAndDelete(req.params.id);
-
     if (!userDoc)
       return res.status(404).json({ ok: false, message: "User not found" });
 
-    // ✅ Delete Clerk account
+    // Delete Clerk account
     if (userDoc.clerkUserId) {
       try {
         await clerkClient.users.deleteUser(userDoc.clerkUserId);
@@ -198,24 +187,53 @@ export const deleteUser = async (req, res) => {
       }
     }
 
-    // ✅ Delete Cloudinary assets (if any public IDs stored in userDoc)
-    if (userDoc.cloudinaryAssets && userDoc.cloudinaryAssets.length > 0) {
-      for (const publicId of userDoc.cloudinaryAssets) {
-        try {
-          await cloudinary.uploader.destroy(publicId);
-        } catch (err) {
-          console.warn(
-            "⚠️ Failed to delete Cloudinary asset:",
-            publicId,
-            err.message
-          );
-        }
+    // Delete Cloudinary photo
+    if (userDoc.photoPublicId) {
+      try {
+        await cloudinary.uploader.destroy(userDoc.photoPublicId);
+      } catch (err) {
+        console.warn("⚠️ Failed to delete Cloudinary image:", err.message);
       }
     }
 
-    return res.json({ ok: true, message: "User deleted" });
+    return res.json({ ok: true, message: "User deleted successfully" });
   } catch (err) {
-    console.error("Error deleting user:", err);
+    console.error("❌ Error deleting user:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
+/**
+ * ✅ Get all users
+ */
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await User.find().sort({ createdAt: -1 });
+    return res.json({ ok: true, users });
+  } catch (err) {
+    console.error("❌ Error fetching users:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
+/**
+ * ✅ Get single user by ID
+ */
+export const getUserById = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ ok: false, message: "Invalid user ID" });
+    }
+
+    const user = await User.findById(id);
+    if (!user)
+      return res.status(404).json({ ok: false, message: "User not found" });
+
+    res.json({ ok: true, user });
+  } catch (err) {
+    console.error("❌ Error fetching user:", err);
     return res.status(500).json({ ok: false, error: err.message });
   }
 };

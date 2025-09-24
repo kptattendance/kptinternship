@@ -2,8 +2,8 @@ import mongoose from "mongoose";
 
 const userSchema = new mongoose.Schema(
   {
-    clerkUserId: { type: String, unique: true, sparse: true }, // 👈 remove `required`
-    email: { type: String, required: true, unique: true }, // 👈 email should be unique key
+    clerkUserId: { type: String, unique: true, sparse: true },
+    email: { type: String, required: true, unique: true },
     name: { type: String },
     phoneNumber: { type: String },
     role: {
@@ -15,14 +15,17 @@ const userSchema = new mongoose.Schema(
         "placement",
         "principal",
         "admin",
+        "company",
       ],
       default: "student",
       required: true,
     },
     department: {
       type: String,
-      enum: ["cs", "civil", "eee", "me", "po", "ch", "ce", "at"],
+      enum: ["cs", "eee", "me", "po", "ch", "ce", "at", "ec"],
     },
+    photoUrl: { type: String }, // ✅ Add this
+    photoPublicId: { type: String }, // ✅ Add this
   },
   { timestamps: true }
 );

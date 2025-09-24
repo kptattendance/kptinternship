@@ -32,21 +32,20 @@ export default function Navbar() {
 
     try {
       const token = await getToken();
-      const res = await axios.get(backendUrl + "/api/users/sync", {
+      const res = await axios.get(`${backendUrl}/api/users/sync`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const role = res.data.user.role;
 
-      // ✅ Students → dashboard, everyone else → review
       if (role === "student") {
         navigate("/dashboard");
+      } else if (role === "company") {
+        navigate("/company");
       } else {
         navigate("/review");
       }
     } catch (err) {
       console.error("❌ Error fetching role from backend:", err);
-      // fallback → student dashboard
       navigate("/dashboard");
     } finally {
       setMenuOpen(false);

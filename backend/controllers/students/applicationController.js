@@ -1,5 +1,6 @@
 // backend/controllers/applicationController.js
 import Application from "../../model/Application.js";
+import cloudinary from "../../config/cloudinary.js";
 
 /**
  * Create new application
@@ -15,16 +16,21 @@ export const createApplication = async (req, res) => {
         message: "You have already submitted an application.",
       });
     }
-
     let imageUrl = "";
-    if (req.file && req.file.path) {
-      imageUrl = req.file.path; // ✅ Cloudinary gives hosted URL
+    let imagePublicId = "";
+    if (req.file) {
+      const result = await cloudinary.uploader.upload(req.file.path, {
+        folder: "applications",
+      });
+      imageUrl = result.secure_url;
+      imagePublicId = result.public_id;
     }
-    console.log(imageUrl);
+
     const application = new Application({
       studentId,
       ...req.body,
       image: imageUrl,
+      imagePublicId, // store so you can delete later
     });
 
     await application.save();
@@ -100,8 +106,6 @@ export const updateApplication = async (req, res) => {
 /**
  * Delete application (admin use-case)
  */
-import cloudinary from "../../config/cloudinary.js";
-
 export const deleteApplication = async (req, res) => {
   try {
     const app = await Application.findByIdAndDelete(req.params.id);

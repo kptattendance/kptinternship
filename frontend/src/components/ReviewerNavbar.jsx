@@ -38,8 +38,19 @@ const ReviewerNavbar = () => {
   } else if (role === "placement") {
     tabs = [
       { name: "Dashboard", path: "/review" },
-      { name: "Add HOD", path: "/placement/add-hod" },
-      { name: "List HOD", path: "/placement/list-hod" },
+      { name: "Add a Member", path: "/placement/add-hod" },
+      { name: "Add a Company", path: "/placement/add-company" },
+      { name: "Members List", path: "/placement/list-hod" },
+    ];
+  } else if (role === "cohortOwner") {
+    tabs = [
+      { name: "Dashboard", path: "/review" },
+      { name: "Internal Mark", path: "/cohortOwner/internal-mark" },
+    ];
+  } else if (role === "principal") {
+    tabs = [
+      { name: "Dashboard", path: "/review" },
+      { name: "Applications", path: "/hod/applications" },
     ];
   } else {
     // default (student or unknown role)

@@ -14,27 +14,38 @@ export default function AllApplications() {
   const [selected, setSelected] = useState(null); // selected app for modal
   const [search, setSearch] = useState(""); // 🔍 search box
   const [sortAsc, setSortAsc] = useState(true); // ⬆️⬇️ sort toggle
-
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 10;
-
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
-  const hodDepartment = user?.publicMetadata?.department;
+
+  // Pull role & department from Clerk metadata
+  const role = user?.publicMetadata?.role; // 👈 role
+  const hodDepartment = user?.publicMetadata?.department; // 👈 department
 
   useEffect(() => {
     const fetchApplications = async () => {
       try {
+        setLoading(true);
         const token = await getToken();
         const res = await axios.get(
           backendUrl + "/api/students/getAllApplications",
           { headers: { Authorization: `Bearer ${token}` } }
         );
 
-        const filtered = res.data.filter(
-          (app) => app.department === hodDepartment
-        );
+        let data = res.data;
 
-        setApps(filtered);
+        // 🟢 Logic:
+        // principal / placement => all
+        // hod / cohortOwner => filter by department
+        // student => nothing
+        if (role === "hod" || role === "cohortOwner") {
+          data = data.filter((app) => app.department === hodDepartment);
+        } else if (role === "student") {
+          data = []; // students shouldn't see anything
+        }
+        // principal & placement see everything (no filtering)
+
+        setApps(data);
       } catch (err) {
         console.error("❌ Failed to fetch:", err.response?.data || err.message);
       } finally {
@@ -42,8 +53,8 @@ export default function AllApplications() {
       }
     };
 
-    if (hodDepartment) fetchApplications();
-  }, [getToken, hodDepartment]);
+    if (role) fetchApplications();
+  }, [getToken, hodDepartment, role, backendUrl]);
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this application?"))
@@ -107,7 +118,11 @@ export default function AllApplications() {
 
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-4">
-          Applications ({hodDepartment?.toUpperCase()})
+          {role === "principal" || role === "placement"
+            ? "All Department Applications"
+            : role === "hod" || role === "cohortOwner"
+            ? `Applications (${hodDepartment?.toUpperCase()})`
+            : "Applications"}
         </h2>
 
         {/* 🔍 Search + sort controls */}
@@ -143,18 +158,55 @@ export default function AllApplications() {
               <table className="min-w-full border-collapse text-sm">
                 <thead>
                   <tr className="bg-blue-50 text-left font-semibold text-gray-700">
-                    <th className="p-3 border">Sl. No</th>
-                    <th className="p-3 border">Photo</th>
-                    <th className="p-3 border">Reg No</th>
-                    <th className="p-3 border">Name</th>
-                    <th className="p-3 border">Phone</th>
-                    <th className="p-3 border">Department</th>
-                    <th className="p-3 border">Company</th>
-                    <th className="p-3 border">Cohort Owner</th>
-                    <th className="p-3 border">HOD</th>
-                    <th className="p-3 border">Placement</th>
-                    <th className="p-3 border">Principal</th>
-                    <th className="p-3 border text-center">Actions</th>
+                    <th rowSpan="2" className="p-3 border">
+                      Sl. No
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Photo
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Reg No
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Name
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Phone
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Department
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Company
+                    </th>
+
+                    {/* ✅ Grouped Marks header */}
+                    <th colSpan="3" className="p-3 border text-center">
+                      Marks
+                    </th>
+
+                    <th rowSpan="2" className="p-3 border">
+                      Cohort Owner
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      HOD
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Placement
+                    </th>
+                    <th rowSpan="2" className="p-3 border">
+                      Principal
+                    </th>
+                    <th rowSpan="2" className="p-3 border text-center">
+                      Actions
+                    </th>
+                  </tr>
+
+                  {/* ✅ Sub-header row for marks */}
+                  <tr className="bg-blue-50 text-left font-semibold text-gray-700">
+                    <th className="p-3 border text-center">CIE 1</th>
+                    <th className="p-3 border text-center">CIE 2</th>
+                    <th className="p-3 border text-center">CIE 3</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -184,6 +236,17 @@ export default function AllApplications() {
                       <td className="p-3 border">{app.phoneNumber}</td>
                       <td className="p-3 border uppercase">{app.department}</td>
                       <td className="p-3 border">{app.companyName}</td>
+
+                      {/* ✅ Marks column */}
+                      <td className="p-3 border text-center">
+                        {app.marks?.internal1 ?? 0}
+                      </td>
+                      <td className="p-3 border text-center">
+                        {app.marks?.internal2 ?? 0}
+                      </td>
+                      <td className="p-3 border text-center">
+                        {app.marks?.internal3 ?? 0}
+                      </td>
                       <td className="p-3 border">
                         <StatusBadge status={app.cohortOwner?.status} />
                       </td>

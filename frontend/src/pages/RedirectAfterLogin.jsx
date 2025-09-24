@@ -11,23 +11,21 @@ export default function RedirectAfterLogin() {
     (async () => {
       try {
         const token = await getToken();
-
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        // Call your backend sync endpoint
-        const res = await axios.get(
-          backendUrl + "/api/users/sync",
-
-          {
-            headers: { Authorization: `Bearer ${token}` },
-          }
-        );
+        console.log(backendUrl);
+        const res = await axios.get(`${backendUrl}/api/users/sync`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
         const role = res.data.user.role || "student";
 
+        // Redirect based on role
         if (role === "student") {
           navigate("/dashboard", { replace: true });
+        } else if (role === "company") {
+          navigate("/company", { replace: true });
         } else {
-          navigate("/review", { replace: true });
+          navigate("/review", { replace: true }); // admin, hod, placement, etc.
         }
       } catch (err) {
         console.error(

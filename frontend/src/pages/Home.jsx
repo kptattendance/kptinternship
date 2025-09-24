@@ -5,6 +5,7 @@ import Navbar from "../components/Navbar";
 import StatsCards from "../components/homeDashboard/StatsCards";
 import DeptOverview from "../components/homeDashboard/DeptOverview";
 import ApplicationsTable from "../components/homeDashboard/ApplicationsTable";
+import Footer from "./Footer";
 
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering", total: 57 },
@@ -89,6 +90,7 @@ export default function Home() {
           </>
         )}
       </div>
+      <Footer />
     </>
   );
 }

@@ -186,6 +186,13 @@ const applicationSchema = new mongoose.Schema(
       },
       comment: { type: String, default: "" },
     },
+
+    // Inside applicationSchema
+    marks: {
+      internal1: { type: Number, default: 0 }, // set by HOD
+      internal2: { type: Number, default: 0 }, // set by Company
+      internal3: { type: Number, default: 0 }, // set by Company
+    },
   },
   { timestamps: true }
 );

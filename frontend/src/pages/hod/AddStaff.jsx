@@ -44,7 +44,7 @@ export default function AddStaff() {
       const token = await getToken();
 
       const res = await axios.post(
-        backendUrl + "/api/users/add-staff", // 👈 backend route
+        backendUrl + "/api/users/create", // 👈 backend route
         form,
         { headers: { Authorization: `Bearer ${token}` } }
       );

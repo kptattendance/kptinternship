@@ -24,7 +24,10 @@ export default function StaffList() {
         });
 
         const filtered = res.data.users.filter(
-          (u) => u.role !== "student" && u.department === hodDepartment
+          (u) =>
+            u.role !== "student" &&
+            u.role !== "principal" &&
+            u.department === hodDepartment
         );
 
         setStaff(filtered);

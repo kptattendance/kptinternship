@@ -37,16 +37,14 @@ export default function CompanyDashboard() {
       const staffRes = await axios.get(`${backendUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
+      console.log(staffRes.data.users);
       if (staffRes.data.ok) {
         const users = staffRes.data.users;
 
         const principal = users.find((u) => u.role === "principal");
 
-        // ✅ derive department from first student's register number
-        const firstReg = res.data.applications[0]?.regNumber || "";
-        const deptMatch = firstReg.match(/[A-Z]{2}/i); // e.g. "CS"
-        const dept = deptMatch ? deptMatch[0].toLowerCase() : null;
+        const dept =
+          res.data.applications[0]?.department?.toLowerCase() || null;
 
         const hod = dept
           ? users.find(

@@ -4,7 +4,14 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
 import { toast } from "react-toastify";
 
-const ROLES = ["hod", "cohortOwner", "company", "student"];
+const ROLES = [
+  "principal",
+  "placement",
+  "hod",
+  "cohortOwner",
+  "company",
+  "student",
+];
 const DEPARTMENTS = ["at", "ch", "ce", "cs", "ec", "eee", "me", "po"];
 
 export default function MembersList() {
@@ -33,6 +40,7 @@ export default function MembersList() {
       const res = await axios.get(`${backendUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
+      // console.log(res.data.users);
       setUsers(res.data.users || []);
     } catch (err) {
       console.error("❌ Error fetching users:", err);

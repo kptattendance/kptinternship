@@ -34,17 +34,12 @@ export default function AllApplications() {
 
         let data = res.data;
 
-        // 🟢 Logic:
-        // principal / placement => all
-        // hod / cohortOwner => filter by department
-        // student => nothing
         if (role === "hod" || role === "cohortOwner") {
           data = data.filter((app) => app.department === hodDepartment);
         } else if (role === "student") {
           data = []; // students shouldn't see anything
         }
-        // principal & placement see everything (no filtering)
-
+        // console.log(data);
         setApps(data);
       } catch (err) {
         console.error("❌ Failed to fetch:", err.response?.data || err.message);

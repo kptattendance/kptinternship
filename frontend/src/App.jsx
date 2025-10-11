@@ -36,7 +36,7 @@ export default function App() {
         <Route
           path="/placement/add-hod"
           element={
-            <ProtectedRoute allowedRoles={["placement"]}>
+            <ProtectedRoute allowedRoles={["placement", "principal"]}>
               <PlacementAddUser />{" "}
             </ProtectedRoute>
           }
@@ -44,7 +44,9 @@ export default function App() {
         <Route
           path="/placement/add-company"
           element={
-            <ProtectedRoute allowedRoles={["placement"]}>
+            <ProtectedRoute
+              allowedRoles={["placement", "cohortOwner", "principal"]}
+            >
               <PlacementAddCompany />{" "}
             </ProtectedRoute>
           }
@@ -52,7 +54,7 @@ export default function App() {
         <Route
           path="/placement/list-hod"
           element={
-            <ProtectedRoute allowedRoles={["placement"]}>
+            <ProtectedRoute allowedRoles={["placement", "principal"]}>
               <MembersList />
             </ProtectedRoute>
           }

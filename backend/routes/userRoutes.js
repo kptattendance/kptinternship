@@ -17,7 +17,7 @@ router.get("/sync", requireAuthMiddleware, syncUser);
 router.post(
   "/create",
   requireAuthMiddleware,
-  requireRole(["placement", "hod"]),
+  requireRole(["placement", "hod", "cohortOwner"]),
   upload.single("image"),
   createUser
 );
@@ -37,7 +37,7 @@ router.delete(
 router.get(
   "/",
   requireAuthMiddleware,
-  requireRole(["placement", "hod", "company"]),
+  requireRole(["placement", "hod", "company", "principal"]),
   getAllUsers
 );
 router.get("/:id", requireAuthMiddleware, getUserById);

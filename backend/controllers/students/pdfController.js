@@ -79,17 +79,17 @@ export const generateInternshipLetter = async (req, res) => {
 
     const today = new Date().toLocaleDateString("en-GB");
     doc.moveTo(0, doc.y).lineTo(750, doc.y).stroke();
+    const regPart = app.regNumber.slice(3);
+    const currentYear = new Date().getFullYear();
+    const nextYear = currentYear + 1;
 
     doc.moveDown(1);
     doc
       .fontSize(11)
       .fillColor("black")
-      .text(
-        `No.KPM/INTSP/${new Date().getFullYear()}-${
-          new Date().getFullYear() + 1
-        }`,
-        { align: "left" }
-      )
+      .text(`No.KPM/INTSP/${currentYear}-${nextYear}/${regPart}`, {
+        align: "left",
+      })
       .text(`Date: ${today}`, { align: "right" });
     doc.moveDown(0.5);
 

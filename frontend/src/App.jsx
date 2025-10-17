@@ -27,11 +27,39 @@ export default function App() {
         <Route path="/review" element={<Review />} />
         <Route path="/company" element={<CompanyDashboard />} />
         <Route path="/redirect" element={<RedirectAfterLogin />} />
-        <Route path="/hod/add-staffs" element={<AddStaff />} />
+        <Route
+          path="/hod/add-staffs"
+          element={
+            <ProtectedRoute allowedRoles={["placement", "principal", "hod"]}>
+              <AddStaff />
+            </ProtectedRoute>
+          }
+        />
         <Route path="/redirect" element={<RedirectAfterLogin />} />
-        <Route path="/hod/list-staff" element={<StaffList />} />
-        <Route path="/hod/applications" element={<AllApplications />} />
-        <Route path="/cohortOwner/internal-mark" element={<InternalMark />} />
+        <Route
+          path="/hod/list-staff"
+          element={
+            <ProtectedRoute allowedRoles={["placement", "principal", "hod"]}>
+              <StaffList />{" "}
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/hod/applications"
+          element={
+            <ProtectedRoute allowedRoles={["placement", "principal", "hod"]}>
+              <AllApplications />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/cohortOwner/internal-mark"
+          element={
+            <ProtectedRoute allowedRoles={["cohortOwner"]}>
+              <InternalMark />
+            </ProtectedRoute>
+          }
+        />
 
         <Route
           path="/placement/add-hod"

@@ -5,24 +5,32 @@ import mongoose from "mongoose";
 
 export const syncUser = async (req, res) => {
   try {
-    const clerkUserId = req.userId; // from middleware
+    const clerkUserId = req.auth?.userId || req.userId;
     if (!clerkUserId) {
       return res.status(400).json({ message: "No Clerk user ID found" });
     }
 
-    // 1️⃣ Get Clerk user first
+    // 1️⃣ Fetch user from Clerk
     const clerkUser = await clerkClient.users.getUser(clerkUserId);
 
-    // Extract email + metadata from Clerk
     const email = clerkUser?.emailAddresses?.[0]?.emailAddress || null;
     const role = clerkUser?.publicMetadata?.role || "student";
     const department = clerkUser?.publicMetadata?.department || null;
     const name = clerkUser?.firstName || "";
 
-    // 2️⃣ Check MongoDB for existing user
+    // 2️⃣ Find user in Mongo
     let userDoc = await User.findOne({ clerkUserId });
 
-    // 3️⃣ If not found, auto-create minimal entry in Mongo
+    // 3️⃣ If not found, try to link via existing email
+    if (!userDoc && email) {
+      userDoc = await User.findOne({ email });
+      if (userDoc) {
+        userDoc.clerkUserId = clerkUserId;
+        await userDoc.save();
+      }
+    }
+
+    // 4️⃣ If still not found, create new
     if (!userDoc) {
       userDoc = await User.create({
         clerkUserId,
@@ -33,7 +41,7 @@ export const syncUser = async (req, res) => {
       });
     }
 
-    // 4️⃣ Respond with unified data
+    // 5️⃣ Respond
     res.json({
       ok: true,
       user: {
@@ -42,12 +50,10 @@ export const syncUser = async (req, res) => {
         department: userDoc.department || department,
         name: userDoc.name || name,
         email: userDoc.email || email,
-        // add other fields if you want
       },
     });
   } catch (err) {
-    console.error("❌ Sync user error:", err.message);
-    console.error(err.stack);
+    console.error("❌ Sync user failed:", err);
     res.status(500).json({ message: err.message });
   }
 };

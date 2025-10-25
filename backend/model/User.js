@@ -29,5 +29,6 @@ const userSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+userSchema.index({ clerkUserId: 1, email: 1 }, { unique: true });
 
 export default mongoose.model("User", userSchema);

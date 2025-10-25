@@ -12,7 +12,6 @@ export default function RedirectAfterLogin() {
       try {
         const token = await getToken();
         const backendUrl = import.meta.env.VITE_BACKEND_URL;
-        console.log(backendUrl);
         const res = await axios.get(`${backendUrl}/api/users/sync`, {
           headers: { Authorization: `Bearer ${token}` },
         });

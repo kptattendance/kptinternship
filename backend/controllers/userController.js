@@ -46,8 +46,9 @@ export const syncUser = async (req, res) => {
       },
     });
   } catch (err) {
-    console.error("❌ Sync user error:", err);
-    res.status(500).json({ message: "Server error" });
+    console.error("❌ Sync user error:", err.message);
+    console.error(err.stack);
+    res.status(500).json({ message: err.message });
   }
 };
 

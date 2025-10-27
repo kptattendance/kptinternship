@@ -32,6 +32,9 @@ const initialFormState = {
   expectedChallenges: "",
   learningOutcomes: "",
   jobOpportunity: "",
+  stipendAmount: "", // 🆕 optional field
+  PlacedCompany: "", // 🆕 optional field
+  jobPackage: "", // 🆕 optional field
 };
 
 export default function InternshipApplicationForm() {
@@ -423,6 +426,56 @@ export default function InternshipApplicationForm() {
             className="w-full border p-2 rounded h-20"
             required
           ></textarea>
+
+          {/* Optional Fields */}
+          <h2 className="text-lg font-semibold mt-4">
+            Additional Details (Optional)
+          </h2>
+          <div className="grid md:grid-cols-2 gap-4">
+            <div>
+              <label className="block font-medium">
+                Stipend Amount (if any)
+              </label>
+              <input
+                type="number"
+                onWheel={(e) => e.target.blur()}
+                name="stipendAmount"
+                value={form.stipendAmount}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+                placeholder="Enter zero if you are not getting any stipend/salary during internship "
+                min="0"
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium">
+                Placed Company (if placed after internship)
+              </label>
+              <input
+                type="text"
+                name="PlacedCompany"
+                value={form.PlacedCompany}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+                placeholder="Company Name you placed through placement drive."
+              />
+            </div>
+
+            <div>
+              <label className="block font-medium">
+                Job Package Details (if placed)
+              </label>
+              <input
+                type="text"
+                name="jobPackage"
+                value={form.jobPackage}
+                onChange={handleChange}
+                className="w-full border p-2 rounded"
+                placeholder="e.g., ₹4.5 LPA/ Job Salary/ do not enter intenship salary "
+              />
+            </div>
+          </div>
 
           {/* Submit */}
           {/* Submit */}

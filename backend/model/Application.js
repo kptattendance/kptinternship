@@ -151,6 +151,25 @@ const applicationSchema = new mongoose.Schema(
       required: [true, "Job opportunity info is required"],
     },
 
+    // 💡 New Fields
+    stipendAmount: {
+      type: Number,
+      default: 0,
+      min: 0,
+      comment: "Amount of stipend received during internship",
+    },
+    PlacedCompany: {
+      type: String,
+      default: "",
+      comment: "Whether the student got placed in a company",
+    },
+    jobPackage: {
+      type: String,
+      default: "",
+      trim: true,
+      comment: "Details about the job offer or salary package",
+    },
+
     dateOfApplication: { type: Date, default: Date.now, required: true },
 
     // Review pipeline

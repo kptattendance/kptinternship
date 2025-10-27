@@ -113,6 +113,15 @@ export default function HodReviewModal({ selected, setSelected }) {
               <p>
                 <strong>Job Opportunity:</strong> {selected.jobOpportunity}
               </p>
+              <p>
+                <strong>Stipend:</strong> {selected.stipendAmount}
+              </p>
+              <p>
+                <strong>Placed Company:</strong> {selected.PlacedCompany}
+              </p>
+              <p>
+                <strong>Job Package:</strong> {selected.jobPackage}
+              </p>
             </div>
           </div>
 

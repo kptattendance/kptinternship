@@ -194,6 +194,15 @@ export default function ReviewModal({
                 <li>
                   <strong>Job Opportunity:</strong> {selected.jobOpportunity}
                 </li>
+                <li>
+                  <strong>Stipend:</strong> {selected.stipendAmount}
+                </li>
+                <li>
+                  <strong>Placed Company:</strong> {selected.PlacedCompany}
+                </li>
+                <li>
+                  <strong>Job Package:</strong> {selected.jobPackage}
+                </li>
               </ul>
             </div>
           </div>

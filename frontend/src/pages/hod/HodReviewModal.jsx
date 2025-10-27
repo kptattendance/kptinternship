@@ -98,6 +98,21 @@ export default function HodReviewModal({ selected, setSelected }) {
               <p>
                 <strong>Tasks:</strong> {selected.tasks}
               </p>
+              <p>
+                <strong>Skills:</strong> {selected.expectedSkills}
+              </p>
+              <p>
+                <strong>Tools:</strong> {selected.expectedTools}
+              </p>
+              <p>
+                <strong>Challenges:</strong> {selected.expectedChallenges}
+              </p>
+              <p>
+                <strong>Outcomes:</strong> {selected.learningOutcomes}
+              </p>
+              <p>
+                <strong>Job Opportunity:</strong> {selected.jobOpportunity}
+              </p>
             </div>
           </div>
 

@@ -30,6 +30,7 @@ export default function Home() {
         const res = await axios.get(
           backendUrl + "/api/students/getAllApplications"
         );
+        console.log(res.data);
         setApplications(res.data);
       } catch (err) {
         console.error("Failed to fetch applications:", err);

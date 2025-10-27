@@ -71,15 +71,9 @@ export const createApplication = async (req, res) => {
  */
 export const getApplications = async (req, res) => {
   try {
-    const apps = await Application.find().sort({ createdAt: -1 }).select(
-      "-__v" // remove internal version key for cleaner response
-    );
-
-    res.json({
-      success: true,
-      count: apps.length,
-      data: apps,
-    });
+    const apps = await Application.find().sort({ createdAt: -1 });
+    // const apps = await Application.find().sort({ createdAt: -1 });
+    res.json(apps);
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }

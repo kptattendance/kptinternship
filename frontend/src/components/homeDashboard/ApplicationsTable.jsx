@@ -103,8 +103,9 @@ export default function ApplicationsTable({ applications, departments }) {
               <th className="p-3 border">Reg No</th>
               <th className="p-3 border">Name</th>
               <th className="p-3 border">Department</th>
-              {/* <th className="p-3 border">Phone</th> */}
               <th className="p-3 border">Date</th>
+              <th className="p-3 border">Stipend</th>
+              <th className="p-3 border">Company Placed</th>
               <th className="p-3 border">Cohort Owner</th>
               <th className="p-3 border">HOD</th>
               <th className="p-3 border">Placement</th>
@@ -140,6 +141,9 @@ export default function ApplicationsTable({ applications, departments }) {
                   <td className="p-3 border">
                     {new Date(app.dateOfApplication).toLocaleDateString()}
                   </td>
+                  <td className="p-3 border">{app.stipendAmount ?? "-"}</td>
+
+                  <td className="p-3 border">{app.PlacedCompany || "-"}</td>
                   <td className="p-3 border">
                     <StatusBadge status={app.cohortOwner?.status} />
                   </td>

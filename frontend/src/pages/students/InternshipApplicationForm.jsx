@@ -189,7 +189,7 @@ export default function InternshipApplicationForm() {
                 onChange={handleChange}
                 className="w-full border p-2 rounded"
                 pattern="[0-9]{10}"
-                placeholder="10-digit phone number"
+                placeholder="10-digit phone number / donot give space"
                 required
               />
             </div>
@@ -290,11 +290,10 @@ export default function InternshipApplicationForm() {
             <input
               type="tel"
               name="companyContact"
-              placeholder="Company Contact Number * only 10-digit number"
+              placeholder="Company Contact Number * "
               value={form.companyContact}
               onChange={handleChange}
               className="w-full border p-2 rounded"
-              pattern="[0-9]{10}"
               required
             />
             <input
@@ -309,7 +308,7 @@ export default function InternshipApplicationForm() {
             <input
               type="text"
               name="contactPerson"
-              placeholder="Contact Person (HR/Team Lead) * 10-digit only"
+              placeholder="Contact Person (HR/Team Lead) *"
               value={form.contactPerson}
               onChange={handleChange}
               className="w-full border p-2 rounded"

@@ -84,13 +84,6 @@ const applicationSchema = new mongoose.Schema(
     companyContact: {
       type: String,
       required: [true, "Company contact number is required"],
-      validate: {
-        validator: function (v) {
-          return /^[0-9]{10}$/.test(v);
-        },
-        message: (props) =>
-          `${props.value} is not a valid 10-digit contact number!`,
-      },
     },
 
     companyEmail: {

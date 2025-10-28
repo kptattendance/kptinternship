@@ -44,7 +44,11 @@ const applicationSchema = new mongoose.Schema(
       required: [true, "Subject name is required"],
       trim: true,
     },
-
+    internhsipType: {
+      type: String,
+      enum: ["Internship", "Project"],
+      required: [true, "Internship or Project is required"],
+    },
     // Company Info
     companyName: {
       type: String,

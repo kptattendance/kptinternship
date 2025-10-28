@@ -12,6 +12,7 @@ const initialFormState = {
   phoneNumber: "",
   image: "",
   subName: "",
+  internhsipType: "",
   companyName: "",
   companyVillage: "",
   companyCity: "",
@@ -232,6 +233,22 @@ export default function InternshipApplicationForm() {
 
           {/* Company Info */}
           <h2 className="text-lg font-semibold mt-4">Company Information</h2>
+
+          <div>
+            <label className="block font-medium">Type *</label>
+            <select
+              name="internhsipType"
+              value={form.internhsipType}
+              onChange={handleChange}
+              className="w-full border p-2 rounded"
+              required
+            >
+              <option value="">Select Type</option>
+              <option value="Internship">Internship</option>
+              <option value="Project">Project</option>
+            </select>
+          </div>
+
           <div className="grid md:grid-cols-2 gap-4">
             <input
               type="text"

@@ -23,8 +23,10 @@ const initialFormState = {
   companyEmail: "",
   contactPerson: "",
   companyProfile: "",
-  startDate: "15-12-2025",
-  endDate: "04-04-2026",
+
+  startDate: "2025-12-15",
+  endDate: "2026-04-04",
+
   workingHours: "",
   duties: "",
   tasks: "",
@@ -343,7 +345,7 @@ export default function InternshipApplicationForm() {
           <div className="grid md:grid-cols-2 gap-4">
             <div>
               <label className="block font-medium">
-                Internship Start Date *
+                Internship Start Date / You can change if u want *
               </label>
               <input
                 type="date"
@@ -352,6 +354,7 @@ export default function InternshipApplicationForm() {
                 onChange={handleChange}
                 className="w-full border p-2 rounded"
                 required
+                placeholder="You can change if u want "
               />
             </div>
             <div>

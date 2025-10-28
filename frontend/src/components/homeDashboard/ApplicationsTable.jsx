@@ -143,6 +143,7 @@ export default function ApplicationsTable({ applications, departments }) {
                   </td>
                   <td className="p-3 border">{app.stipendAmount ?? "-"}</td>
 
+                  <td className="p-3 border">{app.companyName || "-"}</td>
                   <td className="p-3 border">{app.PlacedCompany || "-"}</td>
                   <td className="p-3 border">
                     <StatusBadge status={app.cohortOwner?.status} />

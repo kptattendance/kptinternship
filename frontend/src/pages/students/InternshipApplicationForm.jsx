@@ -143,7 +143,7 @@ export default function InternshipApplicationForm() {
                 <option value="">Select Department</option>
                 <option value="at">Automobile Engineering</option>
                 <option value="ch">Chemical Engineering</option>
-                <option value="civil">Civil Engineering</option>
+                <option value="ce">Civil Engineering</option>
                 <option value="cs">Computer Science Engineering</option>
                 <option value="ec">
                   Electronics & Communication Engineering
@@ -290,7 +290,7 @@ export default function InternshipApplicationForm() {
             <input
               type="tel"
               name="companyContact"
-              placeholder="Company Contact Number *"
+              placeholder="Company Contact Number * only 10-digit number"
               value={form.companyContact}
               onChange={handleChange}
               className="w-full border p-2 rounded"
@@ -309,7 +309,7 @@ export default function InternshipApplicationForm() {
             <input
               type="text"
               name="contactPerson"
-              placeholder="Contact Person (HR/Team Lead) *"
+              placeholder="Contact Person (HR/Team Lead) * 10-digit only"
               value={form.contactPerson}
               onChange={handleChange}
               className="w-full border p-2 rounded"

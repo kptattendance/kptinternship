@@ -105,6 +105,7 @@ export default function ApplicationsTable({ applications, departments }) {
               <th className="p-3 border">Department</th>
               <th className="p-3 border">Date</th>
               <th className="p-3 border">Stipend</th>
+              <th className="p-3 border">Internship Company</th>
               <th className="p-3 border">Company Placed</th>
               <th className="p-3 border">Cohort Owner</th>
               <th className="p-3 border">HOD</th>

@@ -10,6 +10,7 @@ import userRoutes from "./routes/userRoutes.js";
 import companyRoutes from "./routes/companyRoutes.js";
 import "./config/cloudinary.js";
 import connectDB from "./config/db.js";
+import yearStatisticsRoutes from "./routes/yearStatisticsRoutes.js";
 
 dotenv.config();
 
@@ -32,6 +33,7 @@ app.use("/api/users", userRoutes);
 app.use("/api/students", applicationRoutes);
 app.use("/api/reviewers", reviewRoutes);
 app.use("/api/company", companyRoutes);
+app.use("/api/yearStatistics", yearStatisticsRoutes);
 
 const PORT = process.env.PORT || 5000;
 

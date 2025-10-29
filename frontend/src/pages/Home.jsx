@@ -6,6 +6,7 @@ import StatsCards from "../components/homeDashboard/StatsCards";
 import DeptOverview from "../components/homeDashboard/DeptOverview";
 import ApplicationsTable from "../components/homeDashboard/ApplicationsTable";
 import Footer from "./Footer";
+import YearStatisticsView from "../components/homeDashboard/YearStatisticsView";
 
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering", total: 57 },
@@ -61,6 +62,7 @@ export default function Home() {
     <>
       <Navbar />
       <div className="p-6 space-y-10">
+        <YearStatisticsView />
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold text-blue-700">

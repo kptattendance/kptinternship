@@ -60,9 +60,8 @@ export default function Home() {
 
   return (
     <>
-      <Navbar />
+      <Navbar /> <YearStatisticsView />
       <div className="p-6 space-y-10">
-        <YearStatisticsView />
         {/* Header */}
         <div className="text-center space-y-2">
           <h1 className="text-3xl md:text-4xl font-bold text-blue-700">

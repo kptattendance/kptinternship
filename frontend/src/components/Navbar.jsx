@@ -67,7 +67,7 @@ export default function Navbar() {
               className="h-15 w-auto"
             />
             <span className="text-xl font-bold text-blue-600 hidden sm:block">
-              Internship Portal
+              KPT Training & Placements
             </span>
           </div>
 

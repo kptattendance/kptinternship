@@ -11,7 +11,7 @@ import YearStatisticsView from "../components/homeDashboard/YearStatisticsView";
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering", total: 57 },
   { value: "ch", label: "Chemical Engineering", total: 60 },
-  { value: "civil", label: "Civil Engineering", total: 48 },
+  { value: "ce", label: "Civil Engineering", total: 48 },
   { value: "cs", label: "Computer Science Engineering", total: 63 },
   { value: "ec", label: "Electronics & Communication Engineering", total: 55 },
   { value: "eee", label: "Electrical & Electronics Engineering", total: 55 },

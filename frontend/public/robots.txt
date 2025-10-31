@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://www.kptplacements.org/sitemap.xml 

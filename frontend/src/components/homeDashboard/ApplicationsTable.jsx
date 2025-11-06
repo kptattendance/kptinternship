@@ -107,7 +107,8 @@ export default function ApplicationsTable({ applications, departments }) {
               <th className="p-3 border">Internship/Project</th>
               <th className="p-3 border">Stipend</th>
               <th className="p-3 border">Internship Company</th>
-              <th className="p-3 border">Company Placed</th>
+              <th className="p-3 border">Internship Location</th>
+              <th className="p-3 border">Placement Company</th>
               <th className="p-3 border">Cohort Owner</th>
               <th className="p-3 border">HOD</th>
               <th className="p-3 border">Placement</th>
@@ -147,6 +148,7 @@ export default function ApplicationsTable({ applications, departments }) {
                   <td className="p-3 border">{app.stipendAmount ?? "-"}</td>
 
                   <td className="p-3 border">{app.companyName || "-"}</td>
+                  <td className="p-3 border">{app.companyTaluk || "-"}</td>
                   <td className="p-3 border">{app.PlacedCompany || "-"}</td>
                   <td className="p-3 border">
                     <StatusBadge status={app.cohortOwner?.status} />

@@ -35,17 +35,14 @@ export default function ReviewModal({
       setActionLoading(true);
       const token = await getToken();
       const resp = await axios.put(
-        backendUrl + `/api/reviewers/${selected._id}/review`,
+        `${backendUrl}/api/reviewers/${selected._id}/review`,
         { action: actionType, comment },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       if (resp.data?.success) {
         toast.success(resp.data.message || "Review updated");
-
-        // ✅ remove the reviewed application from the list
         setApps((prev) => prev.filter((a) => a._id !== selected._id));
-
         setSelected(null);
       } else {
         toast.error(resp.data?.message || "Could not update");
@@ -58,7 +55,6 @@ export default function ReviewModal({
   };
 
   const handleUpdate = (app) => {
-    console.log("Update application:", app);
     toast.info("Update feature coming soon!");
   };
 
@@ -67,12 +63,11 @@ export default function ReviewModal({
       return;
     try {
       const token = await getToken();
-      await axios.delete(backendUrl + `/api/students/deleteApplication/${id}`, {
+      await axios.delete(`${backendUrl}/api/students/deleteApplication/${id}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       toast.success("Application deleted");
       setApps((prev) => prev.filter((a) => a._id !== id));
-
       setSelected(null);
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete");
@@ -80,15 +75,15 @@ export default function ReviewModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="bg-white max-w-5xl w-full rounded-2xl shadow-2xl overflow-auto max-h-[90vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-black/70 via-gray-900/80 to-gray-950/90 backdrop-blur-md p-3 sm:p-6">
+      <div className="bg-white/95 border border-white/20 shadow-2xl rounded-3xl w-full max-w-5xl max-h-[90vh] flex flex-col animate-fadeIn overflow-hidden">
         {/* Header */}
-        <div className="p-5 border-b flex justify-between items-center bg-gray-50 rounded-t-2xl">
-          <h3 className="text-xl font-semibold text-gray-800">
+        <div className="sticky top-0 z-10 bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 text-white px-5 sm:px-8 py-4 flex justify-between items-center rounded-t-3xl shadow-md">
+          <h3 className="text-lg sm:text-xl font-semibold tracking-wide">
             Internship Application Review
           </h3>
           <button
-            className="text-gray-500 hover:text-gray-700 transition"
+            className="text-white/90 hover:text-white text-xl sm:text-2xl"
             onClick={() => setSelected(null)}
           >
             ✕
@@ -96,33 +91,38 @@ export default function ReviewModal({
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="flex-1 overflow-y-auto p-4 sm:p-6 space-y-6 text-gray-900 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-transparent">
           {/* Student Info */}
-          <div className="flex flex-col items-center">
+          <div className="flex flex-col items-center text-center">
             {selected.image && (
               <img
                 src={selected.image}
                 alt={selected.name}
-                className="w-28 h-28 rounded-full border object-cover shadow"
+                className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full shadow-lg ring-4 ring-pink-300 object-cover"
               />
             )}
-            <h3 className="mt-3 text-lg font-bold">{selected.name}</h3>
-            <p className="text-sm text-gray-600">
+            <h3 className="mt-3 text-lg sm:text-xl font-bold text-gray-800">
+              {selected.name}
+            </h3>
+            <p className="text-sm sm:text-base text-gray-600">
               {selected.department.toUpperCase()} • {selected.regNumber}
             </p>
             <p className="text-sm text-gray-600">
               📞 {selected.phoneNumber || "-"}
             </p>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-gray-500 mt-1 italic">
               Applied on {new Date(selected.createdAt).toLocaleDateString()}
             </p>
           </div>
 
-          {/* Company Info + Internship Info */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <div className="bg-gray-50 p-4 rounded-lg border">
-              <h4 className="font-semibold text-gray-700 mb-2">🏢 Company</h4>
-              <ul className="text-sm space-y-1">
+          {/* Company + Internship */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-5 sm:gap-6">
+            {/* Company Details */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-purple-50 to-pink-50 border border-purple-100 shadow-lg">
+              <h4 className="font-semibold text-purple-800 mb-3 flex items-center gap-2 text-base sm:text-lg">
+                🏢 Company Details
+              </h4>
+              <ul className="text-sm sm:text-base space-y-1 text-gray-700">
                 <li>
                   <strong>Name:</strong> {selected.companyName}
                 </li>
@@ -153,11 +153,12 @@ export default function ReviewModal({
               </ul>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-lg border">
-              <h4 className="font-semibold text-gray-700 mb-2">
-                📄 Internship
+            {/* Internship Details */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-indigo-50 to-blue-50 border border-indigo-100 shadow-lg">
+              <h4 className="font-semibold text-indigo-800 mb-3 flex items-center gap-2 text-base sm:text-lg">
+                📄 Internship Details
               </h4>
-              <ul className="text-sm space-y-1">
+              <ul className="text-sm sm:text-base space-y-1 text-gray-700">
                 <li>
                   <strong>Start:</strong>{" "}
                   {selected.startDate
@@ -195,7 +196,7 @@ export default function ReviewModal({
                   <strong>Job Opportunity:</strong> {selected.jobOpportunity}
                 </li>
                 <li>
-                  <strong>Stipend:</strong> {selected.stipendAmount}
+                  <strong>Stipend:</strong> ₹{selected.stipendAmount}
                 </li>
                 <li>
                   <strong>Placed Company:</strong> {selected.PlacedCompany}
@@ -207,18 +208,23 @@ export default function ReviewModal({
             </div>
           </div>
 
-          {/* Reviewer Statuses */}
-          <div className="bg-gray-50 p-4 rounded-lg border">
-            <h4 className="font-semibold text-gray-700 mb-2">
+          {/* Reviewer Pipeline */}
+          <div className="p-4 sm:p-5 rounded-2xl bg-gradient-to-br from-teal-50 to-emerald-50 border border-teal-100 shadow-lg">
+            <h4 className="font-semibold text-teal-800 mb-3 text-base sm:text-lg">
               👥 Reviewer Pipeline
             </h4>
-            <div className="grid md:grid-cols-2 gap-4 text-sm">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 text-sm sm:text-base">
               {["cohortOwner", "hod", "placement", "principal"].map(
                 (roleKey) => (
-                  <div key={roleKey} className="p-2 border rounded">
-                    <span className="capitalize font-medium">{roleKey}:</span>{" "}
+                  <div
+                    key={roleKey}
+                    className="p-3 bg-white/70 backdrop-blur-sm rounded-xl border border-gray-200 shadow-sm"
+                  >
+                    <span className="capitalize font-semibold text-gray-800">
+                      {roleKey}:
+                    </span>{" "}
                     <span
-                      className={`px-2 py-0.5 rounded text-white text-xs ${
+                      className={`px-2 py-1 rounded-md text-xs font-semibold text-white ${
                         selected[roleKey]?.status === "approved"
                           ? "bg-green-600"
                           : selected[roleKey]?.status === "rejected"
@@ -228,7 +234,7 @@ export default function ReviewModal({
                     >
                       {selected[roleKey]?.status}
                     </span>
-                    <p className="text-xs text-gray-500 mt-1">
+                    <p className="text-xs sm:text-sm text-gray-600 mt-1">
                       {selected[roleKey]?.comment || "No comments yet"}
                     </p>
                   </div>
@@ -237,11 +243,11 @@ export default function ReviewModal({
             </div>
           </div>
 
-          {/* Reviewer Comment Input */}
+          {/* Comment Section */}
           <div>
-            <label className="block font-medium text-gray-700 mb-1">
+            <label className="block font-medium text-gray-800 mb-2 text-sm sm:text-base">
               Your Comment{" "}
-              <span className="text-red-500">
+              <span className="text-pink-600 text-xs sm:text-sm">
                 {role === "placement" || role === "principal"
                   ? "(Required only when Rejecting)"
                   : "(Required for Approve/Reject)"}
@@ -250,53 +256,54 @@ export default function ReviewModal({
             <textarea
               value={comment}
               onChange={(e) => setComment(e.target.value)}
-              className="w-full border rounded-lg p-3 text-sm"
+              className="w-full p-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-indigo-400 text-sm shadow-inner bg-white/80 resize-none"
               placeholder="Write your comments here..."
+              rows={3}
             />
           </div>
         </div>
 
         {/* Footer */}
-        <div className="p-5 border-t flex justify-between items-center bg-gray-50 rounded-b-2xl">
+        <div className="sticky bottom-0 z-10 bg-gradient-to-r from-gray-50 via-white to-gray-50 border-t p-4 sm:p-5 flex flex-col sm:flex-row justify-between items-center gap-3 sm:gap-0 rounded-b-3xl shadow-inner">
           {role === "cohortOwner" &&
             (selected.cohortOwner?.status === "pending" ||
               selected.hod?.status === "rejected" ||
               selected.placement?.status === "rejected" ||
               selected.principal?.status === "rejected") && (
-              <div className="flex gap-2">
+              <div className="flex gap-2 sm:gap-3 w-full sm:w-auto justify-center">
                 <button
                   onClick={() => handleUpdate(selected)}
-                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-sky-500 to-indigo-600 text-white font-medium shadow-md hover:shadow-lg transition"
                 >
                   Update
                 </button>
                 <button
                   onClick={() => handleDelete(selected._id)}
-                  className="px-4 py-2 bg-red-500 text-white rounded-md hover:bg-red-600"
+                  className="w-full sm:w-auto px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-rose-500 to-red-600 text-white font-medium shadow-md hover:shadow-lg transition"
                 >
                   Delete
                 </button>
               </div>
             )}
 
-          <div className="flex gap-3">
+          <div className="flex flex-wrap justify-center sm:justify-end gap-2 sm:gap-3 w-full sm:w-auto">
             <button
               onClick={() => handleAction("approve")}
               disabled={actionLoading}
-              className="px-5 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 disabled:opacity-50"
+              className="px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-green-500 to-emerald-600 text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-50"
             >
               {actionLoading ? "Processing..." : "Approve"}
             </button>
             <button
               onClick={() => handleAction("reject")}
               disabled={actionLoading}
-              className="px-5 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 disabled:opacity-50"
+              className="px-4 sm:px-5 py-2 rounded-lg bg-gradient-to-r from-red-500 to-rose-600 text-white font-medium shadow-md hover:shadow-lg transition disabled:opacity-50"
             >
               {actionLoading ? "Processing..." : "Reject"}
             </button>
             <button
               onClick={() => setSelected(null)}
-              className="px-5 py-2 border rounded-md hover:bg-gray-100"
+              className="px-4 sm:px-5 py-2 border border-gray-300 rounded-lg hover:bg-gray-100 text-gray-700 font-medium transition"
             >
               Close
             </button>

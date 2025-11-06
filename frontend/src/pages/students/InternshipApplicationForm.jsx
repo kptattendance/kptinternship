@@ -465,7 +465,7 @@ export default function InternshipApplicationForm() {
 
             <div>
               <label className="block font-medium">
-                Placed Company (if placed after internship)
+                Placement Company (if offered with any job)
               </label>
               <input
                 type="text"

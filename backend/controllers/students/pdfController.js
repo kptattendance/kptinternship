@@ -71,6 +71,11 @@ export const generateInternshipLetter = async (req, res) => {
       .fillColor("green")
       .text("KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU", { align: "center" });
     doc
+      .font("Helvetica-Bold")
+      .fontSize(10)
+      .fillColor("blue")
+      .text("First autonomous polytechnic in India from AICTE, New Delhi", { align: "center" });
+    doc
       .font("Helvetica")
       .fillColor("orange")
       .text("Kadri Hills, Mangaluru–575004, Dakshina Kannada, Karnataka", {

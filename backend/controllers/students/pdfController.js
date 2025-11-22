@@ -74,7 +74,7 @@ export const generateInternshipLetter = async (req, res) => {
       .font("Helvetica-Bold")
       .fontSize(10)
       .fillColor("blue")
-      .text("(First autonomous polytechnic in India from AICTE, New Delhi)", {
+      .text("(First Autonomous Polytechnic in India from AICTE, New Delhi)", {
         align: "center",
       });
     doc
@@ -172,19 +172,82 @@ export const generateInternshipLetter = async (req, res) => {
       .moveDown(0.5);
 
     // ✅ Student Info Table
-    const tableTop = doc.y;
-    doc.font("Helvetica-Bold");
-    doc.text("Sl. No.", 50, tableTop);
-    doc.text("Name", 100, tableTop);
-    doc.text("Register Number", 300, tableTop);
-    doc.text("Mobile Number", 470, tableTop);
+    // const tableTop = doc.y;
+    // doc.font("Helvetica-Bold");
+    // doc.text("Sl. No.", 50, tableTop);
+    // doc.text("Name", 100, tableTop);
+    // doc.text("Register Number", 300, tableTop);
+    // doc.text("Mobile Number", 470, tableTop);
 
-    const rowY = tableTop + 20;
+    // const rowY = tableTop + 20;
+    // doc.font("Helvetica");
+    // doc.text("1", 50, rowY);
+    // doc.text(app.name, 100, rowY);
+    // doc.text(app.regNumber, 300, rowY);
+    // doc.text(app.phoneNumber, 470, rowY);
+    // --------------------------------------------
+    // STUDENT INFO TABLE WITH BORDER
+    // --------------------------------------------
+
+    const tableTop = doc.y + 10;
+    const startX = 40;
+    const rowHeight = 25;
+
+    // Column widths
+    const col1 = 60; // Sl No
+    const col2 = 180; // Name
+    const col3 = 160; // Register Number
+    const col4 = 140; // Mobile Number
+
+    // Draw outer border
+    doc
+      .rect(startX, tableTop, col1 + col2 + col3 + col4, rowHeight * 2)
+      .stroke();
+
+    // Column vertical lines
+    doc
+      .moveTo(startX + col1, tableTop)
+      .lineTo(startX + col1, tableTop + rowHeight * 2)
+      .stroke();
+    doc
+      .moveTo(startX + col1 + col2, tableTop)
+      .lineTo(startX + col1 + col2, tableTop + rowHeight * 2)
+      .stroke();
+    doc
+      .moveTo(startX + col1 + col2 + col3, tableTop)
+      .lineTo(startX + col1 + col2 + col3, tableTop + rowHeight * 2)
+      .stroke();
+
+    // Horizontal mid-line (between header & row)
+    doc
+      .moveTo(startX, tableTop + rowHeight)
+      .lineTo(startX + col1 + col2 + col3 + col4, tableTop + rowHeight)
+      .stroke();
+
+    // Header text
+    doc.font("Helvetica-Bold");
+    doc.text("Sl. No.", startX + 10, tableTop + 7);
+    doc.text("Name", startX + col1 + 10, tableTop + 7);
+    doc.text("Register Number", startX + col1 + col2 + 10, tableTop + 7);
+    doc.text("Mobile Number", startX + col1 + col2 + col3 + 10, tableTop + 7);
+
+    // Row text
     doc.font("Helvetica");
-    doc.text("1", 50, rowY);
-    doc.text(app.name, 100, rowY);
-    doc.text(app.regNumber, 300, rowY);
-    doc.text(app.phoneNumber, 470, rowY);
+    doc.text("1", startX + 10, tableTop + rowHeight + 7);
+    doc.text(app.name, startX + col1 + 10, tableTop + rowHeight + 7);
+    doc.text(
+      app.regNumber,
+      startX + col1 + col2 + 10,
+      tableTop + rowHeight + 7
+    );
+    doc.text(
+      app.phoneNumber,
+      startX + col1 + col2 + col3 + 10,
+      tableTop + rowHeight + 7
+    );
+
+    // Move cursor below table
+    doc.y = tableTop + rowHeight * 2 + 15;
 
     // ✅ Closing
     doc.moveDown(1);

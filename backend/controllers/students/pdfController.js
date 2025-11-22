@@ -74,7 +74,7 @@ export const generateInternshipLetter = async (req, res) => {
       .font("Helvetica-Bold")
       .fontSize(10)
       .fillColor("blue")
-      .text("First autonomous polytechnic in India from AICTE, New Delhi", {
+      .text("(First autonomous polytechnic in India from AICTE, New Delhi)", {
         align: "center",
       });
     doc

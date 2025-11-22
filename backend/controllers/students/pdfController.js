@@ -74,7 +74,9 @@ export const generateInternshipLetter = async (req, res) => {
       .font("Helvetica-Bold")
       .fontSize(10)
       .fillColor("blue")
-      .text("First autonomous polytechnic in India from AICTE, New Delhi", { align: "center" });
+      .text("First autonomous polytechnic in India from AICTE, New Delhi", {
+        align: "center",
+      });
     doc
       .font("Helvetica")
       .fillColor("orange")
@@ -102,12 +104,29 @@ export const generateInternshipLetter = async (req, res) => {
     doc.text("To");
     doc.text("The HR Manager,", 60);
     doc.text(`${toTitleCase(app.companyName || "")},`, 60);
-    if (app.companyVillage) doc.text(toTitleCase(app.companyVillage) + ",", 60);
-    if (app.companyCity) doc.text(toTitleCase(app.companyCity) + ",", 60);
-    if (app.companyTaluk) doc.text(toTitleCase(app.companyTaluk) + ",", 60);
-    if (app.companyDistrict)
-      doc.text(toTitleCase(app.companyDistrict) + ",", 60);
-    if (app.companyState) doc.text(toTitleCase(app.companyState) + ",", 60);
+    // if (app.companyVillage) doc.text(toTitleCase(app.companyVillage) + ",", 60);
+    // if (app.companyCity) doc.text(toTitleCase(app.companyCity) + ",", 60);
+    // if (app.companyTaluk) doc.text(toTitleCase(app.companyTaluk) + ",", 60);
+    // if (app.companyDistrict)
+    //   doc.text(toTitleCase(app.companyDistrict) + ",", 60);
+    // if (app.companyState) doc.text(toTitleCase(app.companyState) + ",", 60);
+    // Collect all address fields and remove empty ones
+    let addressParts = [
+      app.companyVillage,
+      app.companyCity,
+      app.companyTaluk,
+      app.companyDistrict,
+      app.companyState,
+    ].filter(Boolean);
+
+    // Normalize (Title Case) and remove duplicates
+    addressParts = [...new Set(addressParts.map((v) => toTitleCase(v.trim())))];
+
+    // Print each unique value once
+    addressParts.forEach((part) => {
+      doc.text(part + ",", 60);
+    });
+
     if (app.contactPerson) doc.text("Ph: " + app.contactPerson + ".", 60);
 
     doc.moveDown(1);

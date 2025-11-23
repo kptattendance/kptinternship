@@ -78,3 +78,34 @@ export const updateCohortOwnerMarks = async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 };
+
+// Update attendance month-wise
+export const updateAttendance = async (req, res) => {
+  try {
+    const { applicationId } = req.params;
+    const { month1, month2, month3, month4, month5 } = req.body;
+
+    const application = await Application.findById(applicationId);
+    if (!application) {
+      return res
+        .status(404)
+        .json({ ok: false, message: "Application not found" });
+    }
+
+    application.attendance.month1 = month1 ?? application.attendance.month1;
+    application.attendance.month2 = month2 ?? application.attendance.month2;
+    application.attendance.month3 = month3 ?? application.attendance.month3;
+    application.attendance.month4 = month4 ?? application.attendance.month4;
+    application.attendance.month5 = month5 ?? application.attendance.month5;
+
+    await application.save();
+
+    res.json({
+      ok: true,
+      message: "Attendance updated successfully",
+      application,
+    });
+  } catch (err) {
+    res.status(500).json({ ok: false, error: err.message });
+  }
+};

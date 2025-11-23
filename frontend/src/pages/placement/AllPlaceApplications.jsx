@@ -4,12 +4,12 @@ import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import ReviewerNavbar from "../../components/ReviewerNavbar"; // HOD navbar
 import { toast } from "react-toastify";
-import HodReviewModal from "./HodReviewModal";
 import { FaEye, FaTrash } from "react-icons/fa";
 
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
-export default function AllApplications() {
+import HodReviewModal from "../hod/HodReviewModal";
+export default function AllPlaceApplications() {
   const { getToken } = useAuth();
   const { user } = useUser();
   const [apps, setApps] = useState([]);
@@ -92,6 +92,24 @@ export default function AllApplications() {
 
     if (role) fetchApplications();
   }, [getToken, hodDepartment, role, backendUrl]);
+
+  const handleDelete = async (id) => {
+    if (!window.confirm("Are you sure you want to delete this application?"))
+      return;
+
+    try {
+      const token = await getToken();
+      await axios.delete(backendUrl + `/api/students/deleteApplication/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setApps(apps.filter((app) => app._id !== id));
+      toast.success("Application deleted successfully");
+    } catch (err) {
+      console.error("❌ Failed to delete:", err.response?.data || err.message);
+      toast.error("Failed to delete application");
+    }
+  };
 
   const StatusBadge = ({ status }) => {
     let color =
@@ -232,7 +250,7 @@ export default function AllApplications() {
                     </th>
                   </tr>
 
-                  <tr className=" bg-[#e7f0ff] text-gray-600 text-center">
+                  <tr className=" bg-[#e7f0ff] text-gray-600 border text-center">
                     <th className="p-2 border">M1</th>
                     <th className="p-2 border">M2</th>
                     <th className="p-2 border">M3</th>
@@ -249,9 +267,9 @@ export default function AllApplications() {
                   {paginatedApps.map((app, index) => (
                     <tr
                       key={app._id}
-                      className="hover:bg-[#fff9f1] transition duration-150 even:bg-[#f8fbff]"
+                      className="hover:bg-[#fff9f1] transition border duration-150 even:bg-[#f8fbff]"
                     >
-                      <td className="p-3 border text-center">
+                      <td className="p-3 text-center">
                         {(currentPage - 1) * pageSize + index + 1}
                       </td>
 
@@ -275,24 +293,28 @@ export default function AllApplications() {
                           {app.attendance?.[`month${m}`] ?? "-"}
                         </td>
                       ))}
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
+                      <td className="p-3 border  bg-green-100 text-center font-semibold border-gray-900  text-green-700">
                         {app.marks?.internal1 ?? "-"}
                       </td>
                       <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
                         {" "}
                         {app.marks?.internal2 ?? "-"}
                       </td>
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
+                      <td className="p-3 border  bg-green-100 text-center font-semibold border-gray-900  text-green-700">
                         {" "}
                         {app.marks?.internal3 ?? "-"}
                       </td>
 
-                      <td className="p-3 border  gap-3 justify-center">
+                      <td className="p-3  flex gap-3 justify-center">
                         <button
                           onClick={() => setSelected(app)}
-                          className="p-2 flex justify-center items-center gap-1 bg-blue-500 text-white rounded-md hover:bg-blue-700"
+                          className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
                         >
-                          <FaEye size={12} /> View
+                          <FaEye size={12} />
+                        </button>
+
+                        <button className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 shadow transition">
+                          <FaTrash size={10} />
                         </button>
                       </td>
                     </tr>

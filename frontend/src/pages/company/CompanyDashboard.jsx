@@ -3,6 +3,10 @@ import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
 import Footer from "../Footer";
+import { toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
+import { FaSave } from "react-icons/fa";
+import AttendanceNotePanel from "./AttendanceNotePanel";
 
 export default function CompanyDashboard() {
   const { getToken } = useAuth();
@@ -13,6 +17,8 @@ export default function CompanyDashboard() {
     hod: null,
     cohort: null,
   });
+  const [savingAttendance, setSavingAttendance] = useState(false);
+  const [savingMarks, setSavingMarks] = useState(false);
 
   const [loading, setLoading] = useState(true);
   const [showCIE, setShowCIE] = useState(false); // toggle CIE details
@@ -72,24 +78,50 @@ export default function CompanyDashboard() {
     fetchDashboard();
   }, []);
 
-  const renderStaffCard = (person, role) => {
+  const gradients = [
+    "from-indigo-300 via-purple-300 to-pink-300",
+    "from-emerald-300 via-teal-300 to-cyan-300",
+    "from-fuchsia-200 via-rose-100 to-orange-200",
+    "from-blue-100 via-sky-100 to-indigo-300",
+    "from-amber-300 via-orange-300 to-rose-300",
+    "from-pink-100 via-purple-300 to-violet-300",
+    "from-lime-300 via-emerald-300 to-green-300",
+    "from-red-300 via-pink-300 to-fuchsia-300",
+  ];
+
+  const getRandomGradient = () =>
+    gradients[Math.floor(Math.random() * gradients.length)];
+
+  const renderStaffCard = (person) => {
     if (!person) return null;
+
+    const gradient = getRandomGradient();
+
     return (
-      <div className="bg-white shadow-md rounded-2xl p-4 flex flex-col items-center text-center hover:shadow-xl transition">
+      <div
+        className={`
+    w-full max-w-xs text-white 
+    rounded-2xl shadow-lg p-5 flex flex-col items-center text-center 
+    bg-gradient-to-br ${gradient} 
+    transition-transform hover:scale-105 hover:shadow-2xl duration-10 
+  `}
+      >
         <img
           src={person.photoUrl || "/default-avatar.png"}
           alt={person.name}
-          className="h-20 w-20 rounded-full object-cover mb-3 border"
+          className="h-34 w-34 rounded-full object-cover border-1 border-gray-900 shadow-md mb-3"
         />
-        <h3 className="text-lg font-bold">{person.name}</h3>
-        <p className="text-sm text-gray-500">{role}</p>
-        <p className="text-sm text-gray-700">{person.email}</p>
-        <p className="text-sm text-gray-700">{person.phoneNumber || "N/A"}</p>
-        {role.toLowerCase() !== "principal" && (
-          <span className="mt-2 inline-block bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded-full">
-            {person.department || "General"}
-          </span>
-        )}
+
+        <h3 className="text-lg text-black font-bold">{person.name}</h3>
+
+        <p className="text-sm  text-black  opacity-90">{person.email}</p>
+        <p className="text-sm  text-black  opacity-90">
+          {person.phoneNumber || "N/A"}
+        </p>
+
+        <span className="mt-3 text-gray-800 bg-white/25 backdrop-blur-md px-3 py-1 text-xs font-semibold rounded-full shadow">
+          {person.department || "General"}
+        </span>
       </div>
     );
   };
@@ -97,7 +129,7 @@ export default function CompanyDashboard() {
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-6xl mx-auto p-6">
+      <div className="max-w-9xl mx-auto p-6">
         {/* <h2 className="text-2xl font-bold mb-6">Company Dashboard</h2> */}
 
         {/* ===== Company Info ===== */}
@@ -139,7 +171,10 @@ export default function CompanyDashboard() {
             {/* Staff Section */}
             <div className="mb-8">
               <h2 className="text-xl font-bold mb-4">Staff Members</h2>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6
+"
+              >
                 {/* Principal */}
                 {renderStaffCard(staff.principal, "Principal")}
 
@@ -232,124 +267,246 @@ export default function CompanyDashboard() {
                 </div>
               )}
             </div>
+            <AttendanceNotePanel />
 
             {/* ===== Table ===== */}
-            <table className="min-w-full border rounded shadow-sm overflow-hidden">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="border p-2">Photo</th>
-                  <th className="border p-2">Roll No</th>
-                  <th className="border p-2">Name</th>
-                  <th className="border p-2">Phone</th>
-                  <th className="border p-2">Department</th>
-                  <th className="border p-2">Internal 1 (HOD)</th>
-                  <th className="border p-2">Internal 2 (Company)</th>
-                  <th className="border p-2">Internal 3 (Company)</th>
-                </tr>
-              </thead>
-              <tbody>
-                {applications.map((app, index) => (
-                  <tr
-                    key={app._id}
-                    className={`${
-                      index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                    } hover:bg-blue-50 transition`}
-                  >
-                    <td className="p-2 border text-center">
-                      <img
-                        src={app.image}
-                        alt={app.name}
-                        className="h-12 w-12 rounded-full mx-auto"
-                      />
-                    </td>
-                    <td className="p-2 border">{app.regNumber}</td>
-                    <td className="p-2 border">{app.name}</td>
-                    <td className="p-2 border">{app.phoneNumber}</td>
-                    <td className="p-2 border">{app.department}</td>
-                    <td className="p-2 border text-center">
-                      {app.marks.internal1}
-                    </td>
-
-                    {/* Internal 2 */}
-                    <td className="p-2 text-center border">
-                      <input
-                        type="text"
-                        value={app.marks.internal2}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^\d{0,2}$/.test(val)) {
-                            setApplications((prev) =>
-                              prev.map((a) =>
-                                a._id === app._id
-                                  ? {
-                                      ...a,
-                                      marks: { ...a.marks, internal2: val },
-                                    }
-                                  : a
-                              )
-                            );
-                          }
-                        }}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-center focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                        placeholder="marks"
-                      />
-                      <p className="text-[11px] text-red-500 mt-2 italic">
-                        Should be entered at the end of 8th week
-                      </p>
-                    </td>
-
-                    {/* Internal 3 */}
-                    <td className="p-2 text-center border">
-                      <input
-                        type="text"
-                        value={app.marks.internal3}
-                        onChange={(e) => {
-                          const val = e.target.value;
-                          if (/^\d{0,2}$/.test(val)) {
-                            setApplications((prev) =>
-                              prev.map((a) =>
-                                a._id === app._id
-                                  ? {
-                                      ...a,
-                                      marks: { ...a.marks, internal3: val },
-                                    }
-                                  : a
-                              )
-                            );
-                          }
-                        }}
-                        className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-center focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                        placeholder="marks"
-                      />
-                      <p className="text-[11px] text-red-500 mt-2 italic">
-                        Should be entered at the end of 12th week
-                      </p>
-                    </td>
+            <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-300 bg-white">
+              <table className="min-w-full text-sm text-gray-700">
+                <thead className="bg-blue-600 text-white sticky top-0 z-10">
+                  <tr className="text-center">
+                    <th className="p-3">Photo</th>
+                    <th className="p-3">Roll No</th>
+                    <th className="p-3">Name</th>
+                    <th className="p-3">Phone</th>
+                    <th className="p-3">Department</th>
+                    <th className="p-3">1st Month Attendance</th>
+                    <th className="p-3">2nd Month Attendance</th>
+                    <th className="p-3">3rd Month Attendance</th>
+                    <th className="p-3">4th Month Attendance</th>
+                    <th className="p-3">5th Month Attendance</th>
+                    <th className="p-3">Internal Mark 1</th>
+                    <th className="p-3">Internal Mark 2</th>
+                    <th className="p-3">Internal Mark 3</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
 
-            {/* Save Button */}
-            <button
-              onClick={async () => {
-                const token = await getToken();
-                for (let app of applications) {
-                  await axios.put(
-                    `${backendUrl}/api/company/applications/${app._id}/marks`,
-                    {
-                      internal2: app.marks.internal2,
-                      internal3: app.marks.internal3,
-                    },
-                    { headers: { Authorization: `Bearer ${token}` } }
-                  );
-                }
-                alert("Marks updated successfully");
-              }}
-              className="mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded shadow"
-            >
-              Save Marks
-            </button>
+                <tbody>
+                  {applications.map((app, index) => (
+                    <tr
+                      key={app._id}
+                      className={`border-b transition-all duration-200 hover:bg-blue-50 ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      }`}
+                    >
+                      {/* Photo */}
+                      <td className="p-3 text-center">
+                        <img
+                          src={app.image}
+                          alt={app.name}
+                          className="h-12 w-12 rounded-full mx-auto shadow"
+                        />
+                      </td>
+
+                      <td className="p-3 text-center font-semibold">
+                        {app.regNumber}
+                      </td>
+                      <td className="p-3">{app.name}</td>
+                      <td className="p-3 text-center">{app.phoneNumber}</td>
+                      <td className="p-3 text-center uppercase font-medium text-yellow-600">
+                        {app.department}
+                      </td>
+
+                      {/* Attendance Inputs */}
+                      {["month1", "month2", "month3", "month4", "month5"].map(
+                        (month, idx) => (
+                          <td key={month} className="p-3 text-center">
+                            <input
+                              type="number"
+                              min="0"
+                              max="30"
+                              value={app.attendance[month] ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,2}$/.test(val)) {
+                                  setApplications((prev) =>
+                                    prev.map((a) =>
+                                      a._id === app._id
+                                        ? {
+                                            ...a,
+                                            attendance: {
+                                              ...a.attendance,
+                                              [month]: val,
+                                            },
+                                          }
+                                        : a
+                                    )
+                                  );
+                                }
+                              }}
+                              className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
+                              placeholder="Days"
+                            />
+                            <p className="text-[10px] text-blue-500 mt-1 italic">
+                              After Month {idx + 1}
+                            </p>
+                          </td>
+                        )
+                      )}
+
+                      <td className="p-3 text-center font-semibold text-gray-700">
+                        {app.marks.internal1}
+                      </td>
+
+                      {/* Internal 2 */}
+                      <td className="p-3 text-center">
+                        <input
+                          type="text"
+                          value={app.marks.internal2}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val)) {
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: { ...a.marks, internal2: val },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
+                          placeholder="Marks"
+                        />
+                        <p className="text-[10px] text-red-600 mt-1 italic">
+                          Enter at 8th week
+                        </p>
+                      </td>
+
+                      {/* Internal 3 */}
+                      <td className="p-3 text-center">
+                        <input
+                          type="text"
+                          value={app.marks.internal3}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val)) {
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: { ...a.marks, internal3: val },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
+                          placeholder="Marks"
+                        />
+                        <p className="text-[10px] text-red-600 mt-1 italic">
+                          Enter at 12th week
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Button Row */}
+            <div className="mt-6 flex gap-4 items-center justify-center">
+              {/* --- Save Attendance Button --- */}
+              <button
+                disabled={savingAttendance}
+                onClick={async () => {
+                  try {
+                    setSavingAttendance(true);
+                    const token = await getToken();
+
+                    for (let app of applications) {
+                      await axios.put(
+                        `${backendUrl}/api/company/applications/${app._id}/attendance`,
+                        {
+                          month1: Number(app.attendance?.month1) || 0,
+                          month2: Number(app.attendance?.month2) || 0,
+                          month3: Number(app.attendance?.month3) || 0,
+                          month4: Number(app.attendance?.month4) || 0,
+                          month5: Number(app.attendance?.month5) || 0,
+                        },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                      );
+                    }
+
+                    toast.success("Attendance updated successfully!");
+                  } catch (err) {
+                    toast.error("Error saving attendance.");
+                    console.error(err);
+                  } finally {
+                    setSavingAttendance(false);
+                  }
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg text-white transition duration-300 
+      ${
+        savingAttendance
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-green-600 hover:bg-green-700"
+      }`}
+              >
+                {savingAttendance ? (
+                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                ) : (
+                  <FaSave />
+                )}
+                {savingAttendance ? "Saving..." : "Save Attendance"}
+              </button>
+
+              {/* --- Save Marks Button --- */}
+              <button
+                disabled={savingMarks}
+                onClick={async () => {
+                  try {
+                    setSavingMarks(true);
+                    const token = await getToken();
+
+                    for (let app of applications) {
+                      await axios.put(
+                        `${backendUrl}/api/company/applications/${app._id}/marks`,
+                        {
+                          internal2: Number(app.marks.internal2) || 0,
+                          internal3: Number(app.marks.internal3) || 0,
+                        },
+                        { headers: { Authorization: `Bearer ${token}` } }
+                      );
+                    }
+
+                    toast.success("Marks updated successfully!");
+                  } catch (err) {
+                    toast.error("Error updating marks.");
+                    console.error(err);
+                  } finally {
+                    setSavingMarks(false);
+                  }
+                }}
+                className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg text-white transition duration-300
+      ${
+        savingMarks
+          ? "bg-gray-400 cursor-not-allowed"
+          : "bg-blue-600 hover:bg-blue-700"
+      }`}
+              >
+                {savingMarks ? (
+                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
+                ) : (
+                  <FaSave />
+                )}
+                {savingMarks ? "Saving..." : "Save Marks"}
+              </button>
+            </div>
           </>
         )}
       </div>

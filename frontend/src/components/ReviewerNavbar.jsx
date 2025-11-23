@@ -42,7 +42,7 @@ const ReviewerNavbar = () => {
       { name: "Add a Member", path: "/placement/add-hod" },
       { name: "Add a Company", path: "/placement/add-company" },
       { name: "Members List", path: "/placement/list-hod" },
-      { name: "Applications", path: "/hod/applications" },
+      { name: "Applications", path: "/placement/applications" },
       { name: "Statistics", path: "/placement/yearStatistics" },
     ];
   } else if (role === "cohortOwner") {

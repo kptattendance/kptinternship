@@ -209,6 +209,13 @@ const applicationSchema = new mongoose.Schema(
       internal2: { type: Number, default: 0 }, // set by Company
       internal3: { type: Number, default: 0 }, // set by Company
     },
+    attendance: {
+      month1: { type: Number, default: 0 }, // set by HOD
+      month2: { type: Number, default: 0 }, // set by Company
+      month3: { type: Number, default: 0 }, // set by Company
+      month4: { type: Number, default: 0 }, // set by Company
+      month5: { type: Number, default: 0 }, // set by Company
+    },
   },
   { timestamps: true }
 );

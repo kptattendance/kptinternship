@@ -7,6 +7,7 @@ export default function ApplicationsTable({ applications, departments }) {
   const [sortAsc, setSortAsc] = useState(true);
   const [search, setSearch] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
+  const [internType, setInternType] = useState("all");
 
   const pageSize = 10;
 
@@ -16,13 +17,28 @@ export default function ApplicationsTable({ applications, departments }) {
     if (selectedDept !== "all") {
       data = data.filter((app) => app.department === selectedDept);
     }
+    if (internType !== "all") {
+      data = data.filter(
+        (app) =>
+          app.internhsipType &&
+          app.internhsipType.toLowerCase() === internType.toLowerCase()
+      );
+    }
 
     if (search.trim() !== "") {
       const query = search.toLowerCase();
       data = data.filter(
         (app) =>
           app.regNumber.toLowerCase().includes(query) ||
-          app.name.toLowerCase().includes(query)
+          app.name.toLowerCase().includes(query) ||
+          (app.companyVillage &&
+            app.companyVillage.toLowerCase().includes(query)) ||
+          (app.companyCity && app.companyCity.toLowerCase().includes(query)) ||
+          (app.companyTaluk &&
+            app.companyTaluk.toLowerCase().includes(query)) ||
+          (app.companyDistrict &&
+            app.companyDistrict.toLowerCase().includes(query)) ||
+          (app.companyState && app.companyState.toLowerCase().includes(query))
       );
     }
 
@@ -34,7 +50,7 @@ export default function ApplicationsTable({ applications, departments }) {
 
     setFiltered(data);
     setCurrentPage(1);
-  }, [applications, selectedDept, sortAsc, search]);
+  }, [applications, selectedDept, sortAsc, search, internType]);
 
   const totalPages = Math.ceil(filtered.length / pageSize);
   const paginated = filtered.slice(
@@ -74,6 +90,15 @@ export default function ApplicationsTable({ applications, departments }) {
                 {d.label}
               </option>
             ))}
+          </select>
+          <select
+            value={internType}
+            onChange={(e) => setInternType(e.target.value)}
+            className="border rounded px-3 py-2 shadow-sm focus:ring focus:ring-blue-300"
+          >
+            <option value="all">All Internship Types</option>
+            <option value="internship">Internship</option>
+            <option value="project">Project</option>
           </select>
 
           <input

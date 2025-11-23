@@ -35,6 +35,7 @@ export const createApplication = async (req, res) => {
       stipendAmount = 0,
       PlacedCompany = "",
       jobPackage = "",
+      attendance = {},
       ...otherFields
     } = req.body;
 
@@ -45,8 +46,14 @@ export const createApplication = async (req, res) => {
       stipendAmount,
       PlacedCompany,
       jobPackage,
+      attendance: {
+        month1: attendance.month1 ?? 0,
+        month2: attendance.month2 ?? 0,
+        month3: attendance.month3 ?? 0,
+        month4: attendance.month4 ?? 0,
+      },
       image: imageUrl,
-      imagePublicId, // Store to delete later
+      imagePublicId,
     });
 
     await application.save();
@@ -105,8 +112,13 @@ export const getApplicationById = async (req, res) => {
  */
 export const updateApplication = async (req, res) => {
   try {
-    const { stipendAmount, PlacedCompany, jobPackage, ...updateFields } =
-      req.body;
+    const {
+      stipendAmount,
+      PlacedCompany,
+      jobPackage,
+      attendance,
+      ...updateFields
+    } = req.body;
 
     const app = await Application.findByIdAndUpdate(
       req.params.id,
@@ -116,6 +128,12 @@ export const updateApplication = async (req, res) => {
           ...(stipendAmount !== undefined && { stipendAmount }),
           ...(PlacedCompany !== undefined && { PlacedCompany }),
           ...(jobPackage !== undefined && { jobPackage }),
+          ...(attendance && {
+            "attendance.month1": attendance.month1,
+            "attendance.month2": attendance.month2,
+            "attendance.month3": attendance.month3,
+            "attendance.month4": attendance.month4,
+          }),
         },
       },
       { new: true }

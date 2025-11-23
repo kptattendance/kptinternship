@@ -1,6 +1,7 @@
 import express from "express";
 import {
   getCompanyDashboard,
+  updateAttendance,
   updateCohortOwnerMarks,
   updateCompanyMarks,
 } from "../controllers/companyController.js";
@@ -22,6 +23,12 @@ router.put(
   "/applications/:applicationId/cohortmarks",
   requireAuthMiddleware,
   updateCohortOwnerMarks
+);
+
+router.put(
+  "/applications/:applicationId/attendance",
+  requireAuthMiddleware,
+  updateAttendance
 );
 
 export default router;

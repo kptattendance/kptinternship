@@ -17,6 +17,7 @@ import PlacementAddCompany from "./pages/placement/PlacementAddCompany";
 import CompanyDashboard from "./pages/company/CompanyDashboard";
 import InternalMark from "./pages/cohort/InternalMark";
 import YearStatistics from "./pages/placement/YearStatistics";
+import AllPlaceApplications from "./pages/placement/AllPlaceApplications";
 
 export default function App() {
   return (
@@ -87,6 +88,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />{" "}
+          <Route
+          path="/placement/applications"
+          element={
+            <ProtectedRoute allowedRoles={["placement", "principal"]}>
+              <AllPlaceApplications />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/placement/yearStatistics"
           element={

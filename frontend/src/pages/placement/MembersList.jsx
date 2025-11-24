@@ -40,7 +40,6 @@ export default function MembersList() {
       const res = await axios.get(`${backendUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      // console.log(res.data.users);
       setUsers(res.data.users || []);
     } catch (err) {
       console.error("❌ Error fetching users:", err);

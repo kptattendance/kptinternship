@@ -23,8 +23,6 @@ const ReviewerNavbar = () => {
   const handleSignIn = () => {
     openSignIn({ redirectUrl: "/redirect" });
   };
-  console.log("=====================");
-  console.log(user?.publicMetadata?.role);
   // ✅ Role-based tabs
   let tabs = [];
   if (role === "hod") {

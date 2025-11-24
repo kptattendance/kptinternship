@@ -8,7 +8,6 @@ import cloudinary from "../../config/cloudinary.js";
 export const createApplication = async (req, res) => {
   try {
     const studentId = req.auth.userId;
-    console.log("📥 Creating new application...");
 
     // Check for duplicate submission
     const existingApp = await Application.findOne({ studentId });

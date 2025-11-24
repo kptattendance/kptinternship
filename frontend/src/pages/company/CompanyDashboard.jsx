@@ -43,7 +43,6 @@ export default function CompanyDashboard() {
       const staffRes = await axios.get(`${backendUrl}/api/users`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      console.log(staffRes.data.users);
       if (staffRes.data.ok) {
         const users = staffRes.data.users;
 

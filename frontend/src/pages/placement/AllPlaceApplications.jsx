@@ -81,7 +81,6 @@ export default function AllPlaceApplications() {
         } else if (role === "student") {
           data = []; // students shouldn't see anything
         }
-        // console.log(data);
         setApps(data);
       } catch (err) {
         console.error("❌ Failed to fetch:", err.response?.data || err.message);

@@ -109,22 +109,65 @@ const PlacementAddCompany = () => {
               className="w-full border p-2 rounded"
             />
           </div>
-
           <div>
-            <label className="block font-medium">Logo (optional)</label>
+            <label className="block font-medium mb-1">
+              Company Logo (optional)
+            </label>
+
+            {/* Upload Box */}
+            <div
+              onClick={() => document.getElementById("logoUpload").click()}
+              className="border-2 border-dashed rounded-xl p-6 flex flex-col items-center justify-center cursor-pointer hover:bg-gray-50 transition"
+            >
+              {!preview ? (
+                <>
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-10 w-10 text-gray-400"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={1.5}
+                      d="M3 16l5-5 4 4 6-6 3 3M3 20h18"
+                    />
+                  </svg>
+                  <p className="text-gray-500 mt-2 text-sm">
+                    Click to upload logo (PNG/JPG)
+                  </p>
+                </>
+              ) : (
+                <>
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="h-24 w-24 rounded-full object-cover border shadow"
+                  />
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setPreview("");
+                      setPhoto(null);
+                    }}
+                    className="mt-3 text-red-500 text-sm underline"
+                  >
+                    Remove Image
+                  </button>
+                </>
+              )}
+            </div>
+
             <input
+              id="logoUpload"
               type="file"
               accept="image/*"
               onChange={handleFileChange}
-              className="w-full"
+              className="hidden"
             />
-            {preview && (
-              <img
-                src={preview}
-                alt="Preview"
-                className="h-20 w-20 mt-2 rounded-full border object-cover"
-              />
-            )}
           </div>
 
           <button

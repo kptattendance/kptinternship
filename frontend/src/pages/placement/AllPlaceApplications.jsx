@@ -313,7 +313,7 @@ export default function AllPlaceApplications() {
                         </button>
 
                         <button
-                          onClick={() => handleDelete(app)}
+                          onClick={() => handleDelete(app._id)}
                           className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 shadow transition"
                         >
                           <FaTrash size={10} />

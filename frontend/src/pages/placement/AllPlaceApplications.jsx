@@ -312,7 +312,10 @@ export default function AllPlaceApplications() {
                           <FaEye size={12} />
                         </button>
 
-                        <button className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 shadow transition">
+                        <button
+                          onClick={() => handleDelete(app)}
+                          className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 shadow transition"
+                        >
                           <FaTrash size={10} />
                         </button>
                       </td>

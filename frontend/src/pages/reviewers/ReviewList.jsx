@@ -15,6 +15,7 @@ export default function ReviewList() {
   const [loading, setLoading] = useState(false);
   const [apps, setApps] = useState([]);
   const [selected, setSelected] = useState(null);
+  const [search, setSearch] = useState("");
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
@@ -44,6 +45,16 @@ export default function ReviewList() {
     }
   };
 
+  const filteredApps = apps.filter((app) => {
+    const term = search.toLowerCase().trim();
+    if (!term) return true;
+
+    return (
+      app.name?.toLowerCase().includes(term) ||
+      app.regNumber?.toLowerCase().includes(term)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#e0f2ff] via-[#f0e7ff] to-[#ffe7f5]">
       <ReviewerNavbar />
@@ -66,6 +77,26 @@ export default function ReviewList() {
           <div className="mt-4 w-24 h-1 mx-auto bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full shadow-md"></div>
         </div>
 
+        {/* 🔍 Search Bar */}
+        <div className="max-w-md mx-auto mt-8 mb-10">
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by Name or Register Number..."
+            className="
+      w-full px-5 py-3 rounded-full 
+      bg-white/80 backdrop-blur-md
+      border border-purple-300 
+      shadow-md
+      focus:outline-none focus:ring-2 focus:ring-purple-500
+      text-sm
+      placeholder-gray-400
+      transition
+    "
+          />
+        </div>
+
         {/* States */}
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 space-y-4">
@@ -84,9 +115,16 @@ export default function ReviewList() {
               New applications will appear here automatically.
             </p>
           </div>
+        ) : filteredApps.length === 0 ? (
+          <div className="text-center py-20">
+            <div className="text-5xl mb-3">🔍</div>
+            <p className="text-gray-600 font-medium">
+              No applications match your search
+            </p>
+          </div>
         ) : (
           <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
-            {apps.map((app, idx) => (
+            {filteredApps.map((app, idx) => (
               <div
                 key={app._id}
                 className={`relative overflow-hidden rounded-2xl p-[1px] transition-all duration-300 hover:scale-[1.02] ${

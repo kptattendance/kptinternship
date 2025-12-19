@@ -89,6 +89,10 @@ export const generateInternshipLetter = async (req, res) => {
     const regPart = app.regNumber.slice(3);
     const currentYear = new Date().getFullYear();
     const nextYear = currentYear + 1;
+    // ✅ Use last updated date instead of today's date
+    const updatedDate = app.updatedAt
+      ? new Date(app.updatedAt).toLocaleDateString("en-GB")
+      : new Date().toLocaleDateString("en-GB");
 
     doc.moveDown(1);
     doc
@@ -97,7 +101,8 @@ export const generateInternshipLetter = async (req, res) => {
       .text(`No.KPM/INTSP/${currentYear}-${nextYear}/${regPart}`, {
         align: "left",
       })
-      .text(`Date: ${today}`, { align: "right" });
+      .text(`Date: ${updatedDate}`, { align: "right" });
+
     doc.moveDown(0.5);
 
     // ✅ Recipient

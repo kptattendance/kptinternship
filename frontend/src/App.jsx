@@ -18,6 +18,7 @@ import CompanyDashboard from "./pages/company/CompanyDashboard";
 import InternalMark from "./pages/cohort/InternalMark";
 import YearStatistics from "./pages/placement/YearStatistics";
 import AllPlaceApplications from "./pages/placement/AllPlaceApplications";
+import AddCompany from "./pages/cohort/AddCompany";
 
 export default function App() {
   return (
@@ -61,6 +62,14 @@ export default function App() {
               <InternalMark />
             </ProtectedRoute>
           }
+        />{" "}
+        <Route
+          path="/cohortOwner/AddCompany"
+          element={
+            <ProtectedRoute allowedRoles={["cohortOwner", "placement"]}>
+              <AddCompany />
+            </ProtectedRoute>
+          }
         />
         <Route
           path="/placement/add-hod"
@@ -88,7 +97,7 @@ export default function App() {
             </ProtectedRoute>
           }
         />{" "}
-          <Route
+        <Route
           path="/placement/applications"
           element={
             <ProtectedRoute allowedRoles={["placement", "principal"]}>

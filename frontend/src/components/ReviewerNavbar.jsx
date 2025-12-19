@@ -39,6 +39,7 @@ const ReviewerNavbar = () => {
       { name: "Dashboard", path: "/review" },
       { name: "Add a Member", path: "/placement/add-hod" },
       { name: "Add a Company", path: "/placement/add-company" },
+      { name: "Company List", path: "/cohortOwner/AddCompany" },
       { name: "Members List", path: "/placement/list-hod" },
       { name: "Applications", path: "/placement/applications" },
       { name: "Statistics", path: "/placement/yearStatistics" },
@@ -46,7 +47,7 @@ const ReviewerNavbar = () => {
   } else if (role === "cohortOwner") {
     tabs = [
       { name: "Dashboard", path: "/review" },
-      { name: "Add a Company", path: "/placement/add-company" },
+      { name: "Add a Company", path: "/cohortOwner/AddCompany" },
       { name: "Internal Mark", path: "/cohortOwner/internal-mark" },
     ];
   } else if (role === "principal") {

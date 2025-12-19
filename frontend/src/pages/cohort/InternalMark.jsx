@@ -1,9 +1,9 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
-import Loader from "../Loader";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
+import { FaSpinner } from "react-icons/fa";
 
 export default function InternalMark() {
   const { getToken } = useAuth();
@@ -11,18 +11,18 @@ export default function InternalMark() {
   const [filteredApps, setFilteredApps] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
-  const [sortBy, setSortBy] = useState("name");
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // Fetch applications + current user
+  // ---------------- FETCH DATA ----------------
   const fetchData = async () => {
     try {
       setLoading(true);
       const token = await getToken();
 
-      const [appRes, meRes] = await Promise.all([
+      const [appsRes, meRes] = await Promise.all([
         axios.get(`${backendUrl}/api/students/getAllApplications`, {
           headers: { Authorization: `Bearer ${token}` },
         }),
@@ -35,19 +35,19 @@ export default function InternalMark() {
         const user = meRes.data.user;
         setCurrentUser(user);
 
-        // Filter by department for cohort owners
-        let apps = appRes.data;
-        if (user.role === "cohortOwner" && user.department) {
-          const dept = user.department.toLowerCase();
-          apps = apps.filter((a) => a.department?.toLowerCase() === dept);
+        let apps = appsRes.data;
+        if (user.role === "cohortOwner") {
+          apps = apps.filter(
+            (a) =>
+              a.department?.toLowerCase() === user.department?.toLowerCase()
+          );
         }
 
         setApplications(apps);
         setFilteredApps(apps);
       }
     } catch (err) {
-      console.error("❌ Error fetching internal mark data:", err);
-      toast.error("Failed to fetch applications");
+      toast.error("Failed to fetch applications", err);
     } finally {
       setLoading(false);
     }
@@ -57,286 +57,247 @@ export default function InternalMark() {
     fetchData();
   }, []);
 
-  // Permission helpers
-  const canEditInternal1 = (app) =>
+  // ---------------- PERMISSIONS ----------------
+  const canEditCIE1 = (app) =>
     currentUser?.role === "cohortOwner" &&
     currentUser.department?.toLowerCase() === app.department?.toLowerCase();
 
-  const canEditCompanyMarks = () => currentUser?.role === "company";
+  const canEditCompany = () => currentUser?.role === "company";
 
-  // Save marks
-  const handleSave = async () => {
-    const token = await getToken();
+  // ---------------- SAVE ----------------
+  const handleSave = async (app) => {
     try {
-      for (let app of filteredApps) {
-        const payload = {};
-        if (canEditInternal1(app)) payload.internal1 = app.marks.internal1;
-        if (canEditCompanyMarks()) {
-          payload.internal2 = app.marks.internal2;
-          payload.internal3 = app.marks.internal3;
-        }
+      setSaving(true);
+      const token = await getToken();
 
-        if (Object.keys(payload).length > 0) {
-          await axios.put(
-            `${backendUrl}/api/company/applications/${app._id}/cohortmarks`,
-            payload,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-        }
-      }
-      toast.success("Marks updated successfully");
+      await axios.put(
+        `${backendUrl}/api/company/applications/${app._id}/cohortmarks`,
+        {
+          report: app.marks?.cie1?.report ?? 0,
+          presentation: app.marks?.cie1?.presentation ?? 0,
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      toast.success(`CIE-I saved for ${app.regNumber}`);
     } catch (err) {
-      console.error("❌ Error saving marks:", err);
-      toast.error("Failed to save marks");
+      toast.error("Failed to save CIE-I marks", err);
+    } finally {
+      setSaving(false);
     }
   };
 
-  // Search + Sort
+  // ---------------- SEARCH ----------------
   useEffect(() => {
-    let results = [...applications];
-
-    // Search filter
-    if (searchTerm.trim() !== "") {
-      results = results.filter(
+    let res = [...applications];
+    if (searchTerm.trim()) {
+      res = res.filter(
         (a) =>
           a.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
           a.regNumber.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
+    setFilteredApps(res);
+  }, [searchTerm, applications]);
 
-    // Sorting
-    results.sort((a, b) => {
-      if (sortBy === "name") return a.name.localeCompare(b.name);
-      if (sortBy === "regNumber") return a.regNumber.localeCompare(b.regNumber);
-      if (sortBy === "department")
-        return a.department.localeCompare(b.department);
-      return 0;
-    });
-
-    setFilteredApps(results);
-  }, [searchTerm, sortBy, applications]);
-
-  if (loading) return <Loader message="Fetching internal marks..." />;
+  if (loading) {
+    return (
+      <>
+        <ReviewerNavbar />
+        <div className="p-10 text-center">Loading internal marks…</div>
+      </>
+    );
+  }
 
   return (
     <>
       <ReviewerNavbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6 px-3">
-        <div className="max-w-7xl mx-auto">
-          {/* Header Card */}
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-bold text-indigo-700 mb-1">
-              📊 Internal Marks Entry
-            </h2>
-            <p className="text-sm text-gray-600">
-              Enter and update internal assessment marks securely
-            </p>
-          </div>
+      <div className="p-6 bg-slate-100 min-h-screen">
+        <div className="mb-4 rounded-xl bg-gradient-to-r from-indigo-600 to-indigo-700 p-4 text-white shadow">
+          <h2 className="text-xl font-bold tracking-wide">
+            📊 Continuous Internal Evaluation (CIE)
+          </h2>
+          <p className="text-xs text-indigo-100 mt-1">
+            CIE-I entered by Cohort Owner • CIE-II & III entered by Company
+          </p>
+        </div>
 
-          {/* Search & Sort Card */}
-          <div className="bg-white rounded-xl shadow p-4 mb-6">
-            <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
-              <input
-                type="text"
-                placeholder="🔍 Search by name or roll number"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full sm:w-1/2 px-4 py-2 rounded-lg border border-gray-300 
-                         focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-              />
+        <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
+          <table className="w-full text-sm border-collapse">
+            <thead className="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white sticky top-0 z-10">
+              <tr>
+                <th className="p-3 text-center">Sl No</th>
+                <th className="p-3 text-center">Photo</th>
+                <th className="p-3 text-left">Reg No</th>
+                <th className="p-3 text-left">Name</th>
+                <th className="p-3 text-center">Dept</th>
+                <th className="p-3 text-center">
+                  Report (50) + presentation (30) = CIE-I (80)
+                </th>
+                <th className="p-3 text-center">CIE-II (80)</th>
+                <th className="p-3 text-center">CIE-III (80)</th>
+                <th className="p-3 text-center">Action</th>
+              </tr>
+            </thead>
 
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                className="px-4 py-2 rounded-lg border border-gray-300 
-                         focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-              >
-                <option value="name">Sort by Name</option>
-                <option value="regNumber">Sort by Roll No</option>
-                <option value="department">Sort by Department</option>
-              </select>
-            </div>
-          </div>
+            <tbody>
+              {filteredApps.map((app, i) => (
+                <tr
+                  key={app._id}
+                  className={`border-b ${
+                    i % 2 === 0 ? "bg-white" : "bg-slate-50"
+                  } hover:bg-indigo-50`}
+                >
+                  <td className="p-3 text-center font-medium">{i + 1}</td>
+                  <td className="p-3 text-center">
+                    <img
+                      src={app.image || "/default-avatar.png"}
+                      alt={app.name}
+                      className="h-10 w-10 rounded-full object-cover mx-auto border border-indigo-300 shadow-sm"
+                    />
+                  </td>
 
-          {/* Table Card */}
-          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-sm">
-                <thead className="bg-indigo-600 text-white sticky top-0">
-                  <tr>
-                    <th className="px-3 py-3">Photo</th>
-                    <th className="px-3 py-3">Roll No</th>
-                    <th className="px-3 py-3">Name</th>
-                    <th className="px-3 py-3">Phone</th>
-                    <th className="px-3 py-3">Dept</th>
-                    <th className="px-3 py-3">Internal-1</th>
-                    <th className="px-3 py-3">Internal-2</th>
-                    <th className="px-3 py-3">Internal-3</th>
-                  </tr>
-                </thead>
+                  <td className="p-3 font-medium">{app.regNumber}</td>
 
-                <tbody>
-                  {filteredApps.map((app, index) => (
-                    <tr
-                      key={app._id}
-                      className={`${
-                        index % 2 === 0 ? "bg-white" : "bg-indigo-50"
-                      } hover:bg-indigo-100 transition`}
-                    >
-                      {/* Photo */}
-                      <td className="px-3 py-3 text-center">
-                        <img
-                          src={app.image}
-                          alt={app.name}
-                          className="h-11 w-11 rounded-full mx-auto border shadow"
+                  <td className="p-3 font-semibold text-gray-800">
+                    {app.name}
+                  </td>
+
+                  <td className="p-3 text-center">
+                    <span className="px-2 py-0.5 text-xs rounded-full bg-indigo-100 text-indigo-700 font-semibold">
+                      {app.department.toUpperCase()}
+                    </span>
+                  </td>
+
+                  <td className="p-3 text-center">
+                    {canEditCIE1(app) ? (
+                      <div className="flex gap-1 items-center justify-center">
+                        {/* Report */}
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Report /50"
+                          value={app.marks?.cie1?.report ?? ""}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") {
+                              document
+                                .querySelector(`#cie1-report-${i + 1}`)
+                                ?.focus();
+                            }
+                          }}
+                          id={`cie1-report-${i}`}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val) && Number(val) <= 50) {
+                              const v = Number(val || 0);
+                              setFilteredApps((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: {
+                                          ...a.marks,
+                                          cie1: {
+                                            ...a.marks.cie1,
+                                            report: v,
+                                            total:
+                                              v +
+                                              (a.marks.cie1?.presentation || 0),
+                                          },
+                                        },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-24 px-2 py-1 border-2 border-blue-400
+                   rounded-md text-center font-semibold text-blue-700
+                   focus:ring-1 focus:ring-blue-300"
                         />
-                      </td>
 
-                      <td className="px-3 py-3 font-medium">{app.regNumber}</td>
-                      <td className="px-3 py-3 font-semibold">{app.name}</td>
-                      <td className="px-3 py-3">{app.phoneNumber}</td>
+                        {/* Presentation */}
+                        <input
+                          type="text"
+                          inputMode="numeric"
+                          placeholder="Pres /30"
+                          value={app.marks?.cie1?.presentation ?? ""}
+                          onKeyDown={(e) => {
+                            if (e.key === "ArrowDown") {
+                              document
+                                .querySelector(`#cie1-pres-${i + 1}`)
+                                ?.focus();
+                            }
+                          }}
+                          id={`cie1-pres-${i}`}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val) && Number(val) <= 30) {
+                              const v = Number(val || 0);
+                              setFilteredApps((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: {
+                                          ...a.marks,
+                                          cie1: {
+                                            ...a.marks.cie1,
+                                            presentation: v,
+                                            total:
+                                              (a.marks.cie1?.report || 0) + v,
+                                          },
+                                        },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-24 px-2 py-1 border-2 border-purple-400
+                   rounded-md text-center font-semibold text-purple-700
+                   focus:ring-1 focus:ring-purple-300"
+                        />
 
-                      <td className="px-3 py-3">
-                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-200 text-indigo-800">
-                          {app.department}
-                        </span>
-                      </td>
+                        <div className="text-[11px] font-bold text-gray-700 mt-0.5">
+                          Total: {app.marks?.cie1?.total || 0} / 80
+                        </div>
+                      </div>
+                    ) : (
+                      <span className="font-bold text-indigo-700">
+                        {app.marks?.cie1?.total || 0}
+                      </span>
+                    )}
+                  </td>
 
-                      {/* Internal 1 */}
-                      <td className="px-3 py-3 text-center">
-                        {canEditInternal1(app) ? (
-                          <>
-                            <input
-                              type="text"
-                              value={app.marks.internal1}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d{0,2}$/.test(val)) {
-                                  setFilteredApps((prev) =>
-                                    prev.map((a) =>
-                                      a._id === app._id
-                                        ? {
-                                            ...a,
-                                            marks: {
-                                              ...a.marks,
-                                              internal1: val,
-                                            },
-                                          }
-                                        : a
-                                    )
-                                  );
-                                }
-                              }}
-                              className="w-16 px-2 py-1 rounded-md border border-indigo-300 
-                                       text-center focus:ring-2 focus:ring-indigo-400"
-                            />
-                            <p className="text-[10px] text-indigo-600 mt-1 italic">
-                              4th week
-                            </p>
-                          </>
-                        ) : (
-                          <span className="font-semibold">
-                            {app.marks.internal1}
-                          </span>
-                        )}
-                      </td>
+                  {/* ================= CIE II ================= */}
+                  <td className="p-3 text-center font-semibold text-emerald-700">
+                    {app.marks?.cie2?.total || 0}
+                  </td>
 
-                      {/* Internal 2 */}
-                      <td className="px-3 py-3 text-center">
-                        {canEditCompanyMarks() ? (
-                          <>
-                            <input
-                              type="text"
-                              value={app.marks.internal2}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d{0,2}$/.test(val)) {
-                                  setFilteredApps((prev) =>
-                                    prev.map((a) =>
-                                      a._id === app._id
-                                        ? {
-                                            ...a,
-                                            marks: {
-                                              ...a.marks,
-                                              internal2: val,
-                                            },
-                                          }
-                                        : a
-                                    )
-                                  );
-                                }
-                              }}
-                              className="w-16 px-2 py-1 rounded-md border border-green-300 
-                                       text-center focus:ring-2 focus:ring-green-400"
-                            />
-                            <p className="text-[10px] text-green-700 mt-1 italic">
-                              8th week
-                            </p>
-                          </>
-                        ) : (
-                          <span className="font-semibold">
-                            {app.marks.internal2}
-                          </span>
-                        )}
-                      </td>
+                  {/* ================= CIE III ================= */}
+                  <td className="p-3 text-center font-semibold text-orange-700">
+                    {app.marks?.cie3?.total || 0}
+                  </td>
 
-                      {/* Internal 3 */}
-                      <td className="px-3 py-3 text-center">
-                        {canEditCompanyMarks() ? (
-                          <>
-                            <input
-                              type="text"
-                              value={app.marks.internal3}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d{0,2}$/.test(val)) {
-                                  setFilteredApps((prev) =>
-                                    prev.map((a) =>
-                                      a._id === app._id
-                                        ? {
-                                            ...a,
-                                            marks: {
-                                              ...a.marks,
-                                              internal3: val,
-                                            },
-                                          }
-                                        : a
-                                    )
-                                  );
-                                }
-                              }}
-                              className="w-16 px-2 py-1 rounded-md border border-orange-300 
-                                       text-center focus:ring-2 focus:ring-orange-400"
-                            />
-                            <p className="text-[10px] text-orange-700 mt-1 italic">
-                              12th week
-                            </p>
-                          </>
-                        ) : (
-                          <span className="font-semibold">
-                            {app.marks.internal3}
-                          </span>
-                        )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
-          {/* Save Button */}
-          <div className="flex justify-end mt-6">
-            <button
-              onClick={handleSave}
-              className="bg-gradient-to-r from-indigo-600 to-blue-600 
-                       hover:from-indigo-700 hover:to-blue-700
-                       text-white px-8 py-2 rounded-xl shadow-lg font-semibold"
-            >
-              💾 Save Marks
-            </button>
-          </div>
+                  {/* ACTION */}
+                  <td className="p-3 text-center">
+                    {canEditCIE1(app) && (
+                      <button
+                        onClick={() => handleSave(app)}
+                        className="px-4 py-1.5 text-xs rounded-md 
+                       bg-green-600 hover:bg-green-700 
+                       text-white font-semibold"
+                      >
+                        Save
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
     </>

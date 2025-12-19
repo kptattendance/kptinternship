@@ -1,5 +1,7 @@
 import Application from "../model/Application.js";
 import User from "../model/User.js"; // for company info
+import Company from "../model/Company.js";
+import cloudinary from "../config/cloudinary.js";
 
 // 1️⃣ Get Company Info + Applications
 import { clerkClient } from "@clerk/express";
@@ -32,49 +34,137 @@ export const getCompanyDashboard = async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 };
-
-// 2️⃣ Update Marks for Company (2nd and 3rd internal)
-export const updateCompanyMarks = async (req, res) => {
+export const updateCohortOwnerMarks = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const { internal2, internal3 } = req.body;
+    const { report, presentation } = req.body;
+
+    // ✅ Validate input existence
+    if (report === undefined && presentation === undefined) {
+      return res.status(400).json({
+        ok: false,
+        message: "No CIE-I marks provided",
+      });
+    }
+
+    // ✅ Validate ranges
+    if (
+      (report !== undefined && (report < 0 || report > 50)) ||
+      (presentation !== undefined && (presentation < 0 || presentation > 30))
+    ) {
+      return res.status(400).json({
+        ok: false,
+        message: "Invalid CIE-I marks range",
+      });
+    }
 
     const application = await Application.findById(applicationId);
-    if (!application)
+    if (!application) {
       return res
         .status(404)
         .json({ ok: false, message: "Application not found" });
+    }
 
-    application.marks.internal2 = internal2 ?? application.marks.internal2;
-    application.marks.internal3 = internal3 ?? application.marks.internal3;
+    // ✅ ENSURE cie1 OBJECT EXISTS
+    if (!application.marks) application.marks = {};
+    if (!application.marks.cie1) {
+      application.marks.cie1 = {
+        report: 0,
+        presentation: 0,
+        total: 0,
+      };
+    }
+
+    // ✅ UPDATE VALUES
+    if (report !== undefined) application.marks.cie1.report = Number(report);
+
+    if (presentation !== undefined)
+      application.marks.cie1.presentation = Number(presentation);
+
+    // ✅ CALCULATE TOTAL
+    application.marks.cie1.total =
+      application.marks.cie1.report + application.marks.cie1.presentation;
+
+    // ✅ FORCE MONGOOSE TO TRACK CHANGE
+    application.markModified("marks.cie1");
 
     await application.save();
 
-    res.json({ ok: true, message: "Marks updated successfully", application });
+    return res.json({
+      ok: true,
+      message: "CIE-I marks updated successfully",
+      data: application.marks.cie1,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("❌ CIE-I update error:", err);
     res.status(500).json({ ok: false, error: err.message });
   }
 };
 
-export const updateCohortOwnerMarks = async (req, res) => {
+export const updateCompanyCIEMarks = async (req, res) => {
   try {
     const { applicationId } = req.params;
-    const { internal1 } = req.body;
+    const { cie2, cie3 } = req.body;
 
-    const application = await Application.findById(applicationId);
-    if (!application)
+    const app = await Application.findById(applicationId);
+    if (!app)
       return res
         .status(404)
         .json({ ok: false, message: "Application not found" });
 
-    application.marks.internal1 = internal1 ?? application.marks.internal1;
+    if (!app.marks) app.marks = {};
 
-    await application.save();
+    // -------- CIE II --------
+    if (cie2) {
+      const r = cie2.report ?? 0;
+      const u = cie2.useCase ?? 0;
 
-    res.json({ ok: true, message: "Marks updated successfully", application });
+      if (r < 0 || r > 50 || u < 0 || u > 30) {
+        return res.status(400).json({
+          ok: false,
+          message: "Invalid CIE-II marks range",
+        });
+      }
+
+      app.marks.cie2 = {
+        report: r,
+        useCase: u,
+        total: r + u,
+      };
+
+      app.markModified("marks.cie2");
+    }
+
+    // -------- CIE III --------
+    if (cie3) {
+      const r = cie3.report ?? 0;
+      const u = cie3.useCase ?? 0;
+
+      if (r < 0 || r > 50 || u < 0 || u > 30) {
+        return res.status(400).json({
+          ok: false,
+          message: "Invalid CIE-III marks range",
+        });
+      }
+
+      app.marks.cie3 = {
+        report: r,
+        useCase: u,
+        total: r + u,
+      };
+
+      app.markModified("marks.cie3");
+    }
+
+    await app.save();
+
+    res.json({
+      ok: true,
+      message: "Company CIE marks updated successfully",
+      data: app.marks,
+    });
   } catch (err) {
-    console.error(err);
+    console.error("❌ Company CIE update error:", err);
     res.status(500).json({ ok: false, error: err.message });
   }
 };
@@ -109,9 +199,6 @@ export const updateAttendance = async (req, res) => {
     res.status(500).json({ ok: false, error: err.message });
   }
 };
-
-import Company from "../model/Company.js";
-import cloudinary from "../config/cloudinary.js";
 
 /**
  * ✅ Add or link company

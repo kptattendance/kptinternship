@@ -125,6 +125,35 @@ export default function CompanyDashboard() {
     );
   };
 
+  const saveCompanyMarks = async () => {
+    try {
+      setSavingMarks(true);
+      const token = await getToken();
+
+      await Promise.all(
+        applications.map((app) =>
+          axios.put(
+            `${backendUrl}/api/company/applications/${app._id}/company-marks`,
+            {
+              cie2: app.marks.cie2,
+              cie3: app.marks.cie3,
+            },
+            {
+              headers: { Authorization: `Bearer ${token}` },
+            }
+          )
+        )
+      );
+
+      toast.success("✅ Company CIE marks saved successfully");
+    } catch (err) {
+      console.error(err);
+      toast.error("❌ Failed to save company marks");
+    } finally {
+      setSavingMarks(false);
+    }
+  };
+
   return (
     <>
       <ReviewerNavbar />
@@ -287,65 +316,172 @@ export default function CompanyDashboard() {
                       </td>
 
                       {/* Internal 2 (COMPANY) */}
+                      {/* ===== CIE-II (Company) ===== */}
                       <td className="p-3 text-center bg-amber-50 border-l-4 border-orange-300">
-                        <input
-                          type="text"
-                          value={app.marks.internal2}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
+                        <div className="flex flex-col gap-1 items-center">
+                          {/* Report (50) */}
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            value={app.marks?.cie2?.report ?? ""}
+                            onChange={(e) => {
+                              const v = Math.min(
+                                50,
+                                Math.max(0, Number(e.target.value || 0))
+                              );
                               setApplications((prev) =>
                                 prev.map((a) =>
                                   a._id === app._id
                                     ? {
                                         ...a,
-                                        marks: { ...a.marks, internal2: val },
+                                        marks: {
+                                          ...a.marks,
+                                          cie2: {
+                                            ...a.marks.cie2,
+                                            report: v,
+                                            total:
+                                              v + (a.marks.cie2?.useCase || 0),
+                                          },
+                                        },
                                       }
                                     : a
                                 )
                               );
-                            }
-                          }}
-                          className="w-16 px-2 py-1 
-              border-2 border-orange-400 rounded-lg 
-              text-center font-bold text-orange-700 
-              focus:ring-4 focus:ring-orange-300 
-              outline-none shadow"
-                        />
-                        <p className="text-[10px] text-orange-600 italic mt-1">
-                          8th Week
-                        </p>
+                            }}
+                            className="w-16 px-2 py-1 border-2 border-orange-400 rounded-lg
+      text-center font-semibold text-orange-700 focus:ring-2 focus:ring-orange-300"
+                            placeholder="Rpt /50"
+                          />
+
+                          {/* Use Case (30) */}
+                          <input
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={app.marks?.cie2?.useCase ?? ""}
+                            onChange={(e) => {
+                              const v = Math.min(
+                                30,
+                                Math.max(0, Number(e.target.value || 0))
+                              );
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: {
+                                          ...a.marks,
+                                          cie2: {
+                                            ...a.marks.cie2,
+                                            useCase: v,
+                                            total:
+                                              (a.marks.cie2?.report || 0) + v,
+                                          },
+                                        },
+                                      }
+                                    : a
+                                )
+                              );
+                            }}
+                            className="w-16 px-2 py-1 border-2 border-orange-400 rounded-lg
+      text-center font-semibold text-orange-700 focus:ring-2 focus:ring-orange-300"
+                            placeholder="UC /30"
+                          />
+
+                          {/* Total (80) */}
+                          <div className="mt-1 text-sm font-bold text-orange-800">
+                            Total: {app.marks?.cie2?.total || 0} / 80
+                          </div>
+
+                          <p className="text-[10px] text-orange-600 italic">
+                            CIE-II (8th Week)
+                          </p>
+                        </div>
                       </td>
 
-                      {/* Internal 3 (COMPANY) */}
+                      {/* ===== CIE-III (Company) ===== */}
                       <td className="p-3 text-center bg-amber-50 border-r-4 border-orange-300">
-                        <input
-                          type="text"
-                          value={app.marks.internal3}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
+                        <div className="flex flex-col gap-1 items-center">
+                          {/* Report (50) */}
+                          <input
+                            type="number"
+                            min="0"
+                            max="50"
+                            value={app.marks?.cie3?.report ?? ""}
+                            onChange={(e) => {
+                              const v = Math.min(
+                                50,
+                                Math.max(0, Number(e.target.value || 0))
+                              );
                               setApplications((prev) =>
                                 prev.map((a) =>
                                   a._id === app._id
                                     ? {
                                         ...a,
-                                        marks: { ...a.marks, internal3: val },
+                                        marks: {
+                                          ...a.marks,
+                                          cie3: {
+                                            ...a.marks.cie3,
+                                            report: v,
+                                            total:
+                                              v + (a.marks.cie3?.useCase || 0),
+                                          },
+                                        },
                                       }
                                     : a
                                 )
                               );
-                            }
-                          }}
-                          className="w-16 px-2 py-1 
-              border-2 border-orange-400 rounded-lg 
-              text-center font-bold text-orange-700 
-              focus:ring-4 focus:ring-orange-300 
-              outline-none shadow"
-                        />
-                        <p className="text-[10px] text-orange-600 italic mt-1">
-                          12th Week
-                        </p>
+                            }}
+                            className="w-16 px-2 py-1 border-2 border-orange-400 rounded-lg
+      text-center font-semibold text-orange-700 focus:ring-2 focus:ring-orange-300"
+                            placeholder="Rpt /50"
+                          />
+
+                          {/* Use Case (30) */}
+                          <input
+                            type="number"
+                            min="0"
+                            max="30"
+                            value={app.marks?.cie3?.useCase ?? ""}
+                            onChange={(e) => {
+                              const v = Math.min(
+                                30,
+                                Math.max(0, Number(e.target.value || 0))
+                              );
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: {
+                                          ...a.marks,
+                                          cie3: {
+                                            ...a.marks.cie3,
+                                            useCase: v,
+                                            total:
+                                              (a.marks.cie3?.report || 0) + v,
+                                          },
+                                        },
+                                      }
+                                    : a
+                                )
+                              );
+                            }}
+                            className="w-16 px-2 py-1 border-2 border-orange-400 rounded-lg
+      text-center font-semibold text-orange-700 focus:ring-2 focus:ring-orange-300"
+                            placeholder="UC /30"
+                          />
+
+                          {/* Total */}
+                          <div className="mt-1 text-sm font-bold text-orange-800">
+                            Total: {app.marks?.cie3?.total || 0} / 80
+                          </div>
+
+                          <p className="text-[10px] text-orange-600 italic">
+                            CIE-III (12th Week)
+                          </p>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -366,11 +502,12 @@ export default function CompanyDashboard() {
               </button>
 
               <button
+                onClick={saveCompanyMarks}
                 disabled={savingMarks}
                 className={`px-7 py-3 rounded-xl text-white font-semibold shadow-lg transition
-    ${savingMarks ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"}`}
+${savingMarks ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"}`}
               >
-                Save Company Marks
+                {savingMarks ? "Saving..." : "Save Company Marks"}
               </button>
             </div>
 

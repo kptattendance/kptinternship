@@ -205,10 +205,25 @@ const applicationSchema = new mongoose.Schema(
 
     // Inside applicationSchema
     marks: {
-      internal1: { type: Number, default: 0 }, // set by HOD
-      internal2: { type: Number, default: 0 }, // set by Company
-      internal3: { type: Number, default: 0 }, // set by Company
+      cie1: {
+        report: { type: Number, default: 0, min: 0, max: 50 }, // Report
+        presentation: { type: Number, default: 0, min: 0, max: 30 }, // Presentation
+        total: { type: Number, default: 0 }, // auto-calculated (80)
+      },
+
+      cie2: {
+        report: { type: Number, default: 0, min: 0, max: 50 }, // OJT-1 report
+        useCase: { type: Number, default: 0, min: 0, max: 30 }, // Use Case
+        total: { type: Number, default: 0 }, // auto-calculated (80)
+      },
+
+      cie3: {
+        report: { type: Number, default: 0, min: 0, max: 50 }, // OJT-2 report
+        useCase: { type: Number, default: 0, min: 0, max: 30 }, // Use Case
+        total: { type: Number, default: 0 }, // auto-calculated (80)
+      },
     },
+
     attendance: {
       month1: { type: Number, default: 0 }, // set by HOD
       month2: { type: Number, default: 0 }, // set by Company
@@ -219,6 +234,25 @@ const applicationSchema = new mongoose.Schema(
   },
   { timestamps: true }
 );
+
+applicationSchema.pre("save", function (next) {
+  if (this.marks?.cie1) {
+    this.marks.cie1.total =
+      (this.marks.cie1.report || 0) + (this.marks.cie1.presentation || 0);
+  }
+
+  if (this.marks?.cie2) {
+    this.marks.cie2.total =
+      (this.marks.cie2.report || 0) + (this.marks.cie2.useCase || 0);
+  }
+
+  if (this.marks?.cie3) {
+    this.marks.cie3.total =
+      (this.marks.cie3.report || 0) + (this.marks.cie3.useCase || 0);
+  }
+
+  next();
+});
 
 const Application = mongoose.model("Application", applicationSchema);
 export default Application;

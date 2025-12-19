@@ -39,9 +39,18 @@ export default function AllPlaceApplications() {
       "Month 3": app.attendance?.month3 ?? "-",
       "Month 4": app.attendance?.month4 ?? "-",
       "Month 5": app.attendance?.month5 ?? "-",
-      "CIE 1": app.marks?.internal1 ?? "-",
-      "CIE 2": app.marks?.internal2 ?? "-",
-      "CIE 3": app.marks?.internal3 ?? "-",
+      "CIE 1 Total": app.marks?.cie1?.total ?? "-",
+      "CIE 1 Report": app.marks?.cie1?.report ?? "-",
+      "CIE 1 Presentation": app.marks?.cie1?.presentation ?? "-",
+
+      "CIE 2 Total": app.marks?.cie2?.total ?? "-",
+      "CIE 2 Report": app.marks?.cie2?.report ?? "-",
+      "CIE 2 Use Case": app.marks?.cie2?.useCase ?? "-",
+
+      "CIE 3 Total": app.marks?.cie3?.total ?? "-",
+      "CIE 3 Report": app.marks?.cie3?.report ?? "-",
+      "CIE 3 Use Case": app.marks?.cie3?.useCase ?? "-",
+
       "Start Date": app.startDate
         ? new Date(app.startDate).toLocaleDateString()
         : "-",
@@ -196,128 +205,132 @@ export default function AllPlaceApplications() {
           </p>
         ) : (
           <>
-            <div className="overflow-x-auto rounded-lg shadow">
-              <table className="w-full text-sm border-collapse rounded-xl shadow-md overflow-hidden">
-                <thead>
-                  <tr className="bg-gradient-to-r from-[#dce7ff] to-[#eef4ff] text-gray-800">
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Sl. No
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Photo
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Reg No
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Name
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Phone
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Department
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Company
-                    </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
-                      Email
-                    </th>
+            <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
+              <table className="w-full text-sm border-collapse">
+                {/* ================= HEADER ================= */}
+                <thead className="sticky top-0 z-10 bg-slate-100 text-slate-700 border-b">
+                  <tr>
+                    <th className="p-3 text-left">Sl</th>
+                    <th className="p-3 text-center">Photo</th>
+                    <th className="p-3 text-left">Reg No</th>
+                    <th className="p-3 text-left">Name</th>
+                    <th className="p-3 text-left">Phone</th>
+                    <th className="p-3 text-center">Dept</th>
+                    <th className="p-3 text-left">Company</th>
+                    <th className="p-3 text-left">Email</th>
 
-                    {/* Attendance Header */}
-                    <th
-                      colSpan="5"
-                      className="p-3 border font-bold text-center tracking-wide"
-                    >
-                      Attendance (Monthly)
-                    </th>
+                    <th className="p-3 text-center">M1</th>
+                    <th className="p-3 text-center">M2</th>
+                    <th className="p-3 text-center">M3</th>
+                    <th className="p-3 text-center">M4</th>
+                    <th className="p-3 text-center">M5</th>
 
-                    {/* Marks Header */}
-                    <th
-                      colSpan="3"
-                      className="p-3 border font-bold text-center bg-[#e7f0ff] text-[#1d3b8b] tracking-wide"
-                    >
-                      Marks (Evaluation)
-                    </th>
+                    <th className="p-3 text-center">CIE-I</th>
+                    <th className="p-3 text-center">CIE-II</th>
+                    <th className="p-3 text-center">CIE-III</th>
 
-                    <th
-                      rowSpan="2"
-                      className="p-3 border font-semibold text-center"
-                    >
-                      Actions
-                    </th>
-                  </tr>
-
-                  <tr className=" bg-[#e7f0ff] text-gray-600 border text-center">
-                    <th className="p-2 border">M1</th>
-                    <th className="p-2 border">M2</th>
-                    <th className="p-2 border">M3</th>
-                    <th className="p-2 border">M4</th>
-                    <th className="p-2 border">M5</th>
-
-                    <th className="p-2 border">CIE 1</th>
-                    <th className="p-2 border">CIE 2</th>
-                    <th className="p-2 border">CIE 3</th>
+                    <th className="p-3 text-center">Actions</th>
                   </tr>
                 </thead>
 
+                {/* ================= BODY ================= */}
                 <tbody>
                   {paginatedApps.map((app, index) => (
                     <tr
                       key={app._id}
-                      className="hover:bg-[#fff9f1] transition border duration-150 even:bg-[#f8fbff]"
+                      className="border-b hover:bg-slate-50 even:bg-white transition"
                     >
-                      <td className="p-3 text-center">
+                      {/* Sl No */}
+                      <td className="p-3 text-center text-slate-600">
                         {(currentPage - 1) * pageSize + index + 1}
                       </td>
 
-                      <td className="p-3 border text-center">
+                      {/* Photo */}
+                      <td className="p-3 text-center">
                         <img
                           src={app.image || "/default-avatar.png"}
-                          className="h-12 w-12 object-cover rounded-full border shadow-sm mx-auto"
+                          alt={app.name}
+                          className="h-9 w-9 rounded-full object-cover mx-auto border border-slate-300"
                         />
                       </td>
-                      <td className="p-3 border">{app.regNumber}</td>
-                      <td className="p-3 border font-medium">{app.name}</td>
-                      <td className="p-3 border">{app.phoneNumber}</td>
-                      <td className="p-3 border uppercase">{app.department}</td>
-                      <td className="p-3 border">{app.companyName}</td>
-                      <td className="p-3 border">{app.companyEmail}</td>
+
+                      <td className="p-3 font-medium">{app.regNumber}</td>
+                      <td className="p-3 font-semibold text-slate-800">
+                        {app.name}
+                      </td>
+                      <td className="p-3">{app.phoneNumber}</td>
+
+                      <td className="p-3 text-center">
+                        <span className="px-2 py-0.5 text-xs rounded-full bg-slate-200 text-slate-700 font-semibold">
+                          {app.department?.toUpperCase()}
+                        </span>
+                      </td>
+
+                      <td className="p-3">{app.companyName}</td>
+                      <td className="p-3">{app.companyEmail}</td>
+
+                      {/* Attendance */}
                       {[1, 2, 3, 4, 5].map((m) => (
-                        <td
-                          key={m}
-                          className="p-3 border bg-pink-50 border-black text-center font-semibold  text-[#8a5a00] "
-                        >
+                        <td key={m} className="p-3 text-center text-slate-600">
                           {app.attendance?.[`month${m}`] ?? "-"}
                         </td>
                       ))}
-                      <td className="p-3 border  bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {app.marks?.internal1 ?? "-"}
-                      </td>
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {" "}
-                        {app.marks?.internal2 ?? "-"}
-                      </td>
-                      <td className="p-3 border  bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {" "}
-                        {app.marks?.internal3 ?? "-"}
+
+                      {/* ================= CIE I ================= */}
+                      <td className="p-3 text-center">
+                        <div className="text-lg font-semibold text-emerald-700">
+                          {app.marks?.cie1?.total ?? "-"}
+                          <span className="text-xs text-slate-500"> / 80</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          R {app.marks?.cie1?.report ?? 0} · P{" "}
+                          {app.marks?.cie1?.presentation ?? 0}
+                        </div>
                       </td>
 
-                      <td className="p-3  flex gap-3 justify-center">
-                        <button
-                          onClick={() => setSelected(app)}
-                          className="p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-                        >
-                          <FaEye size={12} />
-                        </button>
+                      {/* ================= CIE II ================= */}
+                      <td className="p-3 text-center">
+                        <div className="text-lg font-semibold text-blue-700">
+                          {app.marks?.cie2?.total ?? "-"}
+                          <span className="text-xs text-slate-500"> / 80</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          R {app.marks?.cie2?.report ?? 0} · UC{" "}
+                          {app.marks?.cie2?.useCase ?? 0}
+                        </div>
+                      </td>
 
-                        <button
-                          onClick={() => handleDelete(app._id)}
-                          className="flex items-center gap-1 px-3 py-1 bg-red-500 text-white text-xs rounded-md hover:bg-red-600 shadow transition"
-                        >
-                          <FaTrash size={10} />
-                        </button>
+                      {/* ================= CIE III ================= */}
+                      <td className="p-3 text-center">
+                        <div className="text-lg font-semibold text-purple-700">
+                          {app.marks?.cie3?.total ?? "-"}
+                          <span className="text-xs text-slate-500"> / 80</span>
+                        </div>
+                        <div className="text-[11px] text-slate-500">
+                          R {app.marks?.cie3?.report ?? 0} · UC{" "}
+                          {app.marks?.cie3?.useCase ?? 0}
+                        </div>
+                      </td>
+
+                      {/* Actions */}
+                      <td className="p-3 text-center">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            onClick={() => setSelected(app)}
+                            className="p-2 rounded border border-blue-300 text-blue-700 hover:bg-blue-50"
+                            title="View"
+                          >
+                            <FaEye size={12} />
+                          </button>
+
+                          <button
+                            onClick={() => handleDelete(app._id)}
+                            className="p-2 rounded border border-red-300 text-red-600 hover:bg-red-50"
+                            title="Delete"
+                          >
+                            <FaTrash size={10} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))}

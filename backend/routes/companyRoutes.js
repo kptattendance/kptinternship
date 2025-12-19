@@ -7,7 +7,7 @@ import {
   getCompanyDashboard,
   updateAttendance,
   updateCohortOwnerMarks,
-  updateCompanyMarks,
+  updateCompanyCIEMarks,
 } from "../controllers/companyController.js";
 import { requireAuthMiddleware } from "../middlewares/authMiddleware.js"; // Clerk auth middleware
 import upload from "../middlewares/uploadMiddleware.js";
@@ -17,11 +17,10 @@ const router = express.Router();
 // Get dashboard info (company + applications)
 router.get("/dashboard", requireAuthMiddleware, getCompanyDashboard);
 
-// Update marks for application
 router.put(
-  "/applications/:applicationId/marks",
+  "/applications/:applicationId/company-marks",
   requireAuthMiddleware,
-  updateCompanyMarks
+  updateCompanyCIEMarks
 );
 
 router.put(

@@ -166,25 +166,212 @@ export default function CompanyDashboard() {
                 </div>
               </div>
             )}
-            {/* Staff Section */}
-            {/* Staff Section */}
-            <div className="mb-8">
-              <h2 className="text-xl font-bold mb-4">Staff Members</h2>
+
+            {/* 🔔 Company Action Banner */}
+            <div className="mb-4 flex items-center justify-center">
               <div
-                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6
-"
+                className="px-6 py-2 rounded-full 
+    bg-gradient-to-r from-amber-500 to-orange-500 
+    text-white text-sm font-semibold shadow-lg animate-pulse"
               >
-                {/* Principal */}
-                {renderStaffCard(staff.principal, "Principal")}
-
-                {/* HOD */}
-                {renderStaffCard(staff.hod, "Head of Department")}
-
-                {/* Cohort Owners */}
-                {staff.cohortOwners?.map((cohort) =>
-                  renderStaffCard(cohort, "Cohort Owner")
-                )}
+                🏭 Company Evaluation → Enter Internal-2 & Internal-3 Marks
               </div>
+            </div>
+
+            {/* ===== TABLE ===== */}
+            <div className="overflow-x-auto rounded-2xl shadow-xl border bg-white">
+              <table className="min-w-full text-sm text-gray-700">
+                <thead className="sticky top-0 z-10">
+                  <tr className="text-center text-white">
+                    <th className="p-3 bg-slate-600">Photo</th>
+                    <th className="p-3 bg-slate-600">Roll No</th>
+                    <th className="p-3 bg-slate-600">Name</th>
+                    <th className="p-3 bg-slate-600">Phone</th>
+                    <th className="p-3 bg-slate-600">Dept</th>
+
+                    {/* Attendance (GREEN) */}
+                    <th className="p-3 bg-emerald-600">M1</th>
+                    <th className="p-3 bg-emerald-600">M2</th>
+                    <th className="p-3 bg-emerald-600">M3</th>
+                    <th className="p-3 bg-emerald-600">M4</th>
+                    <th className="p-3 bg-emerald-600">M5</th>
+
+                    {/* Internal 1 (PURPLE) */}
+                    <th className="p-3 bg-purple-600">Internal-1</th>
+
+                    {/* Company Marks (ORANGE) */}
+                    <th className="p-3 bg-orange-600 border-l-4 border-orange-300">
+                      Internal-2
+                      <br />
+                      <span className="text-xs font-normal">(Company)</span>
+                    </th>
+                    <th className="p-3 bg-orange-600 border-r-4 border-orange-300">
+                      Internal-3
+                      <br />
+                      <span className="text-xs font-normal">(Company)</span>
+                    </th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {applications.map((app, index) => (
+                    <tr
+                      key={app._id}
+                      className={`border-b hover:bg-slate-50 transition ${
+                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
+                      }`}
+                    >
+                      {/* Photo */}
+                      <td className="p-3 text-center">
+                        <img
+                          src={app.image}
+                          alt={app.name}
+                          className="h-11 w-11 rounded-full mx-auto shadow"
+                        />
+                      </td>
+
+                      <td className="p-3 text-center font-semibold">
+                        {app.regNumber}
+                      </td>
+                      <td className="p-3">{app.name}</td>
+                      <td className="p-3 text-center">{app.phoneNumber}</td>
+                      <td className="p-3 text-center font-semibold uppercase text-slate-600">
+                        {app.department}
+                      </td>
+
+                      {/* Attendance Inputs (GREEN) */}
+                      {["month1", "month2", "month3", "month4", "month5"].map(
+                        (month, idx) => (
+                          <td
+                            key={month}
+                            className="p-3 text-center bg-emerald-50"
+                          >
+                            <input
+                              type="number"
+                              min="0"
+                              max="30"
+                              value={app.attendance[month] ?? ""}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,2}$/.test(val)) {
+                                  setApplications((prev) =>
+                                    prev.map((a) =>
+                                      a._id === app._id
+                                        ? {
+                                            ...a,
+                                            attendance: {
+                                              ...a.attendance,
+                                              [month]: val,
+                                            },
+                                          }
+                                        : a
+                                    )
+                                  );
+                                }
+                              }}
+                              className="w-16 px-2 py-1 
+                  border border-emerald-300 rounded-lg 
+                  text-center bg-white 
+                  focus:ring-2 focus:ring-emerald-400 outline-none"
+                            />
+                            <p className="text-[10px] text-emerald-600 italic mt-1">
+                              Month {idx + 1}
+                            </p>
+                          </td>
+                        )
+                      )}
+
+                      {/* Internal 1 (READ ONLY) */}
+                      <td className="p-3 text-center font-bold text-purple-700 bg-purple-50">
+                        {app.marks.internal1}
+                      </td>
+
+                      {/* Internal 2 (COMPANY) */}
+                      <td className="p-3 text-center bg-amber-50 border-l-4 border-orange-300">
+                        <input
+                          type="text"
+                          value={app.marks.internal2}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val)) {
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: { ...a.marks, internal2: val },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-16 px-2 py-1 
+              border-2 border-orange-400 rounded-lg 
+              text-center font-bold text-orange-700 
+              focus:ring-4 focus:ring-orange-300 
+              outline-none shadow"
+                        />
+                        <p className="text-[10px] text-orange-600 italic mt-1">
+                          8th Week
+                        </p>
+                      </td>
+
+                      {/* Internal 3 (COMPANY) */}
+                      <td className="p-3 text-center bg-amber-50 border-r-4 border-orange-300">
+                        <input
+                          type="text"
+                          value={app.marks.internal3}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            if (/^\d{0,2}$/.test(val)) {
+                              setApplications((prev) =>
+                                prev.map((a) =>
+                                  a._id === app._id
+                                    ? {
+                                        ...a,
+                                        marks: { ...a.marks, internal3: val },
+                                      }
+                                    : a
+                                )
+                              );
+                            }
+                          }}
+                          className="w-16 px-2 py-1 
+              border-2 border-orange-400 rounded-lg 
+              text-center font-bold text-orange-700 
+              focus:ring-4 focus:ring-orange-300 
+              outline-none shadow"
+                        />
+                        <p className="text-[10px] text-orange-600 italic mt-1">
+                          12th Week
+                        </p>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+
+            {/* ===== ACTION BUTTONS ===== */}
+            <div className="mt-8 mb-4 flex flex-wrap gap-6 justify-center">
+              <button
+                disabled={savingAttendance}
+                className={`px-7 py-3 rounded-xl text-white font-semibold shadow-lg transition
+    ${
+      savingAttendance ? "bg-gray-400" : "bg-emerald-600 hover:bg-emerald-700"
+    }`}
+              >
+                Save Attendance
+              </button>
+
+              <button
+                disabled={savingMarks}
+                className={`px-7 py-3 rounded-xl text-white font-semibold shadow-lg transition
+    ${savingMarks ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"}`}
+              >
+                Save Company Marks
+              </button>
             </div>
 
             {/* ===== CIE Section ===== */}
@@ -268,244 +455,22 @@ export default function CompanyDashboard() {
             </div>
             <AttendanceNotePanel />
 
-            {/* ===== Table ===== */}
-            <div className="overflow-x-auto rounded-xl shadow-lg border border-gray-300 bg-white">
-              <table className="min-w-full text-sm text-gray-700">
-                <thead className="bg-blue-600 text-white sticky top-0 z-10">
-                  <tr className="text-center">
-                    <th className="p-3">Photo</th>
-                    <th className="p-3">Roll No</th>
-                    <th className="p-3">Name</th>
-                    <th className="p-3">Phone</th>
-                    <th className="p-3">Department</th>
-                    <th className="p-3">1st Month Attendance</th>
-                    <th className="p-3">2nd Month Attendance</th>
-                    <th className="p-3">3rd Month Attendance</th>
-                    <th className="p-3">4th Month Attendance</th>
-                    <th className="p-3">5th Month Attendance</th>
-                    <th className="p-3">Internal Mark 1</th>
-                    <th className="p-3">Internal Mark 2</th>
-                    <th className="p-3">Internal Mark 3</th>
-                  </tr>
-                </thead>
-
-                <tbody>
-                  {applications.map((app, index) => (
-                    <tr
-                      key={app._id}
-                      className={`border-b transition-all duration-200 hover:bg-blue-50 ${
-                        index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                      }`}
-                    >
-                      {/* Photo */}
-                      <td className="p-3 text-center">
-                        <img
-                          src={app.image}
-                          alt={app.name}
-                          className="h-12 w-12 rounded-full mx-auto shadow"
-                        />
-                      </td>
-
-                      <td className="p-3 text-center font-semibold">
-                        {app.regNumber}
-                      </td>
-                      <td className="p-3">{app.name}</td>
-                      <td className="p-3 text-center">{app.phoneNumber}</td>
-                      <td className="p-3 text-center uppercase font-medium text-yellow-600">
-                        {app.department}
-                      </td>
-
-                      {/* Attendance Inputs */}
-                      {["month1", "month2", "month3", "month4", "month5"].map(
-                        (month, idx) => (
-                          <td key={month} className="p-3 text-center">
-                            <input
-                              type="number"
-                              min="0"
-                              max="30"
-                              value={app.attendance[month] ?? ""}
-                              onChange={(e) => {
-                                const val = e.target.value;
-                                if (/^\d{0,2}$/.test(val)) {
-                                  setApplications((prev) =>
-                                    prev.map((a) =>
-                                      a._id === app._id
-                                        ? {
-                                            ...a,
-                                            attendance: {
-                                              ...a.attendance,
-                                              [month]: val,
-                                            },
-                                          }
-                                        : a
-                                    )
-                                  );
-                                }
-                              }}
-                              className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
-                              placeholder="Days"
-                            />
-                            <p className="text-[10px] text-blue-500 mt-1 italic">
-                              After Month {idx + 1}
-                            </p>
-                          </td>
-                        )
-                      )}
-
-                      <td className="p-3 text-center font-semibold text-gray-700">
-                        {app.marks.internal1}
-                      </td>
-
-                      {/* Internal 2 */}
-                      <td className="p-3 text-center">
-                        <input
-                          type="text"
-                          value={app.marks.internal2}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
-                              setApplications((prev) =>
-                                prev.map((a) =>
-                                  a._id === app._id
-                                    ? {
-                                        ...a,
-                                        marks: { ...a.marks, internal2: val },
-                                      }
-                                    : a
-                                )
-                              );
-                            }
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
-                          placeholder="Marks"
-                        />
-                        <p className="text-[10px] text-red-600 mt-1 italic">
-                          Enter at 8th week
-                        </p>
-                      </td>
-
-                      {/* Internal 3 */}
-                      <td className="p-3 text-center">
-                        <input
-                          type="text"
-                          value={app.marks.internal3}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
-                              setApplications((prev) =>
-                                prev.map((a) =>
-                                  a._id === app._id
-                                    ? {
-                                        ...a,
-                                        marks: { ...a.marks, internal3: val },
-                                      }
-                                    : a
-                                )
-                              );
-                            }
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-lg text-center focus:ring-2 focus:ring-blue-400 outline-none transition"
-                          placeholder="Marks"
-                        />
-                        <p className="text-[10px] text-red-600 mt-1 italic">
-                          Enter at 12th week
-                        </p>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-
-            {/* Button Row */}
-            <div className="mt-6 flex gap-4 items-center justify-center">
-              {/* --- Save Attendance Button --- */}
-              <button
-                disabled={savingAttendance}
-                onClick={async () => {
-                  try {
-                    setSavingAttendance(true);
-                    const token = await getToken();
-
-                    for (let app of applications) {
-                      await axios.put(
-                        `${backendUrl}/api/company/applications/${app._id}/attendance`,
-                        {
-                          month1: Number(app.attendance?.month1) || 0,
-                          month2: Number(app.attendance?.month2) || 0,
-                          month3: Number(app.attendance?.month3) || 0,
-                          month4: Number(app.attendance?.month4) || 0,
-                          month5: Number(app.attendance?.month5) || 0,
-                        },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                      );
-                    }
-
-                    toast.success("Attendance updated successfully!");
-                  } catch (err) {
-                    toast.error("Error saving attendance.");
-                    console.error(err);
-                  } finally {
-                    setSavingAttendance(false);
-                  }
-                }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg text-white transition duration-300 
-      ${
-        savingAttendance
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-green-600 hover:bg-green-700"
-      }`}
+            {/* Staff Section */}
+            {/* <div className="mb-8">
+              <h2 className="text-xl font-bold mb-4">Staff Members</h2>
+              <div
+                className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6
+"
               >
-                {savingAttendance ? (
-                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-                ) : (
-                  <FaSave />
+                {renderStaffCard(staff.principal, "Principal")}
+
+                {renderStaffCard(staff.hod, "Head of Department")}
+
+                {staff.cohortOwners?.map((cohort) =>
+                  renderStaffCard(cohort, "Cohort Owner")
                 )}
-                {savingAttendance ? "Saving..." : "Save Attendance"}
-              </button>
-
-              {/* --- Save Marks Button --- */}
-              <button
-                disabled={savingMarks}
-                onClick={async () => {
-                  try {
-                    setSavingMarks(true);
-                    const token = await getToken();
-
-                    for (let app of applications) {
-                      await axios.put(
-                        `${backendUrl}/api/company/applications/${app._id}/marks`,
-                        {
-                          internal2: Number(app.marks.internal2) || 0,
-                          internal3: Number(app.marks.internal3) || 0,
-                        },
-                        { headers: { Authorization: `Bearer ${token}` } }
-                      );
-                    }
-
-                    toast.success("Marks updated successfully!");
-                  } catch (err) {
-                    toast.error("Error updating marks.");
-                    console.error(err);
-                  } finally {
-                    setSavingMarks(false);
-                  }
-                }}
-                className={`flex items-center gap-2 px-6 py-3 rounded-xl shadow-lg text-white transition duration-300
-      ${
-        savingMarks
-          ? "bg-gray-400 cursor-not-allowed"
-          : "bg-blue-600 hover:bg-blue-700"
-      }`}
-              >
-                {savingMarks ? (
-                  <span className="animate-spin border-2 border-white border-t-transparent rounded-full w-5 h-5"></span>
-                ) : (
-                  <FaSave />
-                )}
-                {savingMarks ? "Saving..." : "Save Marks"}
-              </button>
-            </div>
+              </div>
+            </div> */}
           </>
         )}
       </div>

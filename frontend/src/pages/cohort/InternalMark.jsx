@@ -121,179 +121,223 @@ export default function InternalMark() {
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-6xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">📊 Internal Marks Entry</h2>
 
-        {/* 🔍 Search and Sort */}
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4 gap-3">
-          <input
-            type="text"
-            placeholder="Search by name or roll number..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full sm:w-1/2 px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 py-6 px-3">
+        <div className="max-w-7xl mx-auto">
+          {/* Header Card */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold text-indigo-700 mb-1">
+              📊 Internal Marks Entry
+            </h2>
+            <p className="text-sm text-gray-600">
+              Enter and update internal assessment marks securely
+            </p>
+          </div>
 
-          <select
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-            className="px-3 py-2 border rounded-md shadow-sm focus:ring-2 focus:ring-blue-400 focus:outline-none"
-          >
-            <option value="name">Sort by Name</option>
-            <option value="regNumber">Sort by Roll No</option>
-            <option value="department">Sort by Department</option>
-          </select>
+          {/* Search & Sort Card */}
+          <div className="bg-white rounded-xl shadow p-4 mb-6">
+            <div className="flex flex-col sm:flex-row gap-4 sm:items-center sm:justify-between">
+              <input
+                type="text"
+                placeholder="🔍 Search by name or roll number"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full sm:w-1/2 px-4 py-2 rounded-lg border border-gray-300 
+                         focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+              />
+
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="px-4 py-2 rounded-lg border border-gray-300 
+                         focus:ring-2 focus:ring-indigo-400 focus:outline-none"
+              >
+                <option value="name">Sort by Name</option>
+                <option value="regNumber">Sort by Roll No</option>
+                <option value="department">Sort by Department</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Table Card */}
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="overflow-x-auto">
+              <table className="min-w-full text-sm">
+                <thead className="bg-indigo-600 text-white sticky top-0">
+                  <tr>
+                    <th className="px-3 py-3">Photo</th>
+                    <th className="px-3 py-3">Roll No</th>
+                    <th className="px-3 py-3">Name</th>
+                    <th className="px-3 py-3">Phone</th>
+                    <th className="px-3 py-3">Dept</th>
+                    <th className="px-3 py-3">Internal-1</th>
+                    <th className="px-3 py-3">Internal-2</th>
+                    <th className="px-3 py-3">Internal-3</th>
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredApps.map((app, index) => (
+                    <tr
+                      key={app._id}
+                      className={`${
+                        index % 2 === 0 ? "bg-white" : "bg-indigo-50"
+                      } hover:bg-indigo-100 transition`}
+                    >
+                      {/* Photo */}
+                      <td className="px-3 py-3 text-center">
+                        <img
+                          src={app.image}
+                          alt={app.name}
+                          className="h-11 w-11 rounded-full mx-auto border shadow"
+                        />
+                      </td>
+
+                      <td className="px-3 py-3 font-medium">{app.regNumber}</td>
+                      <td className="px-3 py-3 font-semibold">{app.name}</td>
+                      <td className="px-3 py-3">{app.phoneNumber}</td>
+
+                      <td className="px-3 py-3">
+                        <span className="px-2 py-1 rounded-full text-xs font-semibold bg-indigo-200 text-indigo-800">
+                          {app.department}
+                        </span>
+                      </td>
+
+                      {/* Internal 1 */}
+                      <td className="px-3 py-3 text-center">
+                        {canEditInternal1(app) ? (
+                          <>
+                            <input
+                              type="text"
+                              value={app.marks.internal1}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,2}$/.test(val)) {
+                                  setFilteredApps((prev) =>
+                                    prev.map((a) =>
+                                      a._id === app._id
+                                        ? {
+                                            ...a,
+                                            marks: {
+                                              ...a.marks,
+                                              internal1: val,
+                                            },
+                                          }
+                                        : a
+                                    )
+                                  );
+                                }
+                              }}
+                              className="w-16 px-2 py-1 rounded-md border border-indigo-300 
+                                       text-center focus:ring-2 focus:ring-indigo-400"
+                            />
+                            <p className="text-[10px] text-indigo-600 mt-1 italic">
+                              4th week
+                            </p>
+                          </>
+                        ) : (
+                          <span className="font-semibold">
+                            {app.marks.internal1}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Internal 2 */}
+                      <td className="px-3 py-3 text-center">
+                        {canEditCompanyMarks() ? (
+                          <>
+                            <input
+                              type="text"
+                              value={app.marks.internal2}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,2}$/.test(val)) {
+                                  setFilteredApps((prev) =>
+                                    prev.map((a) =>
+                                      a._id === app._id
+                                        ? {
+                                            ...a,
+                                            marks: {
+                                              ...a.marks,
+                                              internal2: val,
+                                            },
+                                          }
+                                        : a
+                                    )
+                                  );
+                                }
+                              }}
+                              className="w-16 px-2 py-1 rounded-md border border-green-300 
+                                       text-center focus:ring-2 focus:ring-green-400"
+                            />
+                            <p className="text-[10px] text-green-700 mt-1 italic">
+                              8th week
+                            </p>
+                          </>
+                        ) : (
+                          <span className="font-semibold">
+                            {app.marks.internal2}
+                          </span>
+                        )}
+                      </td>
+
+                      {/* Internal 3 */}
+                      <td className="px-3 py-3 text-center">
+                        {canEditCompanyMarks() ? (
+                          <>
+                            <input
+                              type="text"
+                              value={app.marks.internal3}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                if (/^\d{0,2}$/.test(val)) {
+                                  setFilteredApps((prev) =>
+                                    prev.map((a) =>
+                                      a._id === app._id
+                                        ? {
+                                            ...a,
+                                            marks: {
+                                              ...a.marks,
+                                              internal3: val,
+                                            },
+                                          }
+                                        : a
+                                    )
+                                  );
+                                }
+                              }}
+                              className="w-16 px-2 py-1 rounded-md border border-orange-300 
+                                       text-center focus:ring-2 focus:ring-orange-400"
+                            />
+                            <p className="text-[10px] text-orange-700 mt-1 italic">
+                              12th week
+                            </p>
+                          </>
+                        ) : (
+                          <span className="font-semibold">
+                            {app.marks.internal3}
+                          </span>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Save Button */}
+          <div className="flex justify-end mt-6">
+            <button
+              onClick={handleSave}
+              className="bg-gradient-to-r from-indigo-600 to-blue-600 
+                       hover:from-indigo-700 hover:to-blue-700
+                       text-white px-8 py-2 rounded-xl shadow-lg font-semibold"
+            >
+              💾 Save Marks
+            </button>
+          </div>
         </div>
-
-        {/* Table */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full border rounded shadow-sm overflow-hidden">
-            <thead className="bg-gray-100">
-              <tr>
-                <th className="border p-2">Photo</th>
-                <th className="border p-2">Roll No</th>
-                <th className="border p-2">Name</th>
-                <th className="border p-2">Phone</th>
-                <th className="border p-2">Department</th>
-                <th className="border p-2">Internal 1 (Cohort)</th>
-                <th className="border p-2">Internal 2 (Company)</th>
-                <th className="border p-2">Internal 3 (Company)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredApps.map((app, index) => (
-                <tr
-                  key={app._id}
-                  className={`${
-                    index % 2 === 0 ? "bg-white" : "bg-gray-50"
-                  } hover:bg-blue-50 transition`}
-                >
-                  <td className="p-2 border text-center">
-                    <img
-                      src={app.image}
-                      alt={app.name}
-                      className="h-12 w-12 rounded-full mx-auto"
-                    />
-                  </td>
-                  <td className="p-2 border">{app.regNumber}</td>
-                  <td className="p-2 border">{app.name}</td>
-                  <td className="p-2 border">{app.phoneNumber}</td>
-                  <td className="p-2 border">{app.department}</td>
-
-                  {/* Internal 1 */}
-                  <td className="p-2 border text-center">
-                    {canEditInternal1(app) ? (
-                      <>
-                        <input
-                          type="text"
-                          value={app.marks.internal1}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
-                              setFilteredApps((prev) =>
-                                prev.map((a) =>
-                                  a._id === app._id
-                                    ? {
-                                        ...a,
-                                        marks: { ...a.marks, internal1: val },
-                                      }
-                                    : a
-                                )
-                              );
-                            }
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-center focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                          placeholder="marks"
-                        />
-                        <p className="text-[11px] text-red-500 mt-2 italic">
-                          Assess at the end of 4th week
-                        </p>
-                      </>
-                    ) : (
-                      app.marks.internal1
-                    )}
-                  </td>
-
-                  {/* Internal 2 */}
-                  <td className="p-2 border text-center">
-                    {canEditCompanyMarks() ? (
-                      <>
-                        <input
-                          type="text"
-                          value={app.marks.internal2}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
-                              setFilteredApps((prev) =>
-                                prev.map((a) =>
-                                  a._id === app._id
-                                    ? {
-                                        ...a,
-                                        marks: { ...a.marks, internal2: val },
-                                      }
-                                    : a
-                                )
-                              );
-                            }
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-center focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                          placeholder="marks"
-                        />
-                        <p className="text-[11px] text-red-500 mt-2 italic">
-                          End of 8th week
-                        </p>
-                      </>
-                    ) : (
-                      app.marks.internal2
-                    )}
-                  </td>
-
-                  {/* Internal 3 */}
-                  <td className="p-2 border text-center">
-                    {canEditCompanyMarks() ? (
-                      <>
-                        <input
-                          type="text"
-                          value={app.marks.internal3}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            if (/^\d{0,2}$/.test(val)) {
-                              setFilteredApps((prev) =>
-                                prev.map((a) =>
-                                  a._id === app._id
-                                    ? {
-                                        ...a,
-                                        marks: { ...a.marks, internal3: val },
-                                      }
-                                    : a
-                                )
-                              );
-                            }
-                          }}
-                          className="w-20 px-2 py-1 border border-gray-300 rounded-md shadow-sm text-center focus:ring-2 focus:ring-blue-400 focus:outline-none"
-                          placeholder="marks"
-                        />
-                        <p className="text-[11px] text-red-500 mt-2 italic">
-                          End of 12th week
-                        </p>
-                      </>
-                    ) : (
-                      app.marks.internal3
-                    )}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Save Button */}
-        <button
-          onClick={handleSave}
-          className="mt-6 bg-blue-600 hover:bg-blue-700 text-white py-2 px-6 rounded shadow"
-        >
-          Save Marks
-        </button>
       </div>
     </>
   );

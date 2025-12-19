@@ -2,10 +2,11 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
-import { FiUpload } from "react-icons/fi"; // ✅ Upload icon
+import { FiUpload, FiUserPlus } from "react-icons/fi";
 
 const PlacementAddUser = () => {
   const { getToken } = useAuth();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -13,10 +14,12 @@ const PlacementAddUser = () => {
     role: "hod",
     department: "cs",
   });
+
   const [photo, setPhoto] = useState(null);
   const [preview, setPreview] = useState("");
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
+
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleChange = (e) => {
@@ -33,23 +36,20 @@ const PlacementAddUser = () => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     if (!photo) {
-      setMessage("❌ Please select a photo");
+      setMessage("❌ Please upload a profile photo");
       return;
     }
 
     setLoading(true);
-    setMessage("Submitting...");
+    setMessage("");
 
     try {
       const token = await getToken();
-
       const data = new FormData();
-      data.append("name", formData.name);
-      data.append("email", formData.email);
-      data.append("phoneNumber", formData.phoneNumber);
-      data.append("role", formData.role);
-      data.append("department", formData.department);
+
+      Object.entries(formData).forEach(([k, v]) => data.append(k, v));
       data.append("image", photo);
 
       const res = await axios.post(`${backendUrl}/api/users/create`, data, {
@@ -57,7 +57,7 @@ const PlacementAddUser = () => {
       });
 
       if (res.data.ok) {
-        setMessage("✅ User added successfully!");
+        setMessage("✅ User added successfully");
         setFormData({
           name: "",
           email: "",
@@ -81,123 +81,173 @@ const PlacementAddUser = () => {
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-md mx-auto bg-white shadow-lg rounded-lg p-6">
-        <h2 className="text-xl font-bold mb-4">
-          Add HOD / Cohort Owner / Principal
-        </h2>
 
-        <form
-          onSubmit={handleSubmit}
-          encType="multipart/form-data"
-          className="space-y-4"
-        >
-          {/* Name */}
-          <div>
-            <label className="block font-medium">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              required
-              className="w-full border p-2 rounded"
-            />
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
+        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
+          {/* Header */}
+          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
+            <div className="flex items-center gap-3">
+              <FiUserPlus size={28} />
+              <h2 className="text-2xl font-bold">Add Staff / Authority</h2>
+            </div>
+            <p className="text-sm text-blue-100 mt-1">
+              Create HOD, Cohort Owner or Principal account
+            </p>
           </div>
 
-          {/* Email */}
-          <div>
-            <label className="block font-medium">Email</label>
-            <input
-              type="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          {/* Phone */}
-          <div>
-            <label className="block font-medium">Phone Number</label>
-            <input
-              type="text"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            />
-          </div>
-
-          {/* Role */}
-          <div>
-            <label className="block font-medium">Role</label>
-            <select
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            >
-              <option value="hod">HOD</option>
-              <option value="cohortOwner">Cohort Owner</option>
-              <option value="principal">Principal</option> {/* ✅ Added */}
-            </select>
-          </div>
-
-          {/* Department */}
-          <div>
-            <label className="block font-medium">Department</label>
-            <select
-              name="department"
-              value={formData.department}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-            >
-              <option value="cs">Computer Science</option>
-              <option value="ce">Civil</option>
-              <option value="eee">EEE</option>
-              <option value="me">Mechanical</option>
-              <option value="po">PO</option>
-              <option value="ch">Chemical</option>
-              <option value="at">AT</option>
-              <option value="ec">ECE</option>
-            </select>
-          </div>
-
-          {/* Photo with Upload Icon */}
-          <div>
-            <label className="block font-medium mb-1">Photo</label>
-            <label className="flex items-center gap-2 cursor-pointer border p-2 rounded hover:bg-gray-100">
-              <FiUpload size={20} />
-              <span>{photo ? photo.name : "Choose an image"}</span>
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-                name="image" // ✅ Important
-              />
-            </label>
-            {preview && (
-              <img
-                src={preview}
-                alt="Preview"
-                className="h-20 w-20 mt-2 rounded-full border object-cover"
-              />
-            )}
-          </div>
-
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
+          {/* Form */}
+          <form
+            onSubmit={handleSubmit}
+            encType="multipart/form-data"
+            className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
           >
-            {loading ? "Saving..." : "Add User"}
-          </button>
-        </form>
+            {/* Name */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Full Name
+              </label>
+              <input
+                type="text"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
+                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+              />
+            </div>
 
-        {message && <p className="mt-4 text-center">{message}</p>}
+            {/* Email */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Email Address
+              </label>
+              <input
+                type="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
+                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+              />
+            </div>
+
+            {/* Phone */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Phone Number
+              </label>
+              <input
+                type="text"
+                name="phoneNumber"
+                value={formData.phoneNumber}
+                onChange={handleChange}
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
+                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+              />
+            </div>
+
+            {/* Role */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Role
+              </label>
+              <select
+                name="role"
+                value={formData.role}
+                onChange={handleChange}
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
+                focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 outline-none"
+              >
+                <option value="hod">HOD</option>
+                <option value="cohortOwner">Cohort Owner</option>
+                <option value="principal">Principal</option>
+              </select>
+            </div>
+
+            {/* Department */}
+            <div>
+              <label className="text-sm font-semibold text-gray-700">
+                Department
+              </label>
+              <select
+                name="department"
+                value={formData.department}
+                onChange={handleChange}
+                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
+                focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none"
+              >
+                <option value="at">Automation Engineering</option>
+                <option value="ce">Civil Engineering</option>
+                <option value="ch">Chemical Engineering</option>
+                <option value="cs">Computer Science Engineering</option>
+                <option value="ec">
+                  Electronics & Communication Engineering
+                </option>
+                <option value="eee">
+                  Electrical & Electronics Engineering
+                </option>
+                <option value="me">Mechanical Engineering</option>
+                <option value="po">Polymer Technology</option>
+              </select>
+            </div>
+
+            {/* Photo Upload */}
+            <div className="md:col-span-2">
+              <label className="text-sm font-semibold text-gray-700">
+                Profile Photo
+              </label>
+
+              <label
+                className="mt-2 flex items-center justify-between px-4 h-14
+                border-2 border-dashed rounded-xl cursor-pointer
+                hover:bg-blue-50 transition"
+              >
+                <div className="flex items-center gap-3 text-gray-600">
+                  <FiUpload size={20} />
+                  <span className="text-sm">
+                    {photo ? photo.name : "Click to upload image"}
+                  </span>
+                </div>
+                {preview && (
+                  <img
+                    src={preview}
+                    alt="Preview"
+                    className="h-10 w-10 rounded-full object-cover border"
+                  />
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={handleFileChange}
+                  className="hidden"
+                />
+              </label>
+            </div>
+
+            {/* Submit */}
+            <div className="md:col-span-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full h-12 rounded-xl font-semibold text-white
+                bg-gradient-to-r from-blue-600 to-indigo-600
+                hover:from-blue-700 hover:to-indigo-700
+                disabled:opacity-60 shadow-lg transition"
+              >
+                {loading ? "Saving..." : "Add User"}
+              </button>
+            </div>
+          </form>
+
+          {/* Message */}
+          {message && (
+            <div className="px-6 pb-6 text-center font-medium text-gray-700">
+              {message}
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

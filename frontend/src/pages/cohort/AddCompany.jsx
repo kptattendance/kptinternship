@@ -88,7 +88,7 @@ const AddCompany = () => {
     <>
       <ReviewerNavbar />
 
-      <div className=" bg-gray-100 p-4 md:p-6">
+      <div className=" bg-gray-100 p-4 md:p-6  bg-gradient-to-br from-[#e0f2ff] via-[#f0e7ff] to-[#ffe7f5]">
         <div className="max-w-5xl mx-auto">
           <div className="bg-white rounded-2xl shadow-xl p-6">
             <h2 className="text-2xl font-bold mb-1">Add Company</h2>

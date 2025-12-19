@@ -21,10 +21,8 @@ export default function MembersList() {
 
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-
   const [roleFilter, setRoleFilter] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
-
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
 
@@ -42,7 +40,6 @@ export default function MembersList() {
       });
       setUsers(res.data.users || []);
     } catch (err) {
-      console.error("❌ Error fetching users:", err);
       toast.error("Failed to fetch users");
     } finally {
       setLoading(false);
@@ -54,7 +51,7 @@ export default function MembersList() {
   }, []);
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this user?")) return;
+    if (!window.confirm("Delete this user permanently?")) return;
     try {
       const token = await getToken();
       await axios.delete(`${backendUrl}/api/users/${id}`, {
@@ -63,212 +60,173 @@ export default function MembersList() {
       toast.success("User deleted");
       fetchUsers();
     } catch (err) {
-      console.error("❌ Delete error:", err);
-      toast.error(err.response?.data?.message || "Failed to delete user");
+      toast.error(err.response?.data?.message || "Delete failed");
     }
   };
 
-  const handleEditClick = (user) => {
-    setEditingId(user._id);
-    setEditForm({ ...user });
-  };
-
-  const handleCancel = () => {
-    setEditingId(null);
-    setEditForm({});
-  };
-
-  const handleChange = (field, value) => {
-    setEditForm((prev) => ({ ...prev, [field]: value }));
-  };
-
-  const handlePhotoChange = (file) => {
-    setEditForm((prev) => ({ ...prev, imageFile: file }));
+  const handleEditClick = (u) => {
+    setEditingId(u._id);
+    setEditForm({ ...u });
   };
 
   const handleSave = async (id) => {
     try {
       const token = await getToken();
-      const formData = new FormData();
-      formData.append("name", editForm.name || "");
-      formData.append("phoneNumber", editForm.phoneNumber || "");
-      formData.append("role", editForm.role || "");
-      formData.append("department", editForm.department || "");
-      if (editForm.imageFile) formData.append("image", editForm.imageFile);
+      const fd = new FormData();
+      fd.append("name", editForm.name || "");
+      fd.append("phoneNumber", editForm.phoneNumber || "");
+      fd.append("role", editForm.role || "");
+      fd.append("department", editForm.department || "");
+      if (editForm.imageFile) fd.append("image", editForm.imageFile);
 
-      await axios.put(`${backendUrl}/api/users/${id}`, formData, {
+      await axios.put(`${backendUrl}/api/users/${id}`, fd, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setUsers((prev) =>
-        prev.map((u) => (u._id === id ? { ...u, ...editForm } : u))
-      );
       toast.success("User updated");
       setEditingId(null);
-      setEditForm({});
+      fetchUsers();
     } catch (err) {
-      console.error("❌ Update error:", err);
-      toast.error(err.response?.data?.message || "Failed to update user");
+      toast.error("Update failed");
     }
   };
 
   const filteredUsers = users.filter((u) => {
-    const roleMatch = roleFilter ? u.role === roleFilter : true;
-    const deptMatch = deptFilter ? u.department === deptFilter : true;
-    return roleMatch && deptMatch;
+    const r = roleFilter ? u.role === roleFilter : true;
+    const d = deptFilter ? u.department === deptFilter : true;
+    return r && d;
   });
 
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-6xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Members List</h2>
 
-        {/* Filters */}
-        <div className="flex flex-wrap gap-4 mb-6">
-          <select
-            value={roleFilter}
-            onChange={(e) => setRoleFilter(e.target.value)}
-            className="border p-2 rounded"
-          >
-            <option value="">All Roles</option>
-            {ROLES.map((r) => (
-              <option key={r} value={r}>
-                {r}
-              </option>
-            ))}
-          </select>
+      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-6">
+        <div className="max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
+            <h2 className="text-2xl font-bold text-indigo-700">
+              👥 Members Directory
+            </h2>
+            <p className="text-sm text-gray-600">
+              Manage users, roles & departments
+            </p>
+          </div>
 
-          <select
-            value={deptFilter}
-            onChange={(e) => setDeptFilter(e.target.value)}
-            className="border p-2 rounded"
-          >
-            <option value="">All Departments</option>
-            {DEPARTMENTS.map((d) => (
-              <option key={d} value={d}>
-                {d}
-              </option>
-            ))}
-          </select>
-        </div>
+          {/* Filters */}
+          <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap gap-4">
+            <select
+              value={roleFilter}
+              onChange={(e) => setRoleFilter(e.target.value)}
+              className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="">All Roles</option>
+              {ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {r}
+                </option>
+              ))}
+            </select>
 
-        {/* Table */}
-        {loading ? (
-          <p>Loading members...</p>
-        ) : (
-          <div className="overflow-x-auto bg-white rounded shadow">
-            <table className="min-w-full border table-auto">
-              <thead className="bg-gray-100">
-                <tr>
-                  <th className="p-3 border whitespace-nowrap">Sl. No</th>
-                  <th className="p-3 border whitespace-nowrap">Photo</th>
-                  <th className="p-3 border whitespace-nowrap">Name</th>
-                  <th className="p-3 border whitespace-nowrap">Email</th>
-                  <th className="p-3 border whitespace-nowrap">Phone</th>
-                  <th className="p-3 border whitespace-nowrap">Role</th>
-                  <th className="p-3 border whitespace-nowrap">Department</th>
-                  {isAdmin && (
-                    <th className="p-3 border whitespace-nowrap">Actions</th>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredUsers.length > 0 ? (
-                  filteredUsers.map((u, index) => {
-                    const isEditing = editingId === u._id;
+            <select
+              value={deptFilter}
+              onChange={(e) => setDeptFilter(e.target.value)}
+              className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
+            >
+              <option value="">All Departments</option>
+              {DEPARTMENTS.map((d) => (
+                <option key={d} value={d}>
+                  {d}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Table */}
+          {loading ? (
+            <p className="text-center text-gray-600">Loading members…</p>
+          ) : (
+            <div className="overflow-x-auto bg-white rounded-2xl shadow-lg">
+              <table className="min-w-full text-sm">
+                <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+                  <tr>
+                    <th className="px-4 py-3">#</th>
+                    <th className="px-4 py-3">Photo</th>
+                    <th className="px-4 py-3">Name</th>
+                    <th className="px-4 py-3">Email</th>
+                    <th className="px-4 py-3">Phone</th>
+                    <th className="px-4 py-3">Role</th>
+                    <th className="px-4 py-3">Dept</th>
+                    {isAdmin && <th className="px-4 py-3">Actions</th>}
+                  </tr>
+                </thead>
+
+                <tbody>
+                  {filteredUsers.map((u, i) => {
+                    const editing = editingId === u._id;
                     return (
-                      <tr key={u._id} className="hover:bg-gray-50 align-top">
-                        <td className="p-3 border text-center">{index + 1}</td>
-                        <td className="p-3 border text-center">
+                      <tr
+                        key={u._id}
+                        className={`${
+                          i % 2 ? "bg-indigo-50" : "bg-white"
+                        } hover:bg-indigo-100`}
+                      >
+                        <td className="px-4 py-3">{i + 1}</td>
+
+                        <td className="px-4 py-3 text-center">
                           <img
                             src={u.photoUrl || DEFAULT_AVATAR}
-                            alt={u.name || "User"}
-                            className="h-12 w-12 rounded-full object-cover mx-auto"
+                            className="h-12 w-12 rounded-full mx-auto border shadow"
                           />
-                          {isEditing && (
+                          {editing && (
                             <input
                               type="file"
-                              accept="image/*"
                               onChange={(e) =>
-                                handlePhotoChange(e.target.files[0])
+                                setEditForm((p) => ({
+                                  ...p,
+                                  imageFile: e.target.files[0],
+                                }))
                               }
-                              className="mt-1 w-full"
+                              className="mt-1 text-xs"
                             />
                           )}
                         </td>
-                        <td className="p-3 border">
-                          {isEditing ? (
+
+                        <td className="px-4 py-3 font-semibold">
+                          {editing ? (
                             <input
-                              type="text"
                               value={editForm.name || ""}
                               onChange={(e) =>
-                                handleChange("name", e.target.value)
+                                setEditForm({
+                                  ...editForm,
+                                  name: e.target.value,
+                                })
                               }
-                              className="border rounded p-1 w-full"
+                              className="border rounded px-2 py-1 w-full"
                             />
                           ) : (
                             u.name || "-"
                           )}
                         </td>
-                        <td className="p-3 border truncate max-w-xs">
-                          {u.email}
+
+                        <td className="px-4 py-3">{u.email}</td>
+                        <td className="px-4 py-3">{u.phoneNumber || "-"}</td>
+
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded-full text-xs bg-indigo-200 text-indigo-800 font-semibold">
+                            {u.role}
+                          </span>
                         </td>
-                        <td className="p-3 border">
-                          {isEditing ? (
-                            <input
-                              type="text"
-                              value={editForm.phoneNumber || ""}
-                              onChange={(e) =>
-                                handleChange("phoneNumber", e.target.value)
-                              }
-                              className="border rounded p-1 w-full"
-                            />
-                          ) : (
-                            u.phoneNumber || "-"
-                          )}
+
+                        <td className="px-4 py-3">
+                          <span className="px-2 py-1 rounded-full text-xs bg-blue-200 text-blue-800 font-semibold uppercase">
+                            {u.department || "-"}
+                          </span>
                         </td>
-                        <td className="p-3 border">
-                          {isEditing ? (
-                            <select
-                              value={editForm.role || ""}
-                              onChange={(e) =>
-                                handleChange("role", e.target.value)
-                              }
-                              className="border rounded p-1 w-full"
-                            >
-                              {ROLES.map((r) => (
-                                <option key={r} value={r}>
-                                  {r}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            u.role
-                          )}
-                        </td>
-                        <td className="p-3 border">
-                          {isEditing ? (
-                            <select
-                              value={editForm.department || ""}
-                              onChange={(e) =>
-                                handleChange("department", e.target.value)
-                              }
-                              className="border rounded p-1 w-full"
-                            >
-                              {DEPARTMENTS.map((d) => (
-                                <option key={d} value={d}>
-                                  {d}
-                                </option>
-                              ))}
-                            </select>
-                          ) : (
-                            u.department || "-"
-                          )}
-                        </td>
+
                         {isAdmin && (
-                          <td className="p-3 border text-center space-x-2 whitespace-nowrap">
-                            {isEditing ? (
+                          <td className="px-4 py-3 text-center space-x-2">
+                            {editing ? (
                               <>
                                 <button
                                   onClick={() => handleSave(u._id)}
@@ -277,8 +235,8 @@ export default function MembersList() {
                                   Save
                                 </button>
                                 <button
-                                  onClick={handleCancel}
-                                  className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
+                                  onClick={() => setEditingId(null)}
+                                  className="px-3 py-1 bg-gray-500 text-white rounded"
                                 >
                                   Cancel
                                 </button>
@@ -303,21 +261,12 @@ export default function MembersList() {
                         )}
                       </tr>
                     );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan={isAdmin ? 8 : 7}
-                      className="p-3 text-center text-gray-500"
-                    >
-                      No users found
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        )}
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
     </>
   );

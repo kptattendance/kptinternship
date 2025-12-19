@@ -14,7 +14,6 @@ const CompanyList = ({ refreshKey }) => {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  // 🔐 Allowed delete roles
   const canDelete = ["placement", "principal", "admin"].includes(
     user?.publicMetadata?.role
   );
@@ -25,9 +24,7 @@ const CompanyList = ({ refreshKey }) => {
       const res = await axios.get(`${backendUrl}/api/company`, {
         headers: { Authorization: `Bearer ${token}` },
       });
-      if (res.data.ok) {
-        setCompanies(res.data.companies);
-      }
+      if (res.data.ok) setCompanies(res.data.companies);
     } catch (err) {
       console.error("Failed to load companies", err);
     } finally {
@@ -41,7 +38,6 @@ const CompanyList = ({ refreshKey }) => {
 
   if (!isLoaded) return null;
 
-  // 🔍 Search + Filter
   const filteredCompanies = companies.filter((company) => {
     const searchMatch =
       company.name.toLowerCase().includes(search.toLowerCase()) ||
@@ -55,7 +51,6 @@ const CompanyList = ({ refreshKey }) => {
     return searchMatch && deptMatch;
   });
 
-  // ❌ Delete company
   const handleDelete = async (companyId) => {
     const confirm = window.confirm(
       "Are you sure you want to delete this company?\nThis action cannot be undone."
@@ -77,29 +72,33 @@ const CompanyList = ({ refreshKey }) => {
   };
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-4 md:p-6">
+    <div className="bg-gradient-to-br from-blue-50 to-indigo-100 rounded-2xl shadow-xl p-5 md:p-6 mt-6">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center md:justify-between mb-4 gap-3">
-        <h2 className="text-xl font-bold text-gray-800">Company Directory</h2>
-        <span className="text-sm text-gray-500">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+        <h2 className="text-2xl font-bold text-indigo-700">
+          🏢 Company Directory
+        </h2>
+        <span className="text-sm text-gray-600 bg-white px-3 py-1 rounded-full shadow">
           Total: {filteredCompanies.length}
         </span>
       </div>
 
       {/* Filters */}
-      <div className="bg-gray-50 rounded-lg p-3 mb-4 flex flex-col md:flex-row gap-3">
+      <div className="bg-white rounded-xl p-4 shadow mb-5 flex flex-col md:flex-row gap-4">
         <input
           type="text"
-          placeholder="Search by name, email or phone"
+          placeholder="🔍 Search by name, email or phone"
           value={search}
           onChange={(e) => setSearch(e.target.value)}
-          className="w-full md:w-1/2 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-1/2 border border-gray-300 rounded-lg px-4 py-2
+                     focus:ring-2 focus:ring-indigo-400 focus:outline-none"
         />
 
         <select
           value={departmentFilter}
           onChange={(e) => setDepartmentFilter(e.target.value)}
-          className="w-full md:w-1/4 border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"
+          className="w-full md:w-1/4 border border-gray-300 rounded-lg px-4 py-2
+                     focus:ring-2 focus:ring-indigo-400 focus:outline-none"
         >
           <option value="all">All Departments</option>
           <option value="cs">CS</option>
@@ -115,13 +114,13 @@ const CompanyList = ({ refreshKey }) => {
 
       {/* Table */}
       {loading ? (
-        <p className="text-center py-8 text-gray-500">Loading companies...</p>
+        <p className="text-center py-10 text-gray-600">Loading companies...</p>
       ) : filteredCompanies.length === 0 ? (
-        <p className="text-center py-8 text-gray-500">No companies found</p>
+        <p className="text-center py-10 text-gray-600">No companies found</p>
       ) : (
-        <div className="overflow-x-auto rounded-lg border">
+        <div className="overflow-x-auto bg-white rounded-xl shadow-lg">
           <table className="min-w-full text-sm">
-            <thead className="bg-gray-100 text-gray-700">
+            <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white sticky top-0">
               <tr>
                 <th className="px-4 py-3">#</th>
                 <th className="px-4 py-3">Company</th>
@@ -137,9 +136,11 @@ const CompanyList = ({ refreshKey }) => {
               {filteredCompanies.map((company, index) => (
                 <tr
                   key={company._id}
-                  className="border-t hover:bg-blue-50 transition"
+                  className={`${
+                    index % 2 === 0 ? "bg-white" : "bg-indigo-50"
+                  } hover:bg-indigo-100 transition`}
                 >
-                  <td className="px-4 py-3 font-medium">{index + 1}</td>
+                  <td className="px-4 py-3 font-semibold">{index + 1}</td>
 
                   <td className="px-4 py-3 flex items-center gap-2">
                     {company.logoUrl ? (
@@ -149,15 +150,16 @@ const CompanyList = ({ refreshKey }) => {
                         className="h-9 w-9 rounded-full object-cover shadow"
                       />
                     ) : (
-                      <div className="h-9 w-9 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center font-bold">
+                      <div className="h-9 w-9 rounded-full bg-indigo-200 text-indigo-800 flex items-center justify-center font-bold">
                         {company.name.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    <span className="font-medium">{company.name}</span>
+                    <span className="font-semibold text-gray-800">
+                      {company.name}
+                    </span>
                   </td>
 
                   <td className="px-4 py-3">{company.email}</td>
-
                   <td className="px-4 py-3">{company.phoneNumber || "-"}</td>
 
                   <td className="px-4 py-3">
@@ -165,7 +167,8 @@ const CompanyList = ({ refreshKey }) => {
                       {company.departments.map((dept) => (
                         <span
                           key={dept}
-                          className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-700 uppercase font-semibold"
+                          className="px-2 py-1 text-xs rounded-full
+                                     bg-indigo-200 text-indigo-800 font-semibold uppercase"
                         >
                           {dept}
                         </span>
@@ -173,7 +176,7 @@ const CompanyList = ({ refreshKey }) => {
                     </div>
                   </td>
 
-                  <td className="px-4 py-3 text-gray-500">
+                  <td className="px-4 py-3 text-gray-600">
                     {new Date(company.createdAt).toLocaleDateString()}
                   </td>
 
@@ -182,7 +185,10 @@ const CompanyList = ({ refreshKey }) => {
                       <button
                         onClick={() => handleDelete(company._id)}
                         disabled={deletingId === company._id}
-                        className="text-red-600 hover:text-red-800 font-semibold text-sm disabled:opacity-50"
+                        className="px-3 py-1 rounded-lg text-sm font-semibold
+                                   text-red-600 border border-red-300
+                                   hover:bg-red-50 hover:text-red-800
+                                   disabled:opacity-50 transition"
                       >
                         {deletingId === company._id ? "Deleting..." : "Delete"}
                       </button>

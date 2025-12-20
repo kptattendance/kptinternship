@@ -53,7 +53,7 @@ const ReviewerNavbar = () => {
     tabs = [
       { name: "Dashboard", path: "/review" },
       { name: "Members List", path: "/placement/list-hod" },
-      { name: "Applications", path: "/hod/applications" },
+      { name: "Applications", path: "/placement/applications" },
       { name: "Add a Member", path: "/placement/add-hod" },
       { name: "Add a Company", path: "/placement/add-company" },
     ];

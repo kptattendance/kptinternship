@@ -3,7 +3,6 @@ import { useEffect, useState } from "react";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import axios from "axios";
 import ReviewerNavbar from "../../components/ReviewerNavbar"; // HOD navbar
-import { toast } from "react-toastify";
 import HodReviewModal from "./HodReviewModal";
 import { FaEye, FaTrash } from "react-icons/fa";
 
@@ -26,32 +25,67 @@ export default function AllApplications() {
   const hodDepartment = user?.publicMetadata?.department; // 👈 department
 
   const downloadExcel = () => {
-    const data = apps.map((app) => ({
+    // ✅ Sort by Register Number
+    const sortedApps = [...apps].sort((a, b) =>
+      a.regNumber.localeCompare(b.regNumber)
+    );
+
+    // ================= TABLE DATA =================
+    const tableData = sortedApps.map((app) => ({
       "Reg Number": app.regNumber,
       Name: app.name,
       Phone: app.phoneNumber,
       Department: app.department,
       Company: app.companyName,
-      "Company Contact": app.companyContact,
       Email: app.companyEmail,
-      "Month 1": app.attendance?.month1 ?? "-",
-      "Month 2": app.attendance?.month2 ?? "-",
-      "Month 3": app.attendance?.month3 ?? "-",
-      "Month 4": app.attendance?.month4 ?? "-",
-      "Month 5": app.attendance?.month5 ?? "-",
-      "CIE 1": app.marks?.internal1 ?? "-",
-      "CIE 2": app.marks?.internal2 ?? "-",
-      "CIE 3": app.marks?.internal3 ?? "-",
-      "Start Date": app.startDate
-        ? new Date(app.startDate).toLocaleDateString()
-        : "-",
-      "End Date": app.endDate
-        ? new Date(app.endDate).toLocaleDateString()
-        : "-",
-      "Working Hours": app.workingHours ?? "-",
+
+      "Month 1": app.attendance?.month1 ?? 0,
+      "Month 2": app.attendance?.month2 ?? 0,
+      "Month 3": app.attendance?.month3 ?? 0,
+      "Month 4": app.attendance?.month4 ?? 0,
+      "Month 5": app.attendance?.month5 ?? 0,
+
+      "CIE-I Report (50)": app.marks?.cie1?.report ?? 0,
+      "CIE-I Presentation (30)": app.marks?.cie1?.presentation ?? 0,
+      "CIE-I Total (80)": app.marks?.cie1?.total ?? 0,
+
+      "CIE-II Report (50)": app.marks?.cie2?.report ?? 0,
+      "CIE-II Use Case (30)": app.marks?.cie2?.useCase ?? 0,
+      "CIE-II Total (80)": app.marks?.cie2?.total ?? 0,
+
+      "CIE-III Report (50)": app.marks?.cie3?.report ?? 0,
+      "CIE-III Use Case (30)": app.marks?.cie3?.useCase ?? 0,
+      "CIE-III Total (80)": app.marks?.cie3?.total ?? 0,
     }));
 
-    const worksheet = XLSX.utils.json_to_sheet(data);
+    // ================= CREATE WORKSHEET =================
+    const worksheet = XLSX.utils.json_to_sheet(tableData, {
+      origin: "A7", // 👈 table starts from row 7
+    });
+
+    // ================= HEADING ROWS =================
+    const headings = [
+      ["GOVERNMENT OF KARNATAKA"],
+      ["DEPARTMENT OF COLLEGIATE AND TECHNICAL EDUCATION"],
+      ["KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU"],
+      ["(First Autonomous Polytechnic in India from AICTE, New Delhi)"],
+      ["Kadri Hills, Mangaluru – 575004, Dakshina Kannada, Karnataka"],
+    ];
+
+    XLSX.utils.sheet_add_aoa(worksheet, headings, { origin: "A1" });
+
+    // ================= MERGE & STYLE =================
+    const totalColumns = Object.keys(tableData[0] || {}).length;
+
+    worksheet["!merges"] = headings.map((_, i) => ({
+      s: { r: i, c: 0 },
+      e: { r: i, c: totalColumns - 1 },
+    }));
+
+    // Column width auto-adjust
+    worksheet["!cols"] = Array(totalColumns).fill({ wch: 20 });
+
+    // ================= WORKBOOK =================
     const workbook = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(workbook, worksheet, "Internship Report");
 
@@ -59,7 +93,10 @@ export default function AllApplications() {
       bookType: "xlsx",
       type: "array",
     });
-    const file = new Blob([excelBuffer], { type: "application/octet-stream" });
+
+    const file = new Blob([excelBuffer], {
+      type: "application/octet-stream",
+    });
 
     saveAs(file, "Internship_Report.xlsx");
   };
@@ -127,6 +164,39 @@ export default function AllApplications() {
   const paginatedApps = filteredApps.slice(
     (currentPage - 1) * pageSize,
     currentPage * pageSize
+  );
+
+  const CieCell = ({ report, second, total }) => (
+    <div className="grid grid-cols-3 h-full border border-slate-300 rounded-md overflow-hidden text-center text-xs bg-white">
+      {/* Report */}
+      <div className="flex flex-col justify-center border-r border-slate-200 px-2 py-1">
+        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+          R
+        </span>
+        <span className="text-sm font-semibold text-slate-800">
+          {report ?? "-"}
+        </span>
+      </div>
+
+      {/* Use Case / Presentation */}
+      <div className="flex flex-col justify-center border-r border-slate-200 px-2 py-1">
+        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+          UC
+        </span>
+        <span className="text-sm font-semibold text-slate-800">
+          {second ?? "-"}
+        </span>
+      </div>
+
+      {/* Total */}
+      <div className="flex flex-col justify-center px-2 py-1 bg-slate-50">
+        <span className="text-[10px] text-slate-500 uppercase tracking-wide">
+          T
+        </span>
+        <span className="text-sm font-bold text-slate-900">{total ?? "-"}</span>
+        <span className="text-[9px] text-slate-500"></span>
+      </div>
+    </div>
   );
 
   return (
@@ -197,15 +267,15 @@ export default function AllApplications() {
                     <th rowSpan="2" className="p-3 border font-semibold">
                       Phone
                     </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
+                    {/* <th rowSpan="2" className="p-3 border font-semibold">
                       Department
-                    </th>
+                    </th> */}
                     <th rowSpan="2" className="p-3 border font-semibold">
                       Company
                     </th>
-                    <th rowSpan="2" className="p-3 border font-semibold">
+                    {/* <th rowSpan="2" className="p-3 border font-semibold">
                       Email
-                    </th>
+                    </th> */}
 
                     {/* Attendance Header */}
                     <th
@@ -248,7 +318,7 @@ export default function AllApplications() {
                   {paginatedApps.map((app, index) => (
                     <tr
                       key={app._id}
-                      className="hover:bg-[#fff9f1] transition duration-150 even:bg-[#f8fbff]"
+                      className="hover:bg-slate-50 even:bg-white transition"
                     >
                       <td className="p-3 border text-center">
                         {(currentPage - 1) * pageSize + index + 1}
@@ -263,9 +333,9 @@ export default function AllApplications() {
                       <td className="p-3 border">{app.regNumber}</td>
                       <td className="p-3 border font-medium">{app.name}</td>
                       <td className="p-3 border">{app.phoneNumber}</td>
-                      <td className="p-3 border uppercase">{app.department}</td>
+                      {/* <td className="p-3 border uppercase">{app.department}</td> */}
                       <td className="p-3 border">{app.companyName}</td>
-                      <td className="p-3 border">{app.companyEmail}</td>
+                      {/* <td className="p-3 border">{app.companyEmail}</td> */}
                       {[1, 2, 3, 4, 5].map((m) => (
                         <td
                           key={m}
@@ -274,16 +344,28 @@ export default function AllApplications() {
                           {app.attendance?.[`month${m}`] ?? "-"}
                         </td>
                       ))}
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {app.marks?.internal1 ?? "-"}
+                      <td className="p-0 border align-middle">
+                        <CieCell
+                          report={app.marks?.cie1?.report}
+                          second={app.marks?.cie1?.presentation}
+                          total={app.marks?.cie1?.total}
+                        />
                       </td>
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {" "}
-                        {app.marks?.internal2 ?? "-"}
+
+                      <td className="p-3 border align-top">
+                        <CieCell
+                          report={app.marks?.cie2?.report}
+                          second={app.marks?.cie2?.useCase}
+                          total={app.marks?.cie2?.total}
+                        />
                       </td>
-                      <td className="p-3 border bg-green-100 text-center font-semibold border-gray-900  text-green-700">
-                        {" "}
-                        {app.marks?.internal3 ?? "-"}
+
+                      <td className="p-3 border align-top">
+                        <CieCell
+                          report={app.marks?.cie3?.report}
+                          second={app.marks?.cie3?.useCase}
+                          total={app.marks?.cie3?.total}
+                        />
                       </td>
 
                       <td className="p-3 border  gap-3 justify-center">

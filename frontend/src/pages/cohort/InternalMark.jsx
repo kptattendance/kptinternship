@@ -11,7 +11,7 @@ export default function InternalMark() {
   const [filteredApps, setFilteredApps] = useState([]);
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [savingId, setSavingId] = useState(null); // which row is saving
   const [searchTerm, setSearchTerm] = useState("");
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -43,14 +43,21 @@ export default function InternalMark() {
           );
         }
 
-        setApplications(apps);
-        setFilteredApps(apps);
+        const sortedApps = sortByRegNumber(apps);
+        setApplications(sortedApps);
+        setFilteredApps(sortedApps);
       }
     } catch (err) {
       toast.error("Failed to fetch applications", err);
     } finally {
       setLoading(false);
     }
+  };
+
+  const sortByRegNumber = (list) => {
+    return [...list].sort((a, b) =>
+      a.regNumber.localeCompare(b.regNumber, undefined, { numeric: true })
+    );
   };
 
   useEffect(() => {
@@ -67,7 +74,7 @@ export default function InternalMark() {
   // ---------------- SAVE ----------------
   const handleSave = async (app) => {
     try {
-      setSaving(true);
+      setSavingId(app._id); // 👈 mark this row as saving
       const token = await getToken();
 
       await axios.put(
@@ -81,9 +88,10 @@ export default function InternalMark() {
 
       toast.success(`CIE-I saved for ${app.regNumber}`);
     } catch (err) {
-      toast.error("Failed to save CIE-I marks", err);
+      console.error(err);
+      toast.error("Failed to save CIE-I marks");
     } finally {
-      setSaving(false);
+      setSavingId(null); // 👈 reset
     }
   };
 
@@ -121,6 +129,18 @@ export default function InternalMark() {
           <p className="text-xs text-indigo-100 mt-1">
             CIE-I entered by Cohort Owner • CIE-II & III entered by Company
           </p>
+        </div>
+
+        <div className="mb-4 flex justify-end">
+          <input
+            type="text"
+            placeholder="🔍 Search by Reg No or Name"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-72 px-4 py-2 rounded-lg border border-indigo-300
+      focus:ring-2 focus:ring-indigo-400 outline-none
+      text-sm shadow-sm"
+          />
         </div>
 
         <div className="overflow-x-auto rounded-xl border bg-white shadow-sm">
@@ -286,11 +306,24 @@ export default function InternalMark() {
                     {canEditCIE1(app) && (
                       <button
                         onClick={() => handleSave(app)}
-                        className="px-4 py-1.5 text-xs rounded-md 
-                       bg-green-600 hover:bg-green-700 
-                       text-white font-semibold"
+                        disabled={savingId === app._id}
+                        className={`px-4 py-1.5 text-xs rounded-md 
+    flex items-center justify-center gap-2
+    font-semibold text-white
+    ${
+      savingId === app._id
+        ? "bg-gray-400 cursor-not-allowed"
+        : "bg-green-600 hover:bg-green-700"
+    }`}
                       >
-                        Save
+                        {savingId === app._id ? (
+                          <>
+                            <FaSpinner className="animate-spin" />
+                            Saving...
+                          </>
+                        ) : (
+                          "Save"
+                        )}
                       </button>
                     )}
                   </td>

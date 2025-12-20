@@ -46,7 +46,7 @@ const ReviewerNavbar = () => {
   } else if (role === "cohortOwner") {
     tabs = [
       { name: "Dashboard", path: "/review" },
-      { name: "Add a Company", path: "/cohortOwner/AddCompany" },
+      { name: "Company List", path: "/cohortOwner/AddCompany" },
       { name: "Internal Mark", path: "/cohortOwner/internal-mark" },
     ];
   } else if (role === "principal") {

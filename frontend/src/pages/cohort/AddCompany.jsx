@@ -24,26 +24,43 @@ const AddCompany = () => {
 
   if (!isLoaded) return null;
 
+  const department = user?.publicMetadata?.department;
+
   const handleChange = (e) => {
-    setFormData({ ...formData, [e.target.name]: e.target.value });
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
   };
 
   const handleFileChange = (e) => {
     const file = e.target.files[0];
+
     if (file) {
       setPhoto(file);
       setPreview(URL.createObjectURL(file));
     }
   };
 
+  const removePhoto = () => {
+    setPhoto(null);
+    setPreview("");
+
+    const input = document.getElementById("logoUpload");
+
+    if (input) {
+      input.value = "";
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
     setLoading(true);
     setMessage("Submitting...");
 
     try {
       const token = await getToken();
-      const department = user?.publicMetadata?.department;
 
       if (!department) {
         setMessage("❌ Department not assigned to your account");
@@ -52,16 +69,29 @@ const AddCompany = () => {
       }
 
       const data = new FormData();
-      data.append("name", formData.name);
-      data.append("email", formData.email);
-      if (formData.phoneNumber)
-        data.append("phoneNumber", formData.phoneNumber);
-      data.append("department", department);
-      if (photo) data.append("image", photo);
 
-      const res = await axios.post(`${backendUrl}/api/company/add`, data, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      data.append("name", formData.name.trim());
+      data.append("email", formData.email.trim());
+
+      if (formData.phoneNumber.trim()) {
+        data.append("phoneNumber", formData.phoneNumber.trim());
+      }
+
+      data.append("department", department);
+
+      if (photo) {
+        data.append("image", photo);
+      }
+
+      const res = await axios.post(
+        `${backendUrl}/api/company/add`,
+        data,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
 
       if (res.data.alreadyExists) {
         setMessage(
@@ -72,13 +102,32 @@ const AddCompany = () => {
       } else {
         setMessage(`❌ ${res.data.message}`);
       }
+
       setRefreshKey((prev) => prev + 1);
-      setFormData({ name: "", email: "", phoneNumber: "" });
+
+      setFormData({
+        name: "",
+        email: "",
+        phoneNumber: "",
+      });
+
       setPhoto(null);
       setPreview("");
+
+      const input = document.getElementById("logoUpload");
+
+      if (input) {
+        input.value = "";
+      }
     } catch (err) {
-      console.error(err);
-      setMessage("❌ Failed to add company");
+      console.error("Failed to add company:", err);
+
+      setMessage(
+        `❌ ${
+          err.response?.data?.message ||
+          "Failed to add company"
+        }`
+      );
     } finally {
       setLoading(false);
     }
@@ -88,137 +137,178 @@ const AddCompany = () => {
     <>
       <ReviewerNavbar />
 
-      <div className=" bg-gray-100 p-4 md:p-6  bg-gradient-to-br from-[#e0f2ff] via-[#f0e7ff] to-[#ffe7f5]">
-        <div className="max-w-5xl mx-auto">
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <h2 className="text-2xl font-bold mb-1">Add Company</h2>
+      <div className="min-h-screen bg-gradient-to-br from-[#e0f2ff] via-[#f0e7ff] to-[#ffe7f5] p-4 md:p-5">
+        <div className="max-w-7xl mx-auto">
 
-            <p className="text-sm text-gray-600 mb-6">
-              Company will be linked to{" "}
-              <span className="font-semibold uppercase text-blue-600">
-                {user?.publicMetadata?.department}
-              </span>{" "}
-              department
-            </p>
+          {/* ================= ADD COMPANY CARD ================= */}
+          <div className="bg-white rounded-2xl shadow-lg p-5 md:p-6">
 
-            {/* ===== FORM (2 COLUMN) ===== */}
+            {/* Header */}
+            <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2 mb-5">
+              <div>
+                <h2 className="text-xl md:text-2xl font-bold text-gray-800">
+                  Add Company
+                </h2>
+
+                <p className="text-sm text-gray-500 mt-1">
+                  Add a company and link it to your department.
+                </p>
+              </div>
+
+              <div className="inline-flex items-center self-start md:self-auto gap-2 px-3 py-1.5 rounded-full bg-blue-50 border border-blue-200">
+                <span className="text-xs text-gray-500">
+                  Department
+                </span>
+
+                <span className="text-sm font-bold uppercase text-blue-600">
+                  {department || "Not Assigned"}
+                </span>
+              </div>
+            </div>
+
+            {/* ================= FORM ================= */}
             <form
               onSubmit={handleSubmit}
               encType="multipart/form-data"
-              className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 items-start"
             >
-              {/* Company Name */}
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">
-                  Company Name
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  required
-                  className="h-11 px-3 rounded-md border border-gray-400 
-                 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 
-                 outline-none bg-white"
-                />
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
 
-              {/* Email */}
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">
-                  Email
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  required
-                  className="h-11 px-3 rounded-md border border-gray-400 
-                 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 
-                 outline-none bg-white"
-                />
-              </div>
+                {/* Company Name */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Company Name
+                  </label>
 
-              {/* Phone Number */}
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">
-                  Phone Number (optional)
-                </label>
-                <input
-                  type="text"
-                  name="phoneNumber"
-                  value={formData.phoneNumber}
-                  onChange={handleChange}
-                  className="h-11 px-3 rounded-md border border-gray-400 
-                 focus:border-blue-600 focus:ring-2 focus:ring-blue-200 
-                 outline-none bg-white"
-                />
-              </div>
-
-              {/* Logo Upload */}
-              <div className="flex flex-col">
-                <label className="text-sm font-semibold text-gray-700 mb-1">
-                  Company Logo (optional)
-                </label>
-
-                <div
-                  onClick={() => document.getElementById("logoUpload").click()}
-                  className="h-11 px-3 flex items-center gap-3 rounded-md 
-                 border border-dashed border-gray-400 
-                 cursor-pointer hover:bg-blue-50 transition"
-                >
-                  {!preview ? (
-                    <span className="text-sm text-gray-500">
-                      Click to upload logo
-                    </span>
-                  ) : (
-                    <>
-                      <img
-                        src={preview}
-                        alt="Preview"
-                        className="h-8 w-8 rounded-full object-cover border"
-                      />
-                      <span className="text-sm text-gray-600">
-                        Logo selected
-                      </span>
-                    </>
-                  )}
+                  <input
+                    type="text"
+                    name="name"
+                    value={formData.name}
+                    onChange={handleChange}
+                    required
+                    placeholder="Enter company name"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-300
+                    focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                    outline-none transition"
+                  />
                 </div>
 
-                <input
-                  id="logoUpload"
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Email
+                  </label>
+
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    required
+                    placeholder="company@example.com"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-300
+                    focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                    outline-none transition"
+                  />
+                </div>
+
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Phone Number
+                  </label>
+
+                  <input
+                    type="text"
+                    name="phoneNumber"
+                    value={formData.phoneNumber}
+                    onChange={handleChange}
+                    placeholder="Optional"
+                    className="w-full h-10 px-3 rounded-lg border border-gray-300
+                    focus:border-blue-500 focus:ring-2 focus:ring-blue-200
+                    outline-none transition"
+                  />
+                </div>
+
+                {/* Logo */}
+                <div>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">
+                    Company Logo
+                  </label>
+
+                  <div className="flex items-center gap-2">
+
+                    <label
+                      htmlFor="logoUpload"
+                      className="flex-1 h-10 px-3 flex items-center
+                      border border-dashed border-gray-300 rounded-lg
+                      cursor-pointer hover:bg-blue-50 transition
+                      text-sm text-gray-500 truncate"
+                    >
+                      {photo
+                        ? photo.name
+                        : "Choose logo (optional)"}
+                    </label>
+
+                    {preview && (
+                      <div className="relative shrink-0">
+                        <img
+                          src={preview}
+                          alt="Company logo preview"
+                          className="h-10 w-10 rounded-lg object-cover border"
+                        />
+
+                        <button
+                          type="button"
+                          onClick={removePhoto}
+                          className="absolute -top-2 -right-2
+                          h-5 w-5 rounded-full bg-red-600
+                          text-white text-xs flex items-center
+                          justify-center hover:bg-red-700"
+                        >
+                          ×
+                        </button>
+                      </div>
+                    )}
+
+                    <input
+                      id="logoUpload"
+                      type="file"
+                      accept="image/*"
+                      onChange={handleFileChange}
+                      className="hidden"
+                    />
+                  </div>
+                </div>
               </div>
 
-              {/* Submit Button */}
-              <div className="md:col-span-2 pt-2">
+              {/* Submit */}
+              <div className="mt-5 flex justify-end">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full h-11 rounded-md text-white font-semibold
-                 bg-blue-600 hover:bg-blue-700 
-                 disabled:opacity-50 transition shadow"
+                  className="h-10 px-7 rounded-lg bg-blue-600
+                  hover:bg-blue-700 text-white font-semibold
+                  shadow-sm transition disabled:opacity-50
+                  disabled:cursor-not-allowed"
                 >
                   {loading ? "Saving..." : "Add Company"}
                 </button>
               </div>
             </form>
 
+            {/* Message */}
             {message && (
-              <p className="mt-4 text-center font-medium text-gray-700">
+              <div className="mt-4 text-center text-sm font-medium text-gray-700">
                 {message}
-              </p>
+              </div>
             )}
           </div>
+
+          {/* ================= COMPANY LIST ================= */}
+          <CompanyList refreshKey={refreshKey} />
+
         </div>
       </div>
-      <CompanyList refreshKey={refreshKey} />
     </>
   );
 };

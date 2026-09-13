@@ -25,26 +25,52 @@ export default function ReviewList() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoaded, role]);
 
-  const fetchPending = async () => {
-    try {
-      setLoading(true);
-      const token = await getToken();
-      const resp = await axios.get(`${backendUrl}/api/reviewers/list`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (resp.data?.success) setApps(resp.data.data);
-      else setApps([]);
-    } catch (err) {
-      console.error(
-        "Failed to fetch pending:",
-        err.response?.data || err.message
-      );
-      toast.error("Failed to load applications");
-    } finally {
-      setLoading(false);
-    }
-  };
+ const fetchPending = async () => {
+  try {
+    setLoading(true);
 
+    const token = await getToken();
+
+    const resp = await axios.get(
+      `${backendUrl}/api/reviewers/list`,
+      {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      }
+    );
+
+    if (resp.data?.success) {
+      const applications = resp.data.data || [];
+
+      // Sort by Register Number in ascending order
+      const sortedApplications = [...applications].sort(
+        (a, b) =>
+          (a.regNumber || "").localeCompare(
+            b.regNumber || "",
+            undefined,
+            {
+              numeric: true,
+              sensitivity: "base",
+            }
+          )
+      );
+
+      setApps(sortedApplications);
+    } else {
+      setApps([]);
+    }
+  } catch (err) {
+    console.error(
+      "Failed to fetch pending:",
+      err.response?.data || err.message
+    );
+
+    toast.error("Failed to load applications");
+  } finally {
+    setLoading(false);
+  }
+};
   const filteredApps = apps.filter((app) => {
     const term = search.toLowerCase().trim();
     if (!term) return true;

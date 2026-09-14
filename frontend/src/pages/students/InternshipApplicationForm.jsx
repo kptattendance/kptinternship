@@ -41,6 +41,163 @@ const initialFormState = {
   jobPackage: "",
 };
 
+/* -------------------------------------------------------
+     Reusable UI components
+------------------------------------------------------- */
+
+const SectionHeader = ({ icon, title, description, color = "blue" }) => {
+    const colors = {
+      blue: {
+        wrapper: "bg-blue-50 border-blue-100",
+        icon: "bg-white border-blue-100",
+        title: "text-blue-950",
+        text: "text-blue-700/70",
+      },
+      violet: {
+        wrapper: "bg-violet-50 border-violet-100",
+        icon: "bg-white border-violet-100",
+        title: "text-violet-950",
+        text: "text-violet-700/70",
+      },
+      emerald: {
+        wrapper: "bg-emerald-50 border-emerald-100",
+        icon: "bg-white border-emerald-100",
+        title: "text-emerald-950",
+        text: "text-emerald-700/70",
+      },
+      amber: {
+        wrapper: "bg-amber-50 border-amber-100",
+        icon: "bg-white border-amber-100",
+        title: "text-amber-950",
+        text: "text-amber-700/70",
+      },
+    };
+
+    const c = colors[color];
+
+    return (
+      <div
+        className={`rounded-2xl border px-4 py-4 sm:px-5 sm:py-5 mb-5 ${c.wrapper}`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl shadow-sm ${c.icon}`}
+          >
+            {icon}
+          </div>
+
+          <div className="min-w-0">
+            <h2
+              className={`text-base sm:text-lg font-bold ${c.title}`}
+            >
+              {title}
+            </h2>
+
+            <p className={`text-xs sm:text-sm mt-0.5 ${c.text}`}>
+              {description}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+const Field = ({
+  form,
+  handleChange,
+  label,
+    name,
+    type = "text",
+    placeholder,
+    required = false,
+    help,
+    children,
+  }) => {
+    return (
+      <div className="space-y-1.5">
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {label}
+          {required && (
+            <span className="text-rose-500 ml-1">*</span>
+          )}
+        </label>
+
+        {children ? (
+          children
+        ) : (
+          <input
+            id={name}
+            type={type}
+            name={name}
+            value={form[name]}
+            onChange={handleChange}
+            placeholder={placeholder}
+            required={required}
+            min={type === "number" ? "0" : undefined}
+            onWheel={
+              type === "number"
+                ? (e) => e.target.blur()
+                : undefined
+            }
+            className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+          />
+        )}
+
+        {help && (
+          <p className="text-[11px] leading-4 text-slate-400">
+            {help}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+const TextAreaField = ({
+  form,
+  handleChange,
+  label,
+  name,
+  placeholder,
+  required = false,
+  help,
+  rows = 4,
+}) => {
+    return (
+      <div className="space-y-1.5">
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {label}
+          {required && (
+            <span className="text-rose-500 ml-1">*</span>
+          )}
+        </label>
+
+        <textarea
+          id={name}
+          name={name}
+          value={form[name]}
+          onChange={handleChange}
+          placeholder={placeholder}
+          required={required}
+          rows={rows}
+          className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-y transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+        />
+
+        {help && (
+          <p className="text-[11px] leading-4 text-slate-400">
+            {help}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+
 export default function InternshipApplicationForm() {
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(false);
@@ -134,158 +291,6 @@ export default function InternshipApplicationForm() {
     }
   };
 
-  /* -------------------------------------------------------
-     Reusable UI components
-  ------------------------------------------------------- */
-
-  const SectionHeader = ({ icon, title, description, color = "blue" }) => {
-    const colors = {
-      blue: {
-        wrapper: "bg-blue-50 border-blue-100",
-        icon: "bg-white border-blue-100",
-        title: "text-blue-950",
-        text: "text-blue-700/70",
-      },
-      violet: {
-        wrapper: "bg-violet-50 border-violet-100",
-        icon: "bg-white border-violet-100",
-        title: "text-violet-950",
-        text: "text-violet-700/70",
-      },
-      emerald: {
-        wrapper: "bg-emerald-50 border-emerald-100",
-        icon: "bg-white border-emerald-100",
-        title: "text-emerald-950",
-        text: "text-emerald-700/70",
-      },
-      amber: {
-        wrapper: "bg-amber-50 border-amber-100",
-        icon: "bg-white border-amber-100",
-        title: "text-amber-950",
-        text: "text-amber-700/70",
-      },
-    };
-
-    const c = colors[color];
-
-    return (
-      <div
-        className={`rounded-2xl border px-4 py-4 sm:px-5 sm:py-5 mb-5 ${c.wrapper}`}
-      >
-        <div className="flex items-center gap-3">
-          <div
-            className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl shadow-sm ${c.icon}`}
-          >
-            {icon}
-          </div>
-
-          <div className="min-w-0">
-            <h2
-              className={`text-base sm:text-lg font-bold ${c.title}`}
-            >
-              {title}
-            </h2>
-
-            <p className={`text-xs sm:text-sm mt-0.5 ${c.text}`}>
-              {description}
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
-  const Field = ({
-    label,
-    name,
-    type = "text",
-    placeholder,
-    required = false,
-    help,
-    children,
-  }) => {
-    return (
-      <div className="space-y-1.5">
-        <label
-          htmlFor={name}
-          className="block text-sm font-semibold text-slate-700"
-        >
-          {label}
-          {required && (
-            <span className="text-rose-500 ml-1">*</span>
-          )}
-        </label>
-
-        {children ? (
-          children
-        ) : (
-          <input
-            id={name}
-            type={type}
-            name={name}
-            value={form[name]}
-            onChange={handleChange}
-            placeholder={placeholder}
-            required={required}
-            min={type === "number" ? "0" : undefined}
-            onWheel={
-              type === "number"
-                ? (e) => e.target.blur()
-                : undefined
-            }
-            className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
-          />
-        )}
-
-        {help && (
-          <p className="text-[11px] leading-4 text-slate-400">
-            {help}
-          </p>
-        )}
-      </div>
-    );
-  };
-
-  const TextAreaField = ({
-    label,
-    name,
-    placeholder,
-    required = false,
-    help,
-    rows = 4,
-  }) => {
-    return (
-      <div className="space-y-1.5">
-        <label
-          htmlFor={name}
-          className="block text-sm font-semibold text-slate-700"
-        >
-          {label}
-          {required && (
-            <span className="text-rose-500 ml-1">*</span>
-          )}
-        </label>
-
-        <textarea
-          id={name}
-          name={name}
-          value={form[name]}
-          onChange={handleChange}
-          placeholder={placeholder}
-          required={required}
-          rows={rows}
-          className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-y transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
-        />
-
-        {help && (
-          <p className="text-[11px] leading-4 text-slate-400">
-            {help}
-          </p>
-        )}
-      </div>
-    );
-  };
-
   return (
     <>
       <StudentNavbar />
@@ -311,7 +316,7 @@ export default function InternshipApplicationForm() {
               <div className="px-4 pb-5 sm:px-6 sm:pb-7">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Department"
                     name="department"
                     required
@@ -352,21 +357,21 @@ export default function InternshipApplicationForm() {
                     </select>
                   </Field>
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Register Number"
                     name="regNumber"
                     placeholder="Enter your register number"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Student Name"
                     name="name"
                     placeholder="Enter your full name"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Phone Number"
                     name="phoneNumber"
                     type="tel"
@@ -454,7 +459,7 @@ export default function InternshipApplicationForm() {
                     </div>
                   </div>
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Subject Name"
                     name="subName"
                     placeholder="Enter subject name"
@@ -480,7 +485,7 @@ export default function InternshipApplicationForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Internship / Project"
                     name="internhsipType"
                     required
@@ -503,49 +508,49 @@ export default function InternshipApplicationForm() {
                     </select>
                   </Field>
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Company Name"
                     name="companyName"
                     placeholder="Enter company name"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Village / Area / Block"
                     name="companyVillage"
                     placeholder="Enter village, area or block"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="City"
                     name="companyCity"
                     placeholder="Enter company city"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Taluk"
                     name="companyTaluk"
                     placeholder="Enter company taluk"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="District"
                     name="companyDistrict"
                     placeholder="Enter company district"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="State"
                     name="companyState"
                     placeholder="Enter company state"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Company Contact Number"
                     name="companyContact"
                     type="tel"
@@ -553,7 +558,7 @@ export default function InternshipApplicationForm() {
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Company Email"
                     name="companyEmail"
                     type="email"
@@ -561,7 +566,7 @@ export default function InternshipApplicationForm() {
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Contact Person"
                     name="contactPerson"
                     placeholder="HR / Team Lead / Supervisor"
@@ -571,7 +576,7 @@ export default function InternshipApplicationForm() {
                 </div>
 
                 <div className="mt-5">
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Company Profile"
                     name="companyProfile"
                     placeholder="Briefly describe the company, products/services, established year, turnover, website, etc."
@@ -599,7 +604,7 @@ export default function InternshipApplicationForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Internship Start Date"
                     name="startDate"
                     type="date"
@@ -607,14 +612,14 @@ export default function InternshipApplicationForm() {
                     help="You can change the default date if required."
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Internship End Date"
                     name="endDate"
                     type="date"
                     required
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Working Hours"
                     name="workingHours"
                     placeholder="e.g. 9:00 AM - 5:00 PM"
@@ -625,7 +630,7 @@ export default function InternshipApplicationForm() {
 
                 <div className="mt-6 space-y-5">
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Nature of Job / Duties"
                     name="duties"
                     placeholder="Describe the nature of work and responsibilities assigned to you."
@@ -633,7 +638,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Details of Tasks / Projects"
                     name="tasks"
                     placeholder="Describe the major tasks, projects or activities you expect to perform."
@@ -641,7 +646,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Expected Skills to Acquire"
                     name="expectedSkills"
                     placeholder="List the technical and professional skills you expect to develop."
@@ -649,7 +654,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Expected Tools / Software / Machines"
                     name="expectedTools"
                     placeholder="Mention the software, programming languages, tools, machines or technologies you expect to use."
@@ -657,7 +662,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Expected Challenges"
                     name="expectedChallenges"
                     placeholder="Describe the challenges you expect during the internship."
@@ -665,7 +670,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Expected Learning Outcomes"
                     name="learningOutcomes"
                     placeholder="Describe what you expect to learn or achieve by the end of the internship."
@@ -673,7 +678,7 @@ export default function InternshipApplicationForm() {
                     rows={4}
                   />
 
-                  <TextAreaField
+                  <TextAreaField form={form} handleChange={handleChange}
                     label="Expected Job Opportunity"
                     name="jobOpportunity"
                     placeholder="Mention possible job opportunities in the same company or other companies after the internship."
@@ -704,7 +709,7 @@ export default function InternshipApplicationForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Stipend Amount"
                     name="stipendAmount"
                     type="number"
@@ -712,7 +717,7 @@ export default function InternshipApplicationForm() {
                     help="Enter 0 if you are not receiving any stipend/salary during the internship."
                   />
 
-                  <Field
+                  <Field form={form} handleChange={handleChange}
                     label="Placement Company"
                     name="PlacedCompany"
                     placeholder="Company where you were placed"
@@ -720,7 +725,7 @@ export default function InternshipApplicationForm() {
                   />
 
                   <div className="md:col-span-2">
-                    <Field
+                    <Field form={form} handleChange={handleChange}
                       label="Job Package Details"
                       name="jobPackage"
                       placeholder="e.g. ₹4.5 LPA"

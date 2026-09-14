@@ -48,9 +48,12 @@ export const generateInternshipLetter = async (req, res) => {
     );
     doc.pipe(res);
 
-  doc.image(logo3, 30, 32, { width: 60 });
+// Header logos
+doc.image(logo3, 30, 32, { width: 60 });
 doc.image(logo4, 500, 32, { width: 60 });
-doc.image(logo5, 294, 20, { width: 24 });
+
+// Small Karnataka emblem
+doc.image(logo5, 296, 22, { width: 20 });
     // --- Header ---
    doc
   .font("Helvetica-Bold")
@@ -70,7 +73,7 @@ doc
   .font("Helvetica-Bold")
   .fontSize(13)
   .fillColor("green")
-  .text("KARNATAKA (GOVT.....) POLYTECHNIC, MANGALURU", {
+  .text("KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU", {
     align: "center",
   });
 
@@ -85,7 +88,7 @@ doc
 doc
   .font("Helvetica")
   .fillColor("orange")
-  .text("Kadri Hills..., Mangaluru–575004, Dakshina Kannada, Karnataka", {
+  .text("Kadri Hills, Mangaluru–575004, Dakshina Kannada, Karnataka", {
     align: "center",
   });
 

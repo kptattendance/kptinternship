@@ -41,6 +41,7 @@ const ReviewerNavbar = () => {
       { name: "Company List", path: "/cohortOwner/AddCompany" },
       { name: "Members List", path: "/placement/list-hod" },
       { name: "Applications", path: "/placement/applications" },
+      { name: "Consent Letter", path: "/placement/parentConsent" },
       { name: "Statistics", path: "/placement/yearStatistics" },
     ];
   } else if (role === "cohortOwner") {
@@ -48,6 +49,7 @@ const ReviewerNavbar = () => {
       { name: "Dashboard", path: "/review" },
       { name: "Company List", path: "/cohortOwner/AddCompany" },
       { name: "Internal Mark", path: "/cohortOwner/internal-mark" },
+      { name: "Consent Letter", path: "/cohortOwner/parentConsent" },
     ];
   } else if (role === "principal") {
     tabs = [

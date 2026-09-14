@@ -5,8 +5,10 @@ import cloudinary from "../config/cloudinary.js";
 const storage = new CloudinaryStorage({
   cloudinary,
   params: {
-    folder: "internship-consent",
+    folder: "internship-images",
+
     allowed_formats: ["jpg", "jpeg", "png"],
+
     transformation: [
       {
         width: 1600,
@@ -19,11 +21,11 @@ const storage = new CloudinaryStorage({
   },
 });
 
-const uploadConsent = multer({
+const uploadInternshipImageFile = multer({
   storage,
   limits: {
     fileSize: 5 * 1024 * 1024,
   },
 });
 
-export default uploadConsent;
+export default uploadInternshipImageFile;

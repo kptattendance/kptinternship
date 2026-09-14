@@ -8,12 +8,18 @@ import {
   getMyApplications,
   uploadParentConsentLetter,
   getParentConsentApplications,
+  uploadInternshipImage,
+  getInternshipImageApplications,
+  deleteParentConsentLetter,
+  deleteInternshipImage,
+  bulkDeleteInternshipImages,
+  bulkDeleteParentConsentLetters,
 } from "../../controllers/students/applicationController.js";
 import { requireAuthMiddleware } from "../../middlewares/authMiddleware.js";
 import { generateInternshipLetter } from "../../controllers/students/pdfController.js";
 import upload from "../../middlewares/uploadMiddleware.js";
 import uploadConsent from "../../middlewares/consentUpload.js";
-
+import uploadInternshipImageFile from "../../middlewares/uploadInternshipImageFile.js";
 const router = express.Router();
 
 // Student submits new application → must be logged in
@@ -47,11 +53,12 @@ router.get("/myApplications", requireAuthMiddleware, getMyApplications);
 router.get("/download/:id", generateInternshipLetter);
 
 router.post(
-  "/parent-consent",
+  "/myApplications/parent-consent",
   requireAuthMiddleware,
-  uploadConsent.single("consentLetter"),
+  uploadConsent.single("parentConsentLetter"),
   uploadParentConsentLetter
 );
+
 
 router.get(
   "/parent-consent",
@@ -59,4 +66,35 @@ router.get(
   getParentConsentApplications
 );
 
+router.post(
+  "/myApplications/internship-image",
+  uploadInternshipImageFile.single("internshipImage"),
+  uploadInternshipImage
+);
+
+router.get(
+  "/internship-images",
+  getInternshipImageApplications
+);
+
+router.delete(
+  "/myApplications/parent-consent",
+  deleteParentConsentLetter
+);
+
+router.delete(
+  "/myApplications/internship-image",
+  deleteInternshipImage
+);
+
+
+router.delete(
+  "/parent-consent/bulk-delete",
+  bulkDeleteParentConsentLetters
+);
+
+router.delete(
+  "/internship-images/bulk-delete",
+  bulkDeleteInternshipImages
+);
 export default router;

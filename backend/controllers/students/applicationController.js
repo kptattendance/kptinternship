@@ -1,6 +1,7 @@
 // backend/controllers/applicationController.js
 import Application from "../../model/Application.js";
 import cloudinary from "../../config/cloudinary.js";
+import User from "../../model/User.js";
 
 /**
  * Create new application
@@ -304,27 +305,78 @@ export const uploadParentConsentLetter = async (req, res) => {
 };
 
 
-/**
- * Get applications with parent consent status
- *
- * Used by:
- * - Cohort Owner
- * - HOD
- * - Admin
- */
+
 export const getParentConsentApplications = async (req, res) => {
   try {
+    const clerkUserId = req.auth.userId;
+
+    const user = await User.findOne({ clerkUserId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    let query = {};
+
+    // Cohort Owner → only their department
+    if (user.role === "cohortOwner") {
+      if (!user.department) {
+        return res.status(400).json({
+          success: false,
+          message: "Department is not assigned to this Cohort Owner.",
+        });
+      }
+
+      query = {
+        department: user.department.toLowerCase(),
+      };
+    }
+
+    // HOD → only their department
+    else if (user.role === "hod") {
+      if (!user.department) {
+        return res.status(400).json({
+          success: false,
+          message: "Department is not assigned to this HOD.",
+        });
+      }
+
+      query = {
+        department: user.department.toLowerCase(),
+      };
+    }
+
+    // Placement → ALL applications
+    else if (user.role === "placement") {
+      query = {};
+    }
+
+    // Admin → ALL applications
+    else if (user.role === "admin") {
+      query = {};
+    }
+
+    // Everyone else → no access
+    else {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view parent consent records.",
+      });
+    }
+
     const applications = await Application.find(
-      {},
+      query,
       {
         studentId: 1,
         name: 1,
         regNumber: 1,
+        phoneNumber: 1,
         department: 1,
         image: 1,
         parentConsentLetter: 1,
-        cohortOwner: 1,
-        hod: 1,
       }
     ).sort({ regNumber: 1 });
 
@@ -334,14 +386,490 @@ export const getParentConsentApplications = async (req, res) => {
       data: applications,
     });
   } catch (err) {
+    console.error("❌ Get parent consent applications error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch parent consent records.",
+      error: err.message,
+    });
+  }
+};
+
+/** Upload internship image */
+export const uploadInternshipImage = async (req, res) => {
+  try {
+    const studentId = req.auth.userId;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload the internship image.",
+      });
+    }
+
+    const application = await Application.findOne({ studentId });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship application not found.",
+      });
+    }
+
+    // Do not allow another upload once submitted
+    if (
+      application.internshipImage?.submitted &&
+      application.internshipImage?.imageUrl
+    ) {
+      // Delete the newly uploaded Cloudinary file
+      if (req.file.filename) {
+        try {
+          await cloudinary.uploader.destroy(req.file.filename);
+        } catch (cleanupError) {
+          console.error(
+            "Failed to clean up duplicate internship image:",
+            cleanupError
+          );
+        }
+      }
+
+      return res.status(400).json({
+        success: false,
+        message: "Internship image has already been submitted.",
+      });
+    }
+
+    // multer-storage-cloudinary already uploaded the file
+    const imageUrl = req.file.path;
+    const publicId = req.file.filename;
+
+    application.internshipImage = {
+      submitted: true,
+      imageUrl,
+      publicId,
+      uploadedAt: new Date(),
+    };
+
+    await application.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Internship image uploaded successfully.",
+      data: application,
+    });
+  } catch (err) {
+    console.error("❌ Internship image upload error:", err);
+
+    // Remove uploaded Cloudinary image if database operation failed
+    if (req.file?.filename) {
+      try {
+        await cloudinary.uploader.destroy(req.file.filename);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up Cloudinary internship image:",
+          cleanupError
+        );
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload internship image.",
+      error: err.message,
+    });
+  }
+};
+
+/** Get applications with internship image status */
+export const getInternshipImageApplications = async (req, res) => {
+  try {
+    const clerkUserId = req.auth.userId;
+
+    const user = await User.findOne({ clerkUserId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    let query = {};
+
+    // Cohort Owner → only their department
+    if (user.role === "cohortOwner") {
+      if (!user.department) {
+        return res.status(400).json({
+          success: false,
+          message: "Department is not assigned to this Cohort Owner.",
+        });
+      }
+
+      query = {
+        department: user.department.toLowerCase(),
+      };
+    }
+
+    // HOD → only their department
+    else if (user.role === "hod") {
+      if (!user.department) {
+        return res.status(400).json({
+          success: false,
+          message: "Department is not assigned to this HOD.",
+        });
+      }
+
+      query = {
+        department: user.department.toLowerCase(),
+      };
+    }
+
+    // Placement → ALL applications
+    else if (user.role === "placement") {
+      query = {};
+    }
+
+    // Admin → ALL applications
+    else if (user.role === "admin") {
+      query = {};
+    }
+
+    // Everyone else → no access
+    else {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to view internship images.",
+      });
+    }
+
+    const applications = await Application.find(
+      query,
+      {
+        studentId: 1,
+        name: 1,
+        regNumber: 1,
+        phoneNumber: 1,
+        department: 1,
+        image: 1,
+        internshipImage: 1,
+      }
+    ).sort({ regNumber: 1 });
+
+    return res.status(200).json({
+      success: true,
+      count: applications.length,
+      data: applications,
+    });
+  } catch (err) {
+    console.error("❌ Get internship image applications error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch internship image records.",
+      error: err.message,
+    });
+  }
+};
+
+/** Delete parent consent letter */
+export const deleteParentConsentLetter = async (req, res) => {
+  try {
+    const studentId = req.auth.userId;
+
+    const application = await Application.findOne({ studentId });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship application not found.",
+      });
+    }
+
+    const publicId = application.parentConsentLetter?.publicId;
+
+    if (!publicId) {
+      return res.status(404).json({
+        success: false,
+        message: "Parent consent letter not found.",
+      });
+    }
+
+    // Delete from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    console.log("Parent consent Cloudinary delete:", result);
+
+    // Clear MongoDB fields
+    application.parentConsentLetter = {
+      submitted: false,
+      imageUrl: "",
+      publicId: "",
+      uploadedAt: null,
+    };
+
+    await application.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Parent consent letter deleted successfully.",
+    });
+  } catch (err) {
+    console.error("❌ Delete parent consent letter error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete parent consent letter.",
+      error: err.message,
+    });
+  }
+};
+
+
+/** Delete internship image */
+export const deleteInternshipImage = async (req, res) => {
+  try {
+    const studentId = req.auth.userId;
+
+    const application = await Application.findOne({ studentId });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship application not found.",
+      });
+    }
+
+    const publicId = application.internshipImage?.publicId;
+
+    if (!publicId) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship image not found.",
+      });
+    }
+
+    // Delete from Cloudinary
+    const result = await cloudinary.uploader.destroy(publicId);
+
+    console.log("Internship image Cloudinary delete:", result);
+
+    // Clear MongoDB fields
+    application.internshipImage = {
+      submitted: false,
+      imageUrl: "",
+      publicId: "",
+      uploadedAt: null,
+    };
+
+    await application.save();
+
+    return res.status(200).json({
+      success: true,
+      message: "Internship image deleted successfully.",
+    });
+  } catch (err) {
+    console.error("❌ Delete internship image error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete internship image.",
+      error: err.message,
+    });
+  }
+};
+
+// =========================================================
+// BULK DELETE PARENT CONSENT LETTERS
+// Placement + Admin only
+// =========================================================
+
+export const bulkDeleteParentConsentLetters = async (req, res) => {
+  try {
+    const clerkUserId = req.auth.userId;
+
+    const user = await User.findOne({ clerkUserId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Only Placement and Admin can bulk delete
+    if (!["placement", "admin"].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete consent letters.",
+      });
+    }
+
+    const { applicationIds } = req.body;
+
+    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one application.",
+      });
+    }
+
+    const applications = await Application.find({
+      _id: { $in: applicationIds },
+    });
+
+    let deletedCount = 0;
+    let failedCount = 0;
+
+    for (const application of applications) {
+      const publicId =
+        application.parentConsentLetter?.publicId;
+
+      if (!publicId) {
+        continue;
+      }
+
+      try {
+        const result = await cloudinary.uploader.destroy(publicId);
+
+        // Cloudinary normally returns "ok" when deleted
+        if (result.result === "ok" || result.result === "not found") {
+          application.parentConsentLetter = {
+            submitted: false,
+            imageUrl: "",
+            publicId: "",
+            uploadedAt: null,
+          };
+
+          await application.save();
+
+          deletedCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (cloudinaryError) {
+        console.error(
+          `Failed to delete consent for ${application._id}:`,
+          cloudinaryError
+        );
+
+        failedCount++;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `${deletedCount} parent consent letter(s) deleted successfully.`,
+      deletedCount,
+      failedCount,
+    });
+  } catch (err) {
     console.error(
-      "❌ Get parent consent applications error:",
+      "❌ Bulk delete parent consent letters error:",
       err
     );
 
     return res.status(500).json({
       success: false,
-      message: "Failed to fetch parent consent records.",
+      message: "Failed to delete parent consent letters.",
+      error: err.message,
+    });
+  }
+};
+
+
+// =========================================================
+// BULK DELETE INTERNSHIP IMAGES
+// Placement + Admin only
+// =========================================================
+
+export const bulkDeleteInternshipImages = async (req, res) => {
+  try {
+    const clerkUserId = req.auth.userId;
+
+    const user = await User.findOne({ clerkUserId });
+
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        message: "User not found.",
+      });
+    }
+
+    // Only Placement and Admin can bulk delete
+    if (!["placement", "admin"].includes(user.role)) {
+      return res.status(403).json({
+        success: false,
+        message: "You are not authorized to delete internship images.",
+      });
+    }
+
+    const { applicationIds } = req.body;
+
+    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one application.",
+      });
+    }
+
+    const applications = await Application.find({
+      _id: { $in: applicationIds },
+    });
+
+    let deletedCount = 0;
+    let failedCount = 0;
+
+    for (const application of applications) {
+      const publicId =
+        application.internshipImage?.publicId;
+
+      if (!publicId) {
+        continue;
+      }
+
+      try {
+        const result = await cloudinary.uploader.destroy(publicId);
+
+        if (result.result === "ok" || result.result === "not found") {
+          application.internshipImage = {
+            submitted: false,
+            imageUrl: "",
+            publicId: "",
+            uploadedAt: null,
+          };
+
+          await application.save();
+
+          deletedCount++;
+        } else {
+          failedCount++;
+        }
+      } catch (cloudinaryError) {
+        console.error(
+          `Failed to delete internship image for ${application._id}:`,
+          cloudinaryError
+        );
+
+        failedCount++;
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: `${deletedCount} internship image(s) deleted successfully.`,
+      deletedCount,
+      failedCount,
+    });
+  } catch (err) {
+    console.error(
+      "❌ Bulk delete internship images error:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to delete internship images.",
       error: err.message,
     });
   }

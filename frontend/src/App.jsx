@@ -19,6 +19,8 @@ import InternalMark from "./pages/cohort/InternalMark";
 import YearStatistics from "./pages/placement/YearStatistics";
 import AllPlaceApplications from "./pages/placement/AllPlaceApplications";
 import AddCompany from "./pages/cohort/AddCompany";
+import ParentConsent from "./pages/cohort/ParentConsent";
+import PlacementParentConsent from "./pages/placement/placementParentConsent";
 
 export default function App() {
   return (
@@ -63,6 +65,14 @@ export default function App() {
             </ProtectedRoute>
           }
         />{" "}
+           <Route
+          path="/cohortOwner/parentConsent"
+          element={
+            <ProtectedRoute allowedRoles={["cohortOwner", "placement"]}>
+              <ParentConsent />
+            </ProtectedRoute>
+          }
+        />
         <Route
           path="/cohortOwner/AddCompany"
           element={
@@ -86,6 +96,16 @@ export default function App() {
               allowedRoles={["placement", "cohortOwner", "principal"]}
             >
               <PlacementAddCompany />{" "}
+            </ProtectedRoute>
+          }
+        />
+         <Route
+          path="/placement/parentConsent"
+          element={
+            <ProtectedRoute
+              allowedRoles={["placement", "cohortOwner", "principal"]}
+            >
+              <PlacementParentConsent />{" "}
             </ProtectedRoute>
           }
         />

@@ -208,6 +208,32 @@ const applicationSchema = new mongoose.Schema(
     },
 
     // =========================================================
+// Internship Image
+// =========================================================
+internshipImage: {
+  submitted: {
+    type: Boolean,
+    default: false,
+  },
+
+  imageUrl: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  publicId: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  uploadedAt: {
+    type: Date,
+    default: null,
+  },
+},
+    // =========================================================
     // Parent Consent / Undertaking Letter
     // =========================================================
     parentConsentLetter: {

@@ -20,7 +20,7 @@ import YearStatistics from "./pages/placement/YearStatistics";
 import AllPlaceApplications from "./pages/placement/AllPlaceApplications";
 import AddCompany from "./pages/cohort/AddCompany";
 import ParentConsent from "./pages/cohort/ParentConsent";
-import PlacementParentConsent from "./pages/placement/placementParentConsent";
+import PlacementParentConsent from "./pages/placement/PlacementParentConsent";
 
 export default function App() {
   return (

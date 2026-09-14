@@ -1,4 +1,5 @@
 // src/pages/students/InternshipApplicationForm.jsx
+
 import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
@@ -35,9 +36,9 @@ const initialFormState = {
   expectedChallenges: "",
   learningOutcomes: "",
   jobOpportunity: "",
-  stipendAmount: "", // 🆕 optional field
-  PlacedCompany: "", // 🆕 optional field
-  jobPackage: "", // 🆕 optional field
+  stipendAmount: "",
+  PlacedCompany: "",
+  jobPackage: "",
 };
 
 export default function InternshipApplicationForm() {
@@ -46,6 +47,7 @@ export default function InternshipApplicationForm() {
   const [form, setForm] = useState(initialFormState);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -86,12 +88,14 @@ export default function InternshipApplicationForm() {
     }
 
     const formData = new FormData();
+
     Object.keys(form).forEach((key) => {
       formData.append(key, form[key]);
     });
 
     try {
       setLoading(true);
+
       const token = await getToken();
 
       const res = await axios.post(
@@ -105,15 +109,20 @@ export default function InternshipApplicationForm() {
         }
       );
 
-      toast.success(res.data.message || "Application submitted successfully!", {
-        position: "top-center",
-      });
+      toast.success(
+        res.data.message || "Application submitted successfully!",
+        {
+          position: "top-center",
+        }
+      );
+
       setForm(initialFormState);
     } catch (err) {
       console.error(
         "Error submitting application:",
         err.response?.data || err.message
       );
+
       toast.error(
         err.response?.data?.message || "Error submitting application.",
         {
@@ -125,396 +134,694 @@ export default function InternshipApplicationForm() {
     }
   };
 
+  /* -------------------------------------------------------
+     Reusable UI components
+  ------------------------------------------------------- */
+
+  const SectionHeader = ({ icon, title, description, color = "blue" }) => {
+    const colors = {
+      blue: {
+        wrapper: "bg-blue-50 border-blue-100",
+        icon: "bg-white border-blue-100",
+        title: "text-blue-950",
+        text: "text-blue-700/70",
+      },
+      violet: {
+        wrapper: "bg-violet-50 border-violet-100",
+        icon: "bg-white border-violet-100",
+        title: "text-violet-950",
+        text: "text-violet-700/70",
+      },
+      emerald: {
+        wrapper: "bg-emerald-50 border-emerald-100",
+        icon: "bg-white border-emerald-100",
+        title: "text-emerald-950",
+        text: "text-emerald-700/70",
+      },
+      amber: {
+        wrapper: "bg-amber-50 border-amber-100",
+        icon: "bg-white border-amber-100",
+        title: "text-amber-950",
+        text: "text-amber-700/70",
+      },
+    };
+
+    const c = colors[color];
+
+    return (
+      <div
+        className={`rounded-2xl border px-4 py-4 sm:px-5 sm:py-5 mb-5 ${c.wrapper}`}
+      >
+        <div className="flex items-center gap-3">
+          <div
+            className={`w-11 h-11 rounded-xl border flex items-center justify-center text-xl shadow-sm ${c.icon}`}
+          >
+            {icon}
+          </div>
+
+          <div className="min-w-0">
+            <h2
+              className={`text-base sm:text-lg font-bold ${c.title}`}
+            >
+              {title}
+            </h2>
+
+            <p className={`text-xs sm:text-sm mt-0.5 ${c.text}`}>
+              {description}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const Field = ({
+    label,
+    name,
+    type = "text",
+    placeholder,
+    required = false,
+    help,
+    children,
+  }) => {
+    return (
+      <div className="space-y-1.5">
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {label}
+          {required && (
+            <span className="text-rose-500 ml-1">*</span>
+          )}
+        </label>
+
+        {children ? (
+          children
+        ) : (
+          <input
+            id={name}
+            type={type}
+            name={name}
+            value={form[name]}
+            onChange={handleChange}
+            placeholder={placeholder}
+            required={required}
+            min={type === "number" ? "0" : undefined}
+            onWheel={
+              type === "number"
+                ? (e) => e.target.blur()
+                : undefined
+            }
+            className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+          />
+        )}
+
+        {help && (
+          <p className="text-[11px] leading-4 text-slate-400">
+            {help}
+          </p>
+        )}
+      </div>
+    );
+  };
+
+  const TextAreaField = ({
+    label,
+    name,
+    placeholder,
+    required = false,
+    help,
+    rows = 4,
+  }) => {
+    return (
+      <div className="space-y-1.5">
+        <label
+          htmlFor={name}
+          className="block text-sm font-semibold text-slate-700"
+        >
+          {label}
+          {required && (
+            <span className="text-rose-500 ml-1">*</span>
+          )}
+        </label>
+
+        <textarea
+          id={name}
+          name={name}
+          value={form[name]}
+          onChange={handleChange}
+          placeholder={placeholder}
+          required={required}
+          rows={rows}
+          className="w-full px-3.5 py-3 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none resize-y transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+        />
+
+        {help && (
+          <p className="text-[11px] leading-4 text-slate-400">
+            {help}
+          </p>
+        )}
+      </div>
+    );
+  };
+
   return (
     <>
       <StudentNavbar />
-      <div className="max-w-4xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-6">Internship Application</h1>
 
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {/* Personal Info */}
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-medium">Department *</label>
-              <select
-                name="department"
-                value={form.department}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              >
-                <option value="">Select Department</option>
-                <option value="at">Automobile Engineering</option>
-                <option value="ch">Chemical Engineering</option>
-                <option value="ce">Civil Engineering</option>
-                <option value="cs">Computer Science Engineering</option>
-                <option value="ec">
-                  Electronics & Communication Engineering
-                </option>
-                <option value="eee">
-                  Electrical & Electronics Engineering
-                </option>
-                <option value="me">Mechanical Engineering</option>
-                <option value="po">Polymer Engineering</option>
-              </select>
-            </div>
+      <main className="min-h-screen bg-slate-50">
+        <div className="max-w-5xl mx-auto px-3 py-5 sm:px-5 sm:py-8 lg:px-8">
 
-            <div>
-              <label className="block font-medium">Register Number *</label>
-              <input
-                type="text"
-                name="regNumber"
-                value={form.regNumber}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
+       
+
+          <form onSubmit={handleSubmit} className="space-y-6">
+
+            {/* =================================================
+                1. STUDENT INFORMATION
+            ================================================== */}
+            <section className="bg-white rounded-3xl border border-blue-100 shadow-sm overflow-hidden">
+              <SectionHeader
+                icon="🎓"
+                title="Student Information"
+                description="Enter your personal and academic details."
+                color="blue"
               />
-            </div>
 
-            <div>
-              <label className="block font-medium">Name *</label>
-              <input
-                type="text"
-                name="name"
-                value={form.name}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-            </div>
+              <div className="px-4 pb-5 sm:px-6 sm:pb-7">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-            <div>
-              <label className="block font-medium">Phone Number *</label>
-              <input
-                type="tel"
-                name="phoneNumber"
-                value={form.phoneNumber}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                pattern="[0-9]{10}"
-                placeholder="10-digit phone number / donot give space"
-                required
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Student Image *</label>
-              <input
-                type="file"
-                name="image"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files[0];
-                  if (file) {
-                    setForm({ ...form, image: file }); // store file object
-                  }
-                }}
-                className="w-full border p-2 rounded"
-                required
-              />
-              {form.image && (
-                <img
-                  src={URL.createObjectURL(form.image)}
-                  alt="Preview"
-                  className="mt-2 w-24 h-24 object-cover rounded border"
-                />
-              )}
-            </div>
+                  <Field
+                    label="Department"
+                    name="department"
+                    required
+                  >
+                    <select
+                      id="department"
+                      name="department"
+                      value={form.department}
+                      onChange={handleChange}
+                      required
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+                    >
+                      <option value="">Select Department</option>
+                      <option value="at">
+                        Automobile Engineering
+                      </option>
+                      <option value="ch">
+                        Chemical Engineering
+                      </option>
+                      <option value="ce">
+                        Civil Engineering
+                      </option>
+                      <option value="cs">
+                        Computer Science Engineering
+                      </option>
+                      <option value="ec">
+                        Electronics & Communication Engineering
+                      </option>
+                      <option value="eee">
+                        Electrical & Electronics Engineering
+                      </option>
+                      <option value="me">
+                        Mechanical Engineering
+                      </option>
+                      <option value="po">
+                        Polymer Engineering
+                      </option>
+                    </select>
+                  </Field>
 
-            <div>
-              <label className="block font-medium">Subject Name *</label>
-              <input
-                type="text"
-                name="subName"
-                value={form.subName}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-            </div>
-          </div>
+                  <Field
+                    label="Register Number"
+                    name="regNumber"
+                    placeholder="Enter your register number"
+                    required
+                  />
 
-          {/* Company Info */}
-          <h2 className="text-lg font-semibold mt-4">Company Information</h2>
+                  <Field
+                    label="Student Name"
+                    name="name"
+                    placeholder="Enter your full name"
+                    required
+                  />
 
-          <div className="grid md:grid-cols-2 gap-4">
-            <select
-              name="internhsipType"
-              value={form.internhsipType}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            >
-              <option value="">Select Type</option>
-              <option value="Internship">Internship</option>
-              <option value="Project">Project</option>
-            </select>
-            <input
-              type="text"
-              name="companyName"
-              placeholder="Company Name *"
-              value={form.companyName}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="companyVillage"
-              placeholder="Village/Area/Block *"
-              value={form.companyVillage}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="companyCity"
-              placeholder="City (Company Location) *"
-              value={form.companyCity}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="companyTaluk"
-              placeholder="Taluk (Company Location) *"
-              value={form.companyTaluk}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="companyDistrict"
-              placeholder="District (Company Location) *"
-              value={form.companyDistrict}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="companyState"
-              placeholder="State  (Company Location) *"
-              value={form.companyState}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="tel"
-              name="companyContact"
-              placeholder="Company Contact Number * "
-              value={form.companyContact}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="email"
-              name="companyEmail"
-              placeholder="Company Email Id *"
-              value={form.companyEmail}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-            <input
-              type="text"
-              name="contactPerson"
-              placeholder="Contact Person (HR/Team Lead) *"
-              value={form.contactPerson}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-          </div>
+                  <Field
+                    label="Phone Number"
+                    name="phoneNumber"
+                    type="tel"
+                    placeholder="10-digit phone number"
+                    required
+                    help="Enter exactly 10 digits without spaces."
+                  >
+                    <input
+                      id="phoneNumber"
+                      type="tel"
+                      name="phoneNumber"
+                      value={form.phoneNumber}
+                      onChange={handleChange}
+                      pattern="[0-9]{10}"
+                      placeholder="10-digit phone number"
+                      required
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-800 placeholder:text-slate-400 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300"
+                    />
+                  </Field>
 
-          <textarea
-            name="companyProfile"
-            placeholder="Company Profile (Established date, products/services, turnover, website) *"
-            value={form.companyProfile}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-24"
-            required
-          ></textarea>
+                  {/* Student Image */}
+                  <div className="space-y-1.5">
+                    <label
+                      htmlFor="image"
+                      className="block text-sm font-semibold text-slate-700"
+                    >
+                      Student Photograph
+                      <span className="text-rose-500 ml-1">*</span>
+                    </label>
 
-          {/* Internship Info */}
-          <h2 className="text-lg font-semibold mt-4">Internship Details</h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-medium">
-                Internship Start Date / You can change if u want *
-              </label>
-              <input
-                type="date"
-                name="startDate"
-                value={form.startDate}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-                placeholder="You can change if u want "
-              />
-            </div>
-            <div>
-              <label className="block font-medium">Internship End Date *</label>
-              <input
-                type="date"
-                name="endDate"
-                value={form.endDate}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                required
-              />
-            </div>
-            <input
-              type="text"
-              name="workingHours"
-              placeholder="Working Hours *"
-              value={form.workingHours}
-              onChange={handleChange}
-              className="w-full border p-2 rounded"
-              required
-            />
-          </div>
+                    <div className="rounded-2xl border border-dashed border-blue-200 bg-blue-50/40 p-4">
+                      <div className="flex flex-col sm:flex-row items-center gap-4">
 
-          <textarea
-            name="duties"
-            placeholder="Nature of Job / Duties *"
-            value={form.duties}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                        <div className="w-24 h-24 rounded-2xl bg-white border border-blue-100 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
+                          {form.image ? (
+                            <img
+                              src={URL.createObjectURL(form.image)}
+                              alt="Student Preview"
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="text-center">
+                              <div className="text-2xl">
+                                📷
+                              </div>
+                              <span className="text-[10px] text-slate-400">
+                                Preview
+                              </span>
+                            </div>
+                          )}
+                        </div>
 
-          <textarea
-            name="tasks"
-            placeholder="Details of Tasks/Projects *"
-            value={form.tasks}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                        <div className="w-full">
+                          <input
+                            id="image"
+                            type="file"
+                            name="image"
+                            accept="image/*"
+                            onChange={(e) => {
+                              const file = e.target.files[0];
 
-          <textarea
-            name="expectedSkills"
-            placeholder="Expected Skills to Acquire *"
-            value={form.expectedSkills}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                              if (file) {
+                                setForm({
+                                  ...form,
+                                  image: file,
+                                });
+                              }
+                            }}
+                            required
+                            className="block w-full text-sm text-slate-500
+                            file:mr-3 file:py-2.5 file:px-4
+                            file:rounded-xl file:border-0
+                            file:text-sm file:font-semibold
+                            file:bg-blue-100 file:text-blue-700
+                            hover:file:bg-blue-200
+                            cursor-pointer"
+                          />
 
-          <textarea
-            name="expectedTools"
-            placeholder="Expected Tools/Software/Machine *"
-            value={form.expectedTools}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                          <p className="mt-2 text-[11px] text-slate-400">
+                            Upload a clear recent photograph.
+                          </p>
+                        </div>
 
-          <textarea
-            name="expectedChallenges"
-            placeholder="Expected Challenges *"
-            value={form.expectedChallenges}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                      </div>
+                    </div>
+                  </div>
 
-          <textarea
-            name="learningOutcomes"
-            placeholder="Expected Learning Outcomes *"
-            value={form.learningOutcomes}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
+                  <Field
+                    label="Subject Name"
+                    name="subName"
+                    placeholder="Enter subject name"
+                    required
+                  />
 
-          <textarea
-            name="jobOpportunity"
-            placeholder="Expected Job Opportunity (same company / others) *"
-            value={form.jobOpportunity}
-            onChange={handleChange}
-            className="w-full border p-2 rounded h-20"
-            required
-          ></textarea>
-
-          {/* Optional Fields */}
-          <h2 className="text-lg font-semibold mt-4">
-            Additional Details (Optional)
-          </h2>
-          <div className="grid md:grid-cols-2 gap-4">
-            <div>
-              <label className="block font-medium">
-                Stipend Amount (if any)
-              </label>
-              <input
-                type="number"
-                onWheel={(e) => e.target.blur()}
-                name="stipendAmount"
-                value={form.stipendAmount}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                placeholder="Enter zero if you are not getting any stipend/salary during internship "
-                min="0"
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">
-                Placement Company (if offered with any job)
-              </label>
-              <input
-                type="text"
-                name="PlacedCompany"
-                value={form.PlacedCompany}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                placeholder="Company Name you placed through placement drive."
-              />
-            </div>
-
-            <div>
-              <label className="block font-medium">
-                Job Package Details (if placed)
-              </label>
-              <input
-                type="text"
-                name="jobPackage"
-                value={form.jobPackage}
-                onChange={handleChange}
-                className="w-full border p-2 rounded"
-                placeholder="e.g., ₹4.5 LPA/ Job Salary/ do not enter intenship salary "
-              />
-            </div>
-          </div>
-
-          {/* Submit */}
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? "Submitting..." : "Submit Application"}
-          </button>
-
-          {/* Transparent Loading Overlay */}
-          {loading && (
-            <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-40 backdrop-blur-sm z-50">
-              <div className="flex flex-col items-center space-y-4">
-                <div className="w-14 h-14 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
-                <p className="text-white text-lg font-semibold animate-pulse">
-                  Submitting...
-                </p>
+                </div>
               </div>
+            </section>
+
+            {/* =================================================
+                2. COMPANY INFORMATION
+            ================================================== */}
+            <section className="bg-white rounded-3xl border border-violet-100 shadow-sm overflow-hidden">
+              <SectionHeader
+                icon="🏢"
+                title="Company Information"
+                description="Provide complete details about the internship organization."
+                color="violet"
+              />
+
+              <div className="px-4 pb-5 sm:px-6 sm:pb-7">
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                  <Field
+                    label="Internship / Project"
+                    name="internhsipType"
+                    required
+                  >
+                    <select
+                      id="internhsipType"
+                      name="internhsipType"
+                      value={form.internhsipType}
+                      onChange={handleChange}
+                      required
+                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all focus:border-violet-400 focus:ring-4 focus:ring-violet-50 hover:border-slate-300"
+                    >
+                      <option value="">Select Type</option>
+                      <option value="Internship">
+                        Internship
+                      </option>
+                      <option value="Project">
+                        Project
+                      </option>
+                    </select>
+                  </Field>
+
+                  <Field
+                    label="Company Name"
+                    name="companyName"
+                    placeholder="Enter company name"
+                    required
+                  />
+
+                  <Field
+                    label="Village / Area / Block"
+                    name="companyVillage"
+                    placeholder="Enter village, area or block"
+                    required
+                  />
+
+                  <Field
+                    label="City"
+                    name="companyCity"
+                    placeholder="Enter company city"
+                    required
+                  />
+
+                  <Field
+                    label="Taluk"
+                    name="companyTaluk"
+                    placeholder="Enter company taluk"
+                    required
+                  />
+
+                  <Field
+                    label="District"
+                    name="companyDistrict"
+                    placeholder="Enter company district"
+                    required
+                  />
+
+                  <Field
+                    label="State"
+                    name="companyState"
+                    placeholder="Enter company state"
+                    required
+                  />
+
+                  <Field
+                    label="Company Contact Number"
+                    name="companyContact"
+                    type="tel"
+                    placeholder="Enter company contact number"
+                    required
+                  />
+
+                  <Field
+                    label="Company Email"
+                    name="companyEmail"
+                    type="email"
+                    placeholder="company@example.com"
+                    required
+                  />
+
+                  <Field
+                    label="Contact Person"
+                    name="contactPerson"
+                    placeholder="HR / Team Lead / Supervisor"
+                    required
+                  />
+
+                </div>
+
+                <div className="mt-5">
+                  <TextAreaField
+                    label="Company Profile"
+                    name="companyProfile"
+                    placeholder="Briefly describe the company, products/services, established year, turnover, website, etc."
+                    required
+                    rows={5}
+                    help="Provide enough information for the institution to understand the organization."
+                  />
+                </div>
+
+              </div>
+            </section>
+
+            {/* =================================================
+                3. INTERNSHIP DETAILS
+            ================================================== */}
+            <section className="bg-white rounded-3xl border border-emerald-100 shadow-sm overflow-hidden">
+              <SectionHeader
+                icon="💼"
+                title="Internship Details"
+                description="Describe your internship schedule, duties and expected learning."
+                color="emerald"
+              />
+
+              <div className="px-4 pb-5 sm:px-6 sm:pb-7">
+
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+
+                  <Field
+                    label="Internship Start Date"
+                    name="startDate"
+                    type="date"
+                    required
+                    help="You can change the default date if required."
+                  />
+
+                  <Field
+                    label="Internship End Date"
+                    name="endDate"
+                    type="date"
+                    required
+                  />
+
+                  <Field
+                    label="Working Hours"
+                    name="workingHours"
+                    placeholder="e.g. 9:00 AM - 5:00 PM"
+                    required
+                  />
+
+                </div>
+
+                <div className="mt-6 space-y-5">
+
+                  <TextAreaField
+                    label="Nature of Job / Duties"
+                    name="duties"
+                    placeholder="Describe the nature of work and responsibilities assigned to you."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Details of Tasks / Projects"
+                    name="tasks"
+                    placeholder="Describe the major tasks, projects or activities you expect to perform."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Expected Skills to Acquire"
+                    name="expectedSkills"
+                    placeholder="List the technical and professional skills you expect to develop."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Expected Tools / Software / Machines"
+                    name="expectedTools"
+                    placeholder="Mention the software, programming languages, tools, machines or technologies you expect to use."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Expected Challenges"
+                    name="expectedChallenges"
+                    placeholder="Describe the challenges you expect during the internship."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Expected Learning Outcomes"
+                    name="learningOutcomes"
+                    placeholder="Describe what you expect to learn or achieve by the end of the internship."
+                    required
+                    rows={4}
+                  />
+
+                  <TextAreaField
+                    label="Expected Job Opportunity"
+                    name="jobOpportunity"
+                    placeholder="Mention possible job opportunities in the same company or other companies after the internship."
+                    required
+                    rows={4}
+                  />
+
+                </div>
+
+              </div>
+            </section>
+
+            {/* =================================================
+                4. ADDITIONAL DETAILS
+            ================================================== */}
+            <section className="bg-white rounded-3xl border border-amber-100 shadow-sm overflow-hidden">
+              <SectionHeader
+                icon="📈"
+                title="Additional Details"
+                description="  These fields are optional. Fill them only if
+                        applicable to you. "
+                color="amber"
+              />
+
+              <div className="px-4 pb-5 sm:px-6 sm:pb-7">
+
+            
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                  <Field
+                    label="Stipend Amount"
+                    name="stipendAmount"
+                    type="number"
+                    placeholder="Enter stipend amount"
+                    help="Enter 0 if you are not receiving any stipend/salary during the internship."
+                  />
+
+                  <Field
+                    label="Placement Company"
+                    name="PlacedCompany"
+                    placeholder="Company where you were placed"
+                    help="Enter the company name if you received a placement offer."
+                  />
+
+                  <div className="md:col-span-2">
+                    <Field
+                      label="Job Package Details"
+                      name="jobPackage"
+                      placeholder="e.g. ₹4.5 LPA"
+                      help="Enter the job salary/package. Do not enter your internship stipend here."
+                    />
+                  </div>
+
+                </div>
+
+              </div>
+            </section>
+
+            {/* =================================================
+                SUBMIT AREA
+            ================================================== */}
+            <section className="bg-white rounded-3xl border border-slate-200 shadow-sm p-4 sm:p-6">
+
+              <div className="rounded-2xl bg-slate-50 border border-slate-200 p-4 sm:p-5 mb-5">
+                <div className="flex items-start gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center shrink-0">
+                    📋
+                  </div>
+
+                  <div>
+                    <h3 className="text-sm font-bold text-slate-800">
+                      Before submitting
+                    </h3>
+
+                    <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-5">
+                      Please verify your register number, company details,
+                      internship dates and other information carefully.
+                      Once submitted, your application will go through the
+                      institutional review process.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full min-h-12 sm:min-h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300 text-white font-bold text-sm sm:text-base transition-all shadow-md shadow-blue-100 hover:shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2"
+              >
+                {loading ? (
+                  <>
+                    <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+                    Submitting Application...
+                  </>
+                ) : (
+                  <>
+                    <span>✓</span>
+                    Submit Internship Application
+                  </>
+                )}
+              </button>
+
+              <p className="text-center text-[10px] sm:text-xs text-slate-400 mt-3">
+                Fields marked with <span className="text-rose-500">*</span>{" "}
+                are required.
+              </p>
+
+            </section>
+
+          </form>
+        </div>
+      </main>
+
+      {/* =====================================================
+          LOADING OVERLAY
+      ====================================================== */}
+      {loading && (
+        <div className="fixed inset-0 flex items-center justify-center bg-slate-950/40 backdrop-blur-sm z-50 px-4">
+
+          <div className="w-full max-w-sm bg-white rounded-3xl shadow-2xl p-7 text-center">
+
+            <div className="w-16 h-16 mx-auto rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center">
+
+              <div className="w-9 h-9 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+
             </div>
-          )}
-        </form>
-      </div>
+
+            <h3 className="mt-5 text-lg font-bold text-slate-800">
+              Submitting Application
+            </h3>
+
+            <p className="mt-1 text-sm text-slate-500">
+              Please wait while your application is being submitted.
+            </p>
+
+            <div className="mt-5 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="h-full w-1/2 bg-blue-600 rounded-full animate-pulse"></div>
+            </div>
+
+            <p className="mt-3 text-xs text-slate-400">
+              Do not close or refresh this page.
+            </p>
+
+          </div>
+
+        </div>
+      )}
     </>
   );
 }

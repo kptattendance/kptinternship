@@ -48,41 +48,46 @@ export const generateInternshipLetter = async (req, res) => {
     );
     doc.pipe(res);
 
-    // ✅ Use Cloudinary images (Buffers)
-    doc.image(logo3, 30, 40, { width: 60 });
-    doc.image(logo4, 500, 40, { width: 60 });
-    doc.image(logo5, 300, 40, { width: 20 });
-
+  doc.image(logo3, 30, 32, { width: 60 });
+doc.image(logo4, 500, 32, { width: 60 });
+doc.image(logo5, 294, 20, { width: 24 });
     // --- Header ---
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(14)
-      .text("GOVERNMENT OF KARNATAKA", { align: "center" });
-    doc
-      .font("Helvetica")
-      .fontSize(11)
-      .fillColor("red")
-      .text("DEPARTMENT OF COLLEGIATE AND TECHNICAL EDUCATION", {
-        align: "center",
-      });
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(13)
-      .fillColor("green")
-      .text("KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU", { align: "center" });
-    doc
-      .font("Helvetica-Bold")
-      .fontSize(10)
-      .fillColor("blue")
-      .text("(First Autonomous Polytechnic in India from AICTE, New Delhi)", {
-        align: "center",
-      });
-    doc
-      .font("Helvetica")
-      .fillColor("orange")
-      .text("Kadri Hills, Mangaluru–575004, Dakshina Kannada, Karnataka", {
-        align: "center",
-      });
+   doc
+  .font("Helvetica-Bold")
+  .fontSize(14)
+  .fillColor("black")
+  .text("GOVERNMENT OF KARNATAKA", { align: "center" });
+
+doc
+  .font("Helvetica")
+  .fontSize(11)
+  .fillColor("red")
+  .text("DEPARTMENT OF COLLEGIATE AND TECHNICAL EDUCATION", {
+    align: "center",
+  });
+
+doc
+  .font("Helvetica-Bold")
+  .fontSize(13)
+  .fillColor("green")
+  .text("KARNATAKA (GOVT.....) POLYTECHNIC, MANGALURU", {
+    align: "center",
+  });
+
+doc
+  .font("Helvetica-Bold")
+  .fontSize(10)
+  .fillColor("blue")
+  .text("(First Autonomous Polytechnic in India from AICTE, New Delhi)", {
+    align: "center",
+  });
+
+doc
+  .font("Helvetica")
+  .fillColor("orange")
+  .text("Kadri Hills..., Mangaluru–575004, Dakshina Kannada, Karnataka", {
+    align: "center",
+  });
 
     const today = new Date().toLocaleDateString("en-GB");
     doc.moveTo(0, doc.y).lineTo(750, doc.y).stroke();

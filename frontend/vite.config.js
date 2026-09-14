@@ -13,15 +13,15 @@ export default defineConfig(({ command }) => {
     // HTTPS is required only for local development
     server: isDev
       ? {
-          host: "local.kptplacements.org",
+          host: "local.intern.kptmangaluru.in",
           port: 443,
           strictPort: true,
           https: {
             key: fs.readFileSync(
-              "./local.kptplacements.org-key.pem"
+              "./local.intern.kptmangaluru.in-key.pem"
             ),
             cert: fs.readFileSync(
-              "./local.kptplacements.org.pem"
+              "./local.intern.kptmangaluru.in.pem"
             ),
           },
         }

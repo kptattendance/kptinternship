@@ -203,3 +203,146 @@ export const getMyApplications = async (req, res) => {
     });
   }
 };
+
+
+
+/**
+ * Upload / replace parent consent letter
+ */
+export const uploadParentConsentLetter = async (req, res) => {
+  try {
+    const studentId = req.auth.userId;
+
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Please upload the parent consent letter.",
+      });
+    }
+
+    // Find student's application
+    const application = await Application.findOne({ studentId });
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship application not found.",
+      });
+    }
+
+    /*
+     * Keep the old Cloudinary public ID.
+     * If the student is replacing an existing letter,
+     * we will delete the old image after saving the new one.
+     */
+    const oldPublicId =
+      application.parentConsentLetter?.publicId || "";
+
+    /*
+     * multer-storage-cloudinary has already uploaded
+     * the image to Cloudinary.
+     *
+     * req.file.path   = secure Cloudinary URL
+     * req.file.filename = Cloudinary public ID
+     */
+    const imageUrl = req.file.path;
+    const publicId = req.file.filename;
+
+    application.parentConsentLetter = {
+      submitted: true,
+      imageUrl,
+      publicId,
+      uploadedAt: new Date(),
+    };
+
+    await application.save();
+
+    /*
+     * Delete the previous consent image from Cloudinary
+     * after the new image has been successfully saved.
+     */
+    if (oldPublicId && oldPublicId !== publicId) {
+      try {
+        await cloudinary.uploader.destroy(oldPublicId);
+      } catch (cloudinaryError) {
+        console.error(
+          "Failed to delete old consent letter:",
+          cloudinaryError
+        );
+      }
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: "Parent consent letter uploaded successfully.",
+      data: application,
+    });
+  } catch (err) {
+    console.error("❌ Parent consent upload error:", err);
+
+    /*
+     * If something failed after Cloudinary uploaded the new file,
+     * try to remove the newly uploaded file.
+     */
+    if (req.file?.filename) {
+      try {
+        await cloudinary.uploader.destroy(req.file.filename);
+      } catch (cleanupError) {
+        console.error(
+          "Failed to clean up Cloudinary image:",
+          cleanupError
+        );
+      }
+    }
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to upload parent consent letter.",
+      error: err.message,
+    });
+  }
+};
+
+
+/**
+ * Get applications with parent consent status
+ *
+ * Used by:
+ * - Cohort Owner
+ * - HOD
+ * - Admin
+ */
+export const getParentConsentApplications = async (req, res) => {
+  try {
+    const applications = await Application.find(
+      {},
+      {
+        studentId: 1,
+        name: 1,
+        regNumber: 1,
+        department: 1,
+        image: 1,
+        parentConsentLetter: 1,
+        cohortOwner: 1,
+        hod: 1,
+      }
+    ).sort({ regNumber: 1 });
+
+    return res.status(200).json({
+      success: true,
+      count: applications.length,
+      data: applications,
+    });
+  } catch (err) {
+    console.error(
+      "❌ Get parent consent applications error:",
+      err
+    );
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to fetch parent consent records.",
+      error: err.message,
+    });
+  }
+};

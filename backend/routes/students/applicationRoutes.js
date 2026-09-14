@@ -6,10 +6,13 @@ import {
   updateApplication,
   deleteApplication,
   getMyApplications,
+  uploadParentConsentLetter,
+  getParentConsentApplications,
 } from "../../controllers/students/applicationController.js";
 import { requireAuthMiddleware } from "../../middlewares/authMiddleware.js";
 import { generateInternshipLetter } from "../../controllers/students/pdfController.js";
 import upload from "../../middlewares/uploadMiddleware.js";
+import uploadConsent from "../../middlewares/consentUpload.js";
 
 const router = express.Router();
 
@@ -42,5 +45,18 @@ router.get("/myApplications", requireAuthMiddleware, getMyApplications);
 
 // Download internship letter (PDF)
 router.get("/download/:id", generateInternshipLetter);
+
+router.post(
+  "/parent-consent",
+  requireAuthMiddleware,
+  uploadConsent.single("consentLetter"),
+  uploadParentConsentLetter
+);
+
+router.get(
+  "/parent-consent",
+  requireAuthMiddleware,
+  getParentConsentApplications
+);
 
 export default router;

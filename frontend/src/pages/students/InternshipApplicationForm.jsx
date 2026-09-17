@@ -205,9 +205,23 @@ export default function InternshipApplicationForm() {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
-  };
+ const handleChange = (e) => {
+  const { name, value } = e.target;
+
+  if (name === "department") {
+    setForm({
+      ...form,
+      department: value,
+      subName: "",
+    });
+    return;
+  }
+
+  setForm({
+    ...form,
+    [name]: value,
+  });
+};
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -233,6 +247,81 @@ export default function InternshipApplicationForm() {
       startDate: "Start Date",
       endDate: "End Date",
     };
+
+    // =============================================================
+// DEPARTMENT-WISE SUBJECT LIST
+// =============================================================
+
+const SUBJECTS_BY_DEPARTMENT = {
+  ce: [
+    {
+      name: "Structural Engineering",
+      code: "20CE51I",
+      students: 24,
+    },
+    {
+      name: "Transportation Engineering",
+      code: "20CE53I",
+      students: 18,
+    },
+  ],
+
+  po: [
+    {
+      name: "Polymer Product Manufacturing Technology",
+      code: "20PO51I",
+      students: 31,
+    },
+  ],
+
+  at: [
+    {
+      name: "Hybrid and Electric Vehicle",
+      code: "20AT54I",
+      students: 57,
+    },
+  ],
+
+  cs: [
+    {
+      name: "Full Stack Development",
+      code: "20CS52I",
+      students: 64,
+    },
+  ],
+
+  eee: [
+    {
+      name: "Electrical Utility Engineering",
+      code: "20EE541",
+      students: 61,
+    },
+  ],
+
+  ch: [
+    {
+      name: "Process Plant Technology",
+      code: "20CH54I",
+      students: 63,
+    },
+  ],
+
+  ec: [
+    {
+      name: "Automation and Robotics",
+      code: "20EC531",
+      students: 68,
+    },
+  ],
+
+  me: [
+    {
+      name: "Advanced Manufacturing Technologies",
+      code: "20ME53I",
+      students: 60,
+    },
+  ],
+};
 
     for (const [key, label] of Object.entries(requiredFields)) {
       if (
@@ -459,12 +548,41 @@ export default function InternshipApplicationForm() {
                     </div>
                   </div>
 
-                  <Field form={form} handleChange={handleChange}
-                    label="Subject Name"
-                    name="subName"
-                    placeholder="Enter subject name"
-                    required
-                  />
+                <Field
+  form={form}
+  handleChange={handleChange}
+  label="Subject"
+  name="subName"
+  required
+  help="Select the subject applicable to the selected department."
+>
+  <select
+    id="subName"
+    name="subName"
+    value={form.subName}
+    onChange={handleChange}
+    required
+    disabled={!form.department}
+    className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all focus:border-blue-400 focus:ring-4 focus:ring-blue-50 hover:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400 disabled:cursor-not-allowed"
+  >
+    <option value="">
+      {form.department
+        ? "Select Subject"
+        : "Select Department First"}
+    </option>
+
+    {(SUBJECTS_BY_DEPARTMENT[form.department] || []).map(
+      (subject) => (
+        <option
+          key={subject.code}
+          value={`${subject.name} (${subject.code})`}
+        >
+          {subject.name} — {subject.code}
+        </option>
+      )
+    )}
+  </select>
+</Field>
 
                 </div>
               </div>

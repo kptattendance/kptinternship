@@ -10,13 +10,13 @@ import YearStatisticsView from "../components/homeDashboard/YearStatisticsView";
 
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering", total: 57 },
-  { value: "ch", label: "Chemical Engineering", total: 60 },
-  { value: "ce", label: "Civil Engineering", total: 48 },
-  { value: "cs", label: "Computer Science Engineering", total: 63 },
-  { value: "ec", label: "Electronics & Communication Engineering", total: 55 },
-  { value: "eee", label: "Electrical & Electronics Engineering", total: 55 },
-  { value: "me", label: "Mechanical Engineering", total: 62 },
-  { value: "po", label: "Polymer Engineering", total: 36 },
+  { value: "ch", label: "Chemical Engineering", total: 63 },
+  { value: "ce", label: "Civil Engineering", total: 42 },
+  { value: "cs", label: "Computer Science Engineering", total: 64 },
+  { value: "ec", label: "Electronics & Communication Engineering", total: 68 },
+  { value: "eee", label: "Electrical & Electronics Engineering", total: 61 },
+  { value: "me", label: "Mechanical Engineering", total: 60 },
+  { value: "po", label: "Polymer Engineering", total: 31 },
 ].sort((a, b) => a.label.localeCompare(b.label));
 
 export default function Home() {

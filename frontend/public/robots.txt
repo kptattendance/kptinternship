@@ -1,3 +1,13 @@
 User-agent: *
 Allow: /
-Sitemap: https://www.kptplacements.org/sitemap.xml 
+
+Disallow: /api/
+Disallow: /admin/
+Disallow: /dashboard/
+Disallow: /hod/
+Disallow: /faculty/
+Disallow: /student/
+Disallow: /login/
+Disallow: /auth/
+
+Sitemap: https://intern.kptmangaluru.in/sitemap.xml

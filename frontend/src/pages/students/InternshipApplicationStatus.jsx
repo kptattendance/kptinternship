@@ -1145,6 +1145,12 @@ const handleUploadInternshipImage = async () => {
                   </p>
                 )}
 
+                <p className="text-xs text-emerald-700 mt-0.5">
+                  {internshipImage.approved
+                    ? "✓ Approved — shown on the home page"
+                    : "Waiting for placement officer approval to appear on the home page"}
+                </p>
+
               </div>
 
             </div>

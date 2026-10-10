@@ -3,6 +3,8 @@ import {
   createApplication,
   getApplications,
   getPublicApplications,
+  getPublicInternshipPhotos,
+  setInternshipImageApproval,
   getApplicationById,
   updateApplication,
   deleteApplication,
@@ -53,6 +55,9 @@ router.post(
 // Public home page dashboard → limited fields only
 router.get("/public/applications", getPublicApplications);
 
+// Public home page hero → approved internship photos only
+router.get("/public/internship-photos", getPublicInternshipPhotos);
+
 // Fetch all applications (staff only)
 router.get("/getAllApplications", requireStaff, getApplications);
 
@@ -91,6 +96,13 @@ router.post(
 );
 
 router.get("/internship-images", requireDocumentViewer, getDocumentApplications);
+
+// Placement officer approves a photo for the home page hero section
+router.put(
+  "/internship-images/:id/approval",
+  requireDocumentAdmin,
+  setInternshipImageApproval
+);
 
 router.delete(
   "/myApplications/parent-consent",

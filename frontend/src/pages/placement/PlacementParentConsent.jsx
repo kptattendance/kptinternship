@@ -24,6 +24,7 @@ export default function PlacementParentConsent() {
 
   const [deletingConsent, setDeletingConsent] = useState(false);
   const [deletingInternshipImages, setDeletingInternshipImages] = useState(false);
+  const [approvingPhotoId, setApprovingPhotoId] = useState(null);
 
   // Separate bulk-delete filters
   const [consentDeleteFilter, setConsentDeleteFilter] = useState("submitted");
@@ -88,6 +89,7 @@ export default function PlacementParentConsent() {
           imageUrl: "",
           publicId: "",
           uploadedAt: null,
+          approved: false,
         },
       }));
 
@@ -345,6 +347,61 @@ export default function PlacementParentConsent() {
       );
     } finally {
       setDeletingConsent(false);
+    }
+  };
+
+  // =========================================================
+  // APPROVE INTERNSHIP PHOTO FOR HOME PAGE
+  // =========================================================
+
+  const canApprovePhotos =
+    currentUser && ["placement", "admin"].includes(currentUser.role);
+
+  const handlePhotoApproval = async (app, approved) => {
+    try {
+      setApprovingPhotoId(app._id);
+
+      const token = await getToken();
+
+      const res = await axios.put(
+        `${backendUrl}/api/students/internship-images/${app._id}/approval`,
+        { approved },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
+
+      if (res.data.success) {
+        toast.success(res.data.message);
+
+        const internshipImage = res.data.data;
+
+        setApplications((prev) =>
+          prev.map((a) =>
+            a._id === app._id ? { ...a, internshipImage } : a
+          )
+        );
+
+        setSelectedInternshipImage((prev) =>
+          prev && prev._id === app._id
+            ? { ...prev, internshipImage }
+            : prev
+        );
+      }
+    } catch (err) {
+      console.error(
+        "❌ Internship photo approval error:",
+        err.response?.data || err.message
+      );
+
+      toast.error(
+        err.response?.data?.message ||
+          "Failed to update internship photo approval."
+      );
+    } finally {
+      setApprovingPhotoId(null);
     }
   };
 
@@ -1017,6 +1074,15 @@ export default function PlacementParentConsent() {
                                   👁 View Photo
                                 </button>
 
+                                {app.internshipImage?.approved && (
+                                  <span
+                                    className="inline-flex items-center px-2 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-bold whitespace-nowrap"
+                                    title="Shown on the home page"
+                                  >
+                                    ✓ On Home Page
+                                  </span>
+                                )}
+
                               </div>
 
                             ) : (
@@ -1214,6 +1280,7 @@ export default function PlacementParentConsent() {
                             className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition"
                           >
                             👁 View Internship Photo
+                            {app.internshipImage?.approved && " • On Home Page"}
                           </button>
 
                         </div>
@@ -1458,17 +1525,48 @@ export default function PlacementParentConsent() {
 
               </div>
 
-              <a
-                href={
-                  selectedInternshipImage.internshipImage
-                    ?.imageUrl
-                }
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition"
-              >
-                ↗ Open Full Image
-              </a>
+              <div className="flex flex-col sm:flex-row gap-2">
+
+                {/* Approve / remove from home page hero section */}
+                {canApprovePhotos && (
+                  <button
+                    type="button"
+                    disabled={
+                      approvingPhotoId === selectedInternshipImage._id
+                    }
+                    onClick={() =>
+                      handlePhotoApproval(
+                        selectedInternshipImage,
+                        !selectedInternshipImage.internshipImage?.approved
+                      )
+                    }
+                    className={`inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl text-white text-xs font-bold transition disabled:opacity-60 ${
+                      selectedInternshipImage.internshipImage?.approved
+                        ? "bg-rose-600 hover:bg-rose-700"
+                        : "bg-emerald-600 hover:bg-emerald-700"
+                    }`}
+                  >
+                    {approvingPhotoId === selectedInternshipImage._id
+                      ? "Saving..."
+                      : selectedInternshipImage.internshipImage?.approved
+                      ? "✕ Remove from Home Page"
+                      : "✓ Approve for Home Page"}
+                  </button>
+                )}
+
+                <a
+                  href={
+                    selectedInternshipImage.internshipImage
+                      ?.imageUrl
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-sky-600 hover:bg-sky-700 text-white text-xs font-bold transition"
+                >
+                  ↗ Open Full Image
+                </a>
+
+              </div>
 
             </div>
 

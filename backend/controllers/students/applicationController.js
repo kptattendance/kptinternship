@@ -70,6 +70,15 @@ const EMPTY_DOCUMENT = {
   uploadedAt: null,
 };
 
+// A cleared internship image also loses its home page approval
+const emptyDocument = (field) =>
+  field === "internshipImage"
+    ? { ...EMPTY_DOCUMENT, approved: false, approvedAt: null }
+    : { ...EMPTY_DOCUMENT };
+
+// Most recently approved photos shown in the home page hero section
+const MAX_HERO_PHOTOS = 30;
+
 const pickEditableFields = (body = {}) => {
   const picked = {};
 
@@ -459,11 +468,14 @@ export const uploadInternshipImage = async (req, res) => {
     const imageUrl = req.file.path;
     const publicId = req.file.filename;
 
+    // A new photo always needs a fresh approval from the placement officer
     application.internshipImage = {
       submitted: true,
       imageUrl,
       publicId,
       uploadedAt: new Date(),
+      approved: false,
+      approvedAt: null,
     };
 
     await application.save();
@@ -530,6 +542,95 @@ export const getDocumentApplications = async (req, res) => {
   }
 };
 
+/**
+ * Approve / un-approve an internship image for the public home page
+ * (Placement + Admin only)
+ * body: { approved: true | false }
+ */
+export const setInternshipImageApproval = async (req, res) => {
+  try {
+    const { approved } = req.body || {};
+
+    if (typeof approved !== "boolean") {
+      return res.status(400).json({
+        success: false,
+        message: "Please specify whether the photo is approved.",
+      });
+    }
+
+    // Only an uploaded photo can be approved
+    const application = mongoose.isValidObjectId(req.params.id)
+      ? await Application.findOneAndUpdate(
+          {
+            _id: req.params.id,
+            "internshipImage.imageUrl": { $nin: ["", null] },
+          },
+          {
+            $set: {
+              "internshipImage.approved": approved,
+              "internshipImage.approvedAt": approved ? new Date() : null,
+            },
+          },
+          { new: true }
+        )
+      : null;
+
+    if (!application) {
+      return res.status(404).json({
+        success: false,
+        message: "Internship image not found.",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      message: approved
+        ? "Internship photo approved for the home page."
+        : "Internship photo removed from the home page.",
+      data: application.internshipImage,
+    });
+  } catch (err) {
+    console.error("❌ Internship image approval error:", err);
+
+    return res.status(500).json({
+      success: false,
+      message: "Failed to update internship photo approval.",
+      error: err.message,
+    });
+  }
+};
+
+/**
+ * Public home page hero — approved internship photos only
+ */
+export const getPublicInternshipPhotos = async (req, res) => {
+  try {
+    const applications = await Application.find(
+      {
+        "internshipImage.approved": true,
+        "internshipImage.imageUrl": { $nin: ["", null] },
+      },
+      "name department companyName internshipImage.imageUrl"
+    )
+      .sort({ "internshipImage.approvedAt": -1 })
+      .limit(MAX_HERO_PHOTOS)
+      .lean();
+
+    res.set("Cache-Control", "public, max-age=60");
+    res.json(
+      applications.map((application) => ({
+        _id: application._id,
+        name: application.name,
+        department: application.department,
+        companyName: application.companyName,
+        imageUrl: application.internshipImage.imageUrl,
+      }))
+    );
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+};
+
 // Parent consent letter and internship image are stored the same way, so the
 // student "delete my document" and staff "bulk delete" handlers are shared.
 
@@ -557,7 +658,7 @@ const deleteOwnDocument = (field, label) => async (req, res) => {
     await cloudinary.uploader.destroy(publicId);
 
     // Clear MongoDB fields
-    application[field] = { ...EMPTY_DOCUMENT };
+    application[field] = emptyDocument(field);
 
     await application.save();
 
@@ -609,7 +710,7 @@ const bulkDeleteDocuments = (field, label) => async (req, res) => {
     if (clearedIds.length > 0) {
       await Application.updateMany(
         { _id: { $in: clearedIds } },
-        { $set: { [field]: EMPTY_DOCUMENT } }
+        { $set: { [field]: emptyDocument(field) } }
       );
     }
 

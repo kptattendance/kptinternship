@@ -239,6 +239,17 @@ internshipImage: {
     type: Date,
     default: null,
   },
+
+  // Placement officer approval → photo is shown on the public home page
+  approved: {
+    type: Boolean,
+    default: false,
+  },
+
+  approvedAt: {
+    type: Date,
+    default: null,
+  },
 },
     // =========================================================
     // Parent Consent / Undertaking Letter
@@ -424,6 +435,7 @@ internshipImage: {
 applicationSchema.index({ studentId: 1 });
 applicationSchema.index({ department: 1 });
 applicationSchema.index({ companyEmail: 1 });
+applicationSchema.index({ "internshipImage.approved": 1 });
 
 // =========================================================
 // Automatically calculate CIE totals

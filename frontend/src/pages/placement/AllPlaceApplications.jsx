@@ -322,41 +322,26 @@ export default function AllPlaceApplications() {
       const token = await getToken();
 
       /*
-       * Delete every selected application using
-       * the existing backend endpoint.
-       *
-       * Promise.allSettled ensures that if one
-       * deletion fails, the remaining deletions
-       * are still attempted.
+       * Delete every selected application in a
+       * single request. The backend reports which
+       * applications were actually deleted.
        */
 
-      const results = await Promise.allSettled(
-        selectedApplications.map((id) =>
-          axios.delete(
-            backendUrl +
-              `/api/students/deleteApplication/${id}`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          )
-        )
+      const res = await axios.delete(
+        backendUrl + "/api/students/applications/bulk-delete",
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          data: {
+            applicationIds: selectedApplications,
+          },
+        }
       );
 
-      const successfulIds = [];
+      const successfulIds = res.data.deletedIds || [];
 
-      let failedCount = 0;
-
-      results.forEach((result, index) => {
-        if (result.status === "fulfilled") {
-          successfulIds.push(
-            selectedApplications[index]
-          );
-        } else {
-          failedCount++;
-        }
-      });
+      const failedCount = res.data.failedCount || 0;
 
       // Remove successfully deleted applications
       setApps((prev) =>

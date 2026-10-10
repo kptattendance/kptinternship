@@ -2,25 +2,45 @@ import express from "express";
 import {
   createApplication,
   getApplications,
+  getPublicApplications,
   getApplicationById,
   updateApplication,
   deleteApplication,
+  bulkDeleteApplications,
   getMyApplications,
   uploadParentConsentLetter,
-  getParentConsentApplications,
+  getDocumentApplications,
   uploadInternshipImage,
-  getInternshipImageApplications,
   deleteParentConsentLetter,
   deleteInternshipImage,
   bulkDeleteInternshipImages,
   bulkDeleteParentConsentLetters,
 } from "../../controllers/students/applicationController.js";
 import { requireAuthMiddleware } from "../../middlewares/authMiddleware.js";
+import {
+  ALL_DEPARTMENT_ROLES,
+  DEPARTMENT_ROLES,
+  attachUserRole,
+  requireRole,
+} from "../../middlewares/requireRole.js";
 import { generateInternshipLetter } from "../../controllers/students/pdfController.js";
 import upload from "../../middlewares/uploadMiddleware.js";
 import uploadConsent from "../../middlewares/consentUpload.js";
 import uploadInternshipImageFile from "../../middlewares/uploadInternshipImageFile.js";
 const router = express.Router();
+
+// Staff who can see / manage applications (own department or all)
+const requireStaff = requireRole([...DEPARTMENT_ROLES, ...ALL_DEPARTMENT_ROLES]);
+
+// Staff who can see uploaded consent letters / internship images
+const requireDocumentViewer = requireRole([
+  ...DEPARTMENT_ROLES,
+  "placement",
+  "admin",
+]);
+
+// Staff who can bulk delete uploaded documents
+const requireDocumentAdmin = requireRole(["placement", "admin"]);
 
 // Student submits new application → must be logged in
 router.post(
@@ -30,27 +50,29 @@ router.post(
   createApplication
 );
 
-// Fetch all applications (public / dashboard)
-router.get("/getAllApplications", getApplications);
+// Public home page dashboard → limited fields only
+router.get("/public/applications", getPublicApplications);
 
-// Fetch single application
-router.get("/getApplication/:id", requireAuthMiddleware, getApplicationById);
+// Fetch all applications (staff only)
+router.get("/getAllApplications", requireStaff, getApplications);
 
-// Update application
-router.put("/updateApplication/:id", requireAuthMiddleware, updateApplication);
+// Fetch single application (owner or staff)
+router.get("/getApplication/:id", attachUserRole, getApplicationById);
 
-// Delete application
-router.delete(
-  "/deleteApplication/:id",
-  requireAuthMiddleware,
-  deleteApplication
-);
+// Update application (staff only)
+router.put("/updateApplication/:id", requireStaff, updateApplication);
+
+// Delete many applications at once (staff only)
+router.delete("/applications/bulk-delete", requireStaff, bulkDeleteApplications);
+
+// Delete application (staff only)
+router.delete("/deleteApplication/:id", requireStaff, deleteApplication);
 
 // Get logged-in student's applications
 router.get("/myApplications", requireAuthMiddleware, getMyApplications);
 
-// Download internship letter (PDF)
-router.get("/download/:id", generateInternshipLetter);
+// Download internship letter (PDF) → owner or staff
+router.get("/download/:id", attachUserRole, generateInternshipLetter);
 
 router.post(
   "/myApplications/parent-consent",
@@ -59,42 +81,38 @@ router.post(
   uploadParentConsentLetter
 );
 
-
-router.get(
-  "/parent-consent",
-  requireAuthMiddleware,
-  getParentConsentApplications
-);
+router.get("/parent-consent", requireDocumentViewer, getDocumentApplications);
 
 router.post(
   "/myApplications/internship-image",
+  requireAuthMiddleware,
   uploadInternshipImageFile.single("internshipImage"),
   uploadInternshipImage
 );
 
-router.get(
-  "/internship-images",
-  getInternshipImageApplications
-);
+router.get("/internship-images", requireDocumentViewer, getDocumentApplications);
 
 router.delete(
   "/myApplications/parent-consent",
+  requireAuthMiddleware,
   deleteParentConsentLetter
 );
 
 router.delete(
   "/myApplications/internship-image",
+  requireAuthMiddleware,
   deleteInternshipImage
 );
 
-
 router.delete(
   "/parent-consent/bulk-delete",
+  requireDocumentAdmin,
   bulkDeleteParentConsentLetters
 );
 
 router.delete(
   "/internship-images/bulk-delete",
+  requireDocumentAdmin,
   bulkDeleteInternshipImages
 );
 export default router;

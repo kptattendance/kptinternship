@@ -29,7 +29,7 @@ export default function Home() {
     const fetchApplications = async () => {
       try {
         const res = await axios.get(
-          backendUrl + "/api/students/getAllApplications"
+          backendUrl + "/api/students/public/applications"
         );
         setApplications(res.data);
       } catch (err) {

@@ -52,7 +52,6 @@ export default function CompanyDashboard() {
             .filter(Boolean)
         ),
       ];
-      console.log(staffRes.data);
       if (staffRes.data.ok) {
         const users = staffRes.data.users;
 
@@ -63,13 +62,11 @@ export default function CompanyDashboard() {
             u.role?.toLowerCase() === "hod" &&
             departments.includes(u.department?.toLowerCase())
         );
-        console.log(hods);
         const cohortOwners = users.filter(
           (u) =>
             u.role?.toLowerCase() === "cohortowner" &&
             departments.includes(u.department?.toLowerCase())
         );
-        console.log(cohortOwners);
         setStaff({
           principal,
           hods,
@@ -149,19 +146,19 @@ export default function CompanyDashboard() {
       setSavingMarks(true);
       const token = await getToken();
 
-      await Promise.all(
-        applications.map((app) =>
-          axios.put(
-            `${backendUrl}/api/company/applications/${app._id}/company-marks`,
-            {
-              cie2: app.marks.cie2,
-              cie3: app.marks.cie3,
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          )
-        )
+      // Save every student's marks in a single request
+      await axios.put(
+        `${backendUrl}/api/company/applications/company-marks`,
+        {
+          applications: applications.map((app) => ({
+            _id: app._id,
+            cie2: app.marks.cie2,
+            cie3: app.marks.cie3,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       toast.success("✅ Company CIE marks saved successfully");
@@ -179,23 +176,22 @@ export default function CompanyDashboard() {
       setSavingAttendance(true);
       const token = await getToken();
 
-      // Save attendance for each application
-      await Promise.all(
-        applications.map((app) =>
-          axios.put(
-            `${backendUrl}/api/company/applications/${app._id}/attendance`,
-            {
-              month1: Number(app.attendance?.month1) || 0,
-              month2: Number(app.attendance?.month2) || 0,
-              month3: Number(app.attendance?.month3) || 0,
-              month4: Number(app.attendance?.month4) || 0,
-              month5: Number(app.attendance?.month5) || 0,
-            },
-            {
-              headers: { Authorization: `Bearer ${token}` },
-            }
-          )
-        )
+      // Save every student's attendance in a single request
+      await axios.put(
+        `${backendUrl}/api/company/applications/attendance`,
+        {
+          applications: applications.map((app) => ({
+            _id: app._id,
+            month1: Number(app.attendance?.month1) || 0,
+            month2: Number(app.attendance?.month2) || 0,
+            month3: Number(app.attendance?.month3) || 0,
+            month4: Number(app.attendance?.month4) || 0,
+            month5: Number(app.attendance?.month5) || 0,
+          })),
+        },
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
       toast.success("✅ Attendance updated successfully!");

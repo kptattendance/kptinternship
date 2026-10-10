@@ -16,31 +16,26 @@ const router = express.Router();
 router.get("/sync", requireAuthMiddleware, syncUser);
 router.post(
   "/create",
-  requireAuthMiddleware,
   requireRole(["placement", "hod", "cohortOwner"]),
   upload.single("image"),
   createUser
 );
 router.put(
   "/:id",
-  requireAuthMiddleware,
   requireRole(["placement", "hod"]),
   upload.single("image"),
   updateUser
 );
-router.delete(
-  "/:id",
-  requireAuthMiddleware,
-  requireRole(["placement", "hod"]),
-  deleteUser
-);
+router.delete("/:id", requireRole(["placement", "hod"]), deleteUser);
 router.get(
   "/",
-  requireAuthMiddleware,
   requireRole(["placement", "hod", "company", "principal"]),
   getAllUsers
 );
-router.get("/:id", requireAuthMiddleware, getUserById);
-// New GET endpoint for sync
+router.get(
+  "/:id",
+  requireRole(["placement", "hod", "principal", "admin"]),
+  getUserById
+);
 
 export default router;

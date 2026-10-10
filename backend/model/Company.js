@@ -30,6 +30,8 @@ const companySchema = new mongoose.Schema(
     logoUrl: { type: String },
     logoPublicId: { type: String },
 
+    clerkUserId: { type: String },
+
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",

@@ -47,22 +47,13 @@ export default function PlacementParentConsent() {
 
       const token = await getToken();
 
-      // Fetch parent consent, internship photos, and current user separately.
-      // The parent-consent endpoint and internship-images endpoint return
-      // separate document data, so we merge them below.
-      const [consentRes, internshipImageRes, meRes] =
+      // The parent-consent endpoint returns each application together with
+      // its parent consent letter and internship image, so one request
+      // covers both documents.
+      const [consentRes, meRes] =
         await Promise.all([
           axios.get(
             `${backendUrl}/api/students/parent-consent`,
-            {
-              headers: {
-                Authorization: `Bearer ${token}`,
-              },
-            }
-          ),
-
-          axios.get(
-            `${backendUrl}/api/students/internship-images`,
             {
               headers: {
                 Authorization: `Bearer ${token}`,
@@ -89,36 +80,15 @@ export default function PlacementParentConsent() {
 
       let apps = consentRes.data.data || [];
 
-      // =====================================================
-      // MERGE INTERNSHIP IMAGE DATA
-      // =====================================================
-
-      const internshipImageApplications =
-        internshipImageRes.data.data || [];
-
-      // Map internship image records by application _id.
-      const internshipImageMap = new Map();
-
-      internshipImageApplications.forEach((app) => {
-        if (app?._id) {
-          internshipImageMap.set(
-            String(app._id),
-            app.internshipImage || null
-          );
-        }
-      });
-
-      // Add internshipImage to the applications already loaded
-      // from the parent-consent endpoint.
+      // Make sure every application has an internshipImage object
       apps = apps.map((app) => ({
         ...app,
-        internshipImage:
-          internshipImageMap.get(String(app._id)) || {
-            submitted: false,
-            imageUrl: "",
-            publicId: "",
-            uploadedAt: null,
-          },
+        internshipImage: app.internshipImage || {
+          submitted: false,
+          imageUrl: "",
+          publicId: "",
+          uploadedAt: null,
+        },
       }));
 
       // =====================================================

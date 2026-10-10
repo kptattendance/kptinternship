@@ -1,31 +1,36 @@
 // src/App.jsx (example)
+import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
-import Dashboard from "./pages/students/Dashboard";
 import RedirectAfterLogin from "./pages/RedirectAfterLogin";
-import InternshipApplicationForm from "./pages/students/InternshipApplicationForm";
 import { ToastContainer } from "react-toastify";
-import InternshipApplicationStatus from "./pages/students/InternshipApplicationStatus";
-import Review from "./pages/reviewers/Review";
-import AddStaff from "./pages/hod/AddStaff";
-import StaffList from "./pages/hod/StaffList";
-import AllApplications from "./pages/hod/AllApplications";
 import ProtectedRoute from "./components/ProtectedRoute";
-import PlacementAddUser from "./pages/placement/PlacementAddUser";
-import MembersList from "./pages/placement/MembersList";
-import PlacementAddCompany from "./pages/placement/PlacementAddCompany";
-import CompanyDashboard from "./pages/company/CompanyDashboard";
-import InternalMark from "./pages/cohort/InternalMark";
-import YearStatistics from "./pages/placement/YearStatistics";
-import AllPlaceApplications from "./pages/placement/AllPlaceApplications";
-import AddCompany from "./pages/cohort/AddCompany";
-import ParentConsent from "./pages/cohort/ParentConsent";
-import PlacementParentConsent from "./pages/placement/PlacementParentConsent";
+import Loader from "./pages/Loader";
+
+// Pages other than the home page are downloaded only when they are opened
+const Dashboard = lazy(() => import("./pages/students/Dashboard"));
+const InternshipApplicationForm = lazy(() => import("./pages/students/InternshipApplicationForm"));
+const InternshipApplicationStatus = lazy(() => import("./pages/students/InternshipApplicationStatus"));
+const Review = lazy(() => import("./pages/reviewers/Review"));
+const AddStaff = lazy(() => import("./pages/hod/AddStaff"));
+const StaffList = lazy(() => import("./pages/hod/StaffList"));
+const AllApplications = lazy(() => import("./pages/hod/AllApplications"));
+const PlacementAddUser = lazy(() => import("./pages/placement/PlacementAddUser"));
+const MembersList = lazy(() => import("./pages/placement/MembersList"));
+const PlacementAddCompany = lazy(() => import("./pages/placement/PlacementAddCompany"));
+const CompanyDashboard = lazy(() => import("./pages/company/CompanyDashboard"));
+const InternalMark = lazy(() => import("./pages/cohort/InternalMark"));
+const YearStatistics = lazy(() => import("./pages/placement/YearStatistics"));
+const AllPlaceApplications = lazy(() => import("./pages/placement/AllPlaceApplications"));
+const AddCompany = lazy(() => import("./pages/cohort/AddCompany"));
+const ParentConsent = lazy(() => import("./pages/cohort/ParentConsent"));
+const PlacementParentConsent = lazy(() => import("./pages/placement/PlacementParentConsent"));
 
 export default function App() {
   return (
     <>
       <ToastContainer autoClose={3000} />
+      <Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -142,6 +147,7 @@ export default function App() {
           element={<InternshipApplicationStatus />}
         />
       </Routes>
+      </Suspense>
     </>
   );
 }

@@ -77,6 +77,53 @@ const internshipImageInputRef = useRef(null);
   }, [getToken, backendUrl]);
 
   // ---------------------------------------------------------
+  // View / print internship letter
+  // The letter is only given to the logged-in student, so it is
+  // fetched with the auth token and then shown in a new tab.
+  // ---------------------------------------------------------
+
+  const handleViewLetter = async (applicationId) => {
+    // Open the tab right away, otherwise the browser blocks it as a popup
+    const letterTab = window.open("", "_blank");
+
+    try {
+      const token = await getToken();
+
+      const res = await axios.get(
+        `${backendUrl}/api/students/download/${applicationId}`,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+          responseType: "blob",
+        }
+      );
+
+      const letterUrl = URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" })
+      );
+
+      if (letterTab) {
+        letterTab.location.href = letterUrl;
+      } else {
+        window.location.href = letterUrl;
+      }
+
+      // Free the memory once the tab has loaded the letter
+      setTimeout(() => URL.revokeObjectURL(letterUrl), 60 * 1000);
+    } catch (err) {
+      console.error(
+        "❌ Failed to open internship letter:",
+        err.response?.status || err.message
+      );
+
+      letterTab?.close();
+
+      alert("Unable to open the internship letter. Please try again.");
+    }
+  };
+
+  // ---------------------------------------------------------
   // Current application
   // ---------------------------------------------------------
 
@@ -637,14 +684,13 @@ const handleUploadInternshipImage = async () => {
                           {app.principal?.status ===
                           "approved" ? (
 
-                            <a
-                              href={`${backendUrl}/api/students/download/${app._id}`}
-                              target="_blank"
-                              rel="noopener noreferrer"
+                            <button
+                              type="button"
+                              onClick={() => handleViewLetter(app._id)}
                               className="inline-flex items-center gap-2 px-3 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-xs font-semibold transition whitespace-nowrap"
                             >
                               ↗ View / Print
-                            </a>
+                            </button>
 
                           ) : (
 

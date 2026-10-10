@@ -1,6 +1,5 @@
 // backend/controllers/applicationController.js
 import Application from "../../model/Application.js";
-import { clerkClient } from "@clerk/express";
 
 /**
  * Return applications the current reviewer is allowed to see
@@ -8,10 +7,8 @@ import { clerkClient } from "@clerk/express";
  */
 export const getPendingForReviewer = async (req, res) => {
   try {
-    const userId = req.auth.userId;
-    const clerkUser = await clerkClient.users.getUser(userId);
-    const role = clerkUser.publicMetadata?.role || "student";
-    const department = clerkUser.publicMetadata?.department || null;
+    const role = req.userRole;
+    const department = req.userDepartment;
 
     let filter = {};
 
@@ -78,16 +75,19 @@ export const getPendingForReviewer = async (req, res) => {
  */
 export const reviewApplication = async (req, res) => {
   try {
-    const userId = req.auth.userId;
-    const clerkUser = await clerkClient.users.getUser(userId);
-    const role = clerkUser.publicMetadata?.role || "student";
-    const department = clerkUser.publicMetadata?.department || null;
+    const role = req.userRole;
+    const department = req.userDepartment;
 
     const { action, comment } = req.body;
     if (!["approve", "reject"].includes(action))
       return res
         .status(400)
         .json({ success: false, message: "Invalid action" });
+
+    if (comment !== undefined && typeof comment !== "string")
+      return res
+        .status(400)
+        .json({ success: false, message: "Invalid comment" });
 
     const app = await Application.findById(req.params.id);
     if (!app)

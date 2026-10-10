@@ -1,5 +1,35 @@
+import mongoose from "mongoose";
 import Application from "../../model/Application.js";
 import PDFDocument from "pdfkit";
+import { canAccessApplication } from "../../middlewares/requireRole.js";
+
+// ✅ Cloudinary image URLs
+const LOGO_URLS = [
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932916/logo3_vptob4.jpg",
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo4_q0ujtn.png",
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo5_czeuoz.png",
+];
+
+// The logos never change, so download them once and reuse them for every letter
+let logosPromise = null;
+
+const fetchLogo = async (url) => {
+  const response = await fetch(url);
+  if (!response.ok) throw new Error(`Failed to fetch logo: ${url}`);
+
+  return Buffer.from(await response.arrayBuffer());
+};
+
+const getLogos = () => {
+  if (!logosPromise) {
+    logosPromise = Promise.all(LOGO_URLS.map(fetchLogo)).catch((err) => {
+      logosPromise = null; // retry on the next request
+      throw err;
+    });
+  }
+
+  return logosPromise;
+};
 
 function toTitleCase(str = "") {
   return str
@@ -11,40 +41,30 @@ function toTitleCase(str = "") {
 
 export const generateInternshipLetter = async (req, res) => {
   try {
-    const app = await Application.findById(req.params.id);
-    if (!app) return res.status(404).json({ error: "Application not found" });
+    const app = mongoose.isValidObjectId(req.params.id)
+      ? await Application.findById(req.params.id)
+      : null;
+
+    // Only the student who applied or authorised staff can get the letter
+    if (!app || !canAccessApplication(req, app)) {
+      return res.status(404).json({ error: "Application not found" });
+    }
 
     // ✅ Only allow if principal approved
     if (app.principal?.status !== "approved") {
       return res.status(403).json({ error: "Principal approval required" });
     }
 
-    // ✅ Cloudinary image URLs
-    const logo3Url =
-      "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932916/logo3_vptob4.jpg";
-    const logo4Url =
-      "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo4_q0ujtn.png";
-    const logo5Url =
-      "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo5_czeuoz.png";
+    const [logo3, logo4, logo5] = await getLogos();
 
-    // ✅ Fetch and convert to Buffer
-    const [logo3, logo4, logo5] = await Promise.all([
-      fetch(logo3Url)
-        .then((r) => r.arrayBuffer())
-        .then((buf) => Buffer.from(buf)),
-      fetch(logo4Url)
-        .then((r) => r.arrayBuffer())
-        .then((buf) => Buffer.from(buf)),
-      fetch(logo5Url)
-        .then((r) => r.arrayBuffer())
-        .then((buf) => Buffer.from(buf)),
-    ]);
+    // regNumber is typed by the student — keep only safe filename characters
+    const safeRegNumber = app.regNumber.replace(/[^a-zA-Z0-9_-]/g, "");
 
     const doc = new PDFDocument({ margin: 50 });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=Internship_Letter_${app.regNumber}.pdf`
+      `attachment; filename=Internship_Letter_${safeRegNumber}.pdf`
     );
     doc.pipe(res);
 

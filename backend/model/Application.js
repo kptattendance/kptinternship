@@ -45,6 +45,13 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Cloudinary public ID of the student image (needed to delete it later)
+    imagePublicId: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
     subName: {
       type: String,
       required: [true, "Subject name is required"],
@@ -409,6 +416,14 @@ internshipImage: {
 
   { timestamps: true }
 );
+
+// =========================================================
+// Indexes for the lookups used on every page load
+// =========================================================
+
+applicationSchema.index({ studentId: 1 });
+applicationSchema.index({ department: 1 });
+applicationSchema.index({ companyEmail: 1 });
 
 // =========================================================
 // Automatically calculate CIE totals

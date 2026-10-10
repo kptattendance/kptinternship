@@ -1,22 +1,69 @@
 import { clerkClient } from "@clerk/express";
 import User from "../model/User.js";
-import cloudinary from "../config/cloudinary.js";
+import { destroyImages } from "../config/cloudinary.js";
 import mongoose from "mongoose";
+import {
+  clearClerkProfile,
+  getClerkProfile,
+} from "../middlewares/authMiddleware.js";
+
+// Which roles each role is allowed to assign to (or manage in) other users.
+// Without this, anyone allowed to create users could make themselves
+// placement officer / principal.
+const GRANTABLE_ROLES = {
+  admin: [
+    "student",
+    "cohortOwner",
+    "hod",
+    "placement",
+    "principal",
+    "admin",
+    "company",
+  ],
+  placement: [
+    "student",
+    "cohortOwner",
+    "hod",
+    "placement",
+    "principal",
+    "company",
+  ],
+  hod: ["cohortOwner"],
+  cohortOwner: ["company"],
+};
+
+// Roles that only act inside their own department
+const isDepartmentBound = (req) => req.userRole === "hod";
+
+const canGrantRole = (req, role, department) => {
+  if (!GRANTABLE_ROLES[req.userRole]?.includes(role)) return false;
+
+  // HOD can only add / keep staff in their own department
+  if (isDepartmentBound(req)) {
+    return !!req.userDepartment && department === req.userDepartment;
+  }
+
+  return true;
+};
+
+// Can the logged-in user modify / delete an account that currently has
+// this role and department?
+const canManageAccount = (req, role, department) =>
+  canGrantRole(req, role || "student", department);
+
+const forbidden = (res, message) =>
+  res.status(403).json({ ok: false, message });
 
 export const syncUser = async (req, res) => {
   try {
-    const clerkUserId = req.auth?.userId || req.userId;
+    const clerkUserId = req.userId;
     if (!clerkUserId) {
       return res.status(400).json({ message: "No Clerk user ID found" });
     }
 
     // 1️⃣ Fetch user from Clerk
-    const clerkUser = await clerkClient.users.getUser(clerkUserId);
-
-    const email = clerkUser?.emailAddresses?.[0]?.emailAddress || null;
-    const role = clerkUser?.publicMetadata?.role || "student";
-    const department = clerkUser?.publicMetadata?.department || null;
-    const name = clerkUser?.firstName || "";
+    const { email, role, department, name } =
+      await getClerkProfile(clerkUserId);
 
     // 2️⃣ Find user in Mongo
     let userDoc = await User.findOne({ clerkUserId });
@@ -63,12 +110,41 @@ export const syncUser = async (req, res) => {
  */
 export const createUser = async (req, res) => {
   try {
-    const { email, role, department, name, phoneNumber } = req.body;
+    const { role, name, phoneNumber } = req.body;
+    const email =
+      typeof req.body.email === "string" ? req.body.email.trim() : "";
+    const department =
+      typeof req.body.department === "string" && req.body.department
+        ? req.body.department
+        : undefined;
 
-    if (!email || !role) {
+    if (!email || !role || typeof role !== "string") {
+      await destroyImages([req.file?.filename]);
+
       return res
         .status(400)
         .json({ ok: false, message: "Email and role are required" });
+    }
+
+    if (!canGrantRole(req, role, department)) {
+      await destroyImages([req.file?.filename]);
+
+      return forbidden(res, "You are not allowed to assign this role");
+    }
+
+    // Never let someone overwrite an existing account above their level
+    const existingDoc = await User.findOne({ email }).lean();
+    if (
+      existingDoc &&
+      existingDoc.role !== "student" &&
+      !canGrantRole(req, existingDoc.role, existingDoc.department)
+    ) {
+      await destroyImages([req.file?.filename]);
+
+      return forbidden(
+        res,
+        "This email already belongs to an account you cannot modify"
+      );
     }
 
     // Handle uploaded file
@@ -78,10 +154,12 @@ export const createUser = async (req, res) => {
       photoPublicId = req.file.filename; // Cloudinary public_id
     }
 
-    // Clerk user
+    // Clerk user (exact email match)
     let existingUsers;
     try {
-      existingUsers = await clerkClient.users.getUserList({ query: email });
+      existingUsers = await clerkClient.users.getUserList({
+        emailAddress: [email],
+      });
     } catch {
       existingUsers = { data: [] };
     }
@@ -89,9 +167,30 @@ export const createUser = async (req, res) => {
     let clerkUser;
     if (existingUsers?.data?.length > 0) {
       clerkUser = existingUsers.data[0];
+
+      // Same check against the Clerk account.
+      // (An account that has only signed in so far is a plain student.)
+      const existingRole = clerkUser.publicMetadata?.role || "student";
+      const existingDepartment = clerkUser.publicMetadata?.department
+        ? String(clerkUser.publicMetadata.department).toLowerCase()
+        : undefined;
+
+      if (
+        existingRole !== "student" &&
+        !canGrantRole(req, existingRole, existingDepartment)
+      ) {
+        await destroyImages([req.file?.filename]);
+
+        return forbidden(
+          res,
+          "This email already belongs to an account you cannot modify"
+        );
+      }
+
       await clerkClient.users.updateUser(clerkUser.id, {
         publicMetadata: { role, department },
       });
+      clearClerkProfile(clerkUser.id);
     } else {
       clerkUser = await clerkClient.users.createUser({
         emailAddress: [email],
@@ -132,29 +231,43 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { role, department, name, phoneNumber } = req.body;
-    const userDoc = await User.findById(req.params.id);
+    const userDoc = mongoose.isValidObjectId(req.params.id)
+      ? await User.findById(req.params.id)
+      : null;
 
-    if (!userDoc)
+    if (!userDoc) {
+      await destroyImages([req.file?.filename]);
+
       return res.status(404).json({ ok: false, message: "User not found" });
+    }
+
+    const isSelf = userDoc.clerkUserId === req.userId;
+    const newRole = role || userDoc.role;
+    const newDepartment = department || userDoc.department;
+    const changesAccess =
+      newRole !== userDoc.role || newDepartment !== userDoc.department;
+
+    // You may edit your own name / phone / photo, but changing anyone's
+    // role or department needs permission over both the old and new role
+    if (
+      (!isSelf && !canManageAccount(req, userDoc.role, userDoc.department)) ||
+      (changesAccess && !canGrantRole(req, newRole, newDepartment))
+    ) {
+      await destroyImages([req.file?.filename]);
+
+      return forbidden(res, "You are not allowed to modify this user");
+    }
 
     // Handle new photo
     if (req.file) {
-      if (userDoc.photoPublicId) {
-        try {
-          await cloudinary.uploader.destroy(userDoc.photoPublicId);
-        } catch (err) {
-          console.warn(
-            "⚠️ Failed to delete old Cloudinary image:",
-            err.message
-          );
-        }
-      }
+      await destroyImages([userDoc.photoPublicId]);
+
       userDoc.photoUrl = req.file.path;
       userDoc.photoPublicId = req.file.filename;
     }
 
-    userDoc.role = role || userDoc.role;
-    userDoc.department = department || userDoc.department;
+    userDoc.role = newRole;
+    userDoc.department = newDepartment;
     userDoc.name = name || userDoc.name;
     userDoc.phoneNumber = phoneNumber || userDoc.phoneNumber;
 
@@ -167,6 +280,7 @@ export const updateUser = async (req, res) => {
           department: userDoc.department,
         },
       });
+      clearClerkProfile(userDoc.clerkUserId);
     }
 
     return res.json({ ok: true, message: "User updated", user: userDoc });
@@ -181,9 +295,18 @@ export const updateUser = async (req, res) => {
  */
 export const deleteUser = async (req, res) => {
   try {
-    const userDoc = await User.findByIdAndDelete(req.params.id);
+    const userDoc = mongoose.isValidObjectId(req.params.id)
+      ? await User.findById(req.params.id)
+      : null;
+
     if (!userDoc)
       return res.status(404).json({ ok: false, message: "User not found" });
+
+    if (!canManageAccount(req, userDoc.role, userDoc.department)) {
+      return forbidden(res, "You are not allowed to delete this user");
+    }
+
+    await userDoc.deleteOne();
 
     // Delete Clerk account
     if (userDoc.clerkUserId) {
@@ -192,16 +315,11 @@ export const deleteUser = async (req, res) => {
       } catch (err) {
         console.warn("⚠️ Failed to delete Clerk user:", err.message);
       }
+      clearClerkProfile(userDoc.clerkUserId);
     }
 
     // Delete Cloudinary photo
-    if (userDoc.photoPublicId) {
-      try {
-        await cloudinary.uploader.destroy(userDoc.photoPublicId);
-      } catch (err) {
-        console.warn("⚠️ Failed to delete Cloudinary image:", err.message);
-      }
-    }
+    await destroyImages([userDoc.photoPublicId]);
 
     return res.json({ ok: true, message: "User deleted successfully" });
   } catch (err) {
@@ -211,11 +329,25 @@ export const deleteUser = async (req, res) => {
 };
 
 /**
- * ✅ Get all users
+ * ✅ Get all users the logged-in user may see
  */
 export const getAllUsers = async (req, res) => {
   try {
-    const users = await User.find().sort({ createdAt: -1 });
+    let filter = {};
+    let fields = null;
+
+    if (req.userRole === "company") {
+      // Companies only need the college contacts shown on their dashboard
+      filter = { role: { $in: ["principal", "hod", "cohortOwner"] } };
+      fields = "name email phoneNumber role department photoUrl";
+    } else if (isDepartmentBound(req)) {
+      filter = { department: req.userDepartment };
+    }
+
+    const users = await User.find(filter, fields)
+      .sort({ createdAt: -1 })
+      .lean();
+
     return res.json({ ok: true, users });
   } catch (err) {
     console.error("❌ Error fetching users:", err);
@@ -234,7 +366,7 @@ export const getUserById = async (req, res) => {
       return res.status(400).json({ ok: false, message: "Invalid user ID" });
     }
 
-    const user = await User.findById(id);
+    const user = await User.findById(id).lean();
     if (!user)
       return res.status(404).json({ ok: false, message: "User not found" });
 

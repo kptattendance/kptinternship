@@ -14,9 +14,18 @@ import yearStatisticsRoutes from "./routes/yearStatisticsRoutes.js";
 
 dotenv.config();
 
+// Set CORS_ORIGINS (comma separated) to allow only the listed websites,
+// e.g. CORS_ORIGINS=https://intern.kptmangaluru.in
+// When it is not set, every origin is allowed (previous behaviour).
+const allowedOrigins = (process.env.CORS_ORIGINS || "")
+  .split(",")
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+
 const app = express();
-app.use(cors());
-app.use(express.json());
+app.disable("x-powered-by");
+app.use(cors(allowedOrigins.length > 0 ? { origin: allowedOrigins } : {}));
+app.use(express.json({ limit: "1mb" }));
 app.use(clerkMiddleware());
 
 // Routes

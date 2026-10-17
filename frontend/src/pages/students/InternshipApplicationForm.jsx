@@ -38,8 +38,8 @@ const initialFormState = {
   contactPerson: "",
   companyProfile: "",
 
-  startDate: "2025-12-15",
-  endDate: "2026-04-04",
+  startDate: "2026-12-19",
+  endDate: "2027-04-13",
 
   workingHours: "",
   duties: "",

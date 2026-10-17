@@ -1,22 +1,31 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
+import { UserPlus } from "lucide-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
-import { FiUpload, FiUserPlus } from "react-icons/fi";
+import PhotoPicker from "../../components/PhotoPicker";
+import { FilterSelect, Page, PageHeader } from "../../components/ui";
+import { DEPARTMENT_OPTIONS } from "../../constants";
+
+const ROLE_OPTIONS = [
+  { value: "hod", label: "HOD" },
+  { value: "cohortOwner", label: "Cohort Owner" },
+  { value: "principal", label: "Principal" },
+];
+
+const EMPTY_FORM = {
+  name: "",
+  email: "",
+  phoneNumber: "",
+  role: "hod",
+  department: "cs",
+};
 
 const PlacementAddUser = () => {
   const { getToken } = useAuth();
 
-  const [formData, setFormData] = useState({
-    name: "",
-    email: "",
-    phoneNumber: "",
-    role: "hod",
-    department: "cs",
-  });
-
-  const [photo, setPhoto] = useState(null);
-  const [preview, setPreview] = useState("");
+  const [formData, setFormData] = useState(EMPTY_FORM);
+  const [photo, setPhoto] = useState(null); // already compressed by PhotoPicker
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
 
@@ -24,14 +33,6 @@ const PlacementAddUser = () => {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setPhoto(file);
-      setPreview(URL.createObjectURL(file));
-    }
   };
 
   const handleSubmit = async (e) => {
@@ -58,21 +59,14 @@ const PlacementAddUser = () => {
 
       if (res.data.ok) {
         setMessage("✅ User added successfully");
-        setFormData({
-          name: "",
-          email: "",
-          phoneNumber: "",
-          role: "hod",
-          department: "cs",
-        });
+        setFormData(EMPTY_FORM);
         setPhoto(null);
-        setPreview("");
       } else {
         setMessage(`❌ ${res.data.message || res.data.error}`);
       }
     } catch (err) {
       console.error(err);
-      setMessage("❌ Failed to add user");
+      setMessage(`❌ ${err.response?.data?.message || "Failed to add user"}`);
     } finally {
       setLoading(false);
     }
@@ -82,173 +76,84 @@ const PlacementAddUser = () => {
     <>
       <ReviewerNavbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50 p-4">
-        <div className="max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl overflow-hidden">
-          {/* Header */}
-          <div className="bg-gradient-to-r from-blue-600 to-indigo-600 p-6 text-white">
-            <div className="flex items-center gap-3">
-              <FiUserPlus size={28} />
-              <h2 className="text-2xl font-bold">Add Staff / Authority</h2>
-            </div>
-            <p className="text-sm text-blue-100 mt-1">
-              Create HOD, Cohort Owner or Principal account
-            </p>
-          </div>
+      <Page className="max-w-3xl">
+        <PageHeader
+          icon={UserPlus}
+          title="Add Staff / Authority"
+          subtitle="Create an HOD, cohort owner or principal account"
+        />
 
-          {/* Form */}
-          <form
-            onSubmit={handleSubmit}
-            encType="multipart/form-data"
-            className="p-6 grid grid-cols-1 md:grid-cols-2 gap-6"
-          >
-            {/* Name */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Full Name
-              </label>
+        <form onSubmit={handleSubmit} encType="multipart/form-data" className="card p-5 sm:p-7">
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            <label className="block">
+              <span className="label">Full Name *</span>
               <input
                 type="text"
                 name="name"
                 value={formData.name}
                 onChange={handleChange}
                 required
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
-                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+                className="input"
               />
-            </div>
+            </label>
 
-            {/* Email */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Email Address
-              </label>
+            <label className="block">
+              <span className="label">Email Address *</span>
               <input
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
                 required
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
-                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+                className="input"
               />
-            </div>
+            </label>
 
-            {/* Phone */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Phone Number
-              </label>
+            <label className="block">
+              <span className="label">Phone Number</span>
               <input
-                type="text"
+                type="tel"
                 name="phoneNumber"
                 value={formData.phoneNumber}
                 onChange={handleChange}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
-                focus:ring-2 focus:ring-blue-400 focus:border-blue-500 outline-none"
+                className="input"
               />
-            </div>
+            </label>
 
-            {/* Role */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Role
-              </label>
-              <select
-                name="role"
-                value={formData.role}
-                onChange={handleChange}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
-                focus:ring-2 focus:ring-indigo-400 focus:border-indigo-500 outline-none"
-              >
-                <option value="hod">HOD</option>
-                <option value="cohortOwner">Cohort Owner</option>
-                <option value="principal">Principal</option>
-              </select>
-            </div>
+            <FilterSelect
+              label="Role"
+              name="role"
+              value={formData.role}
+              onChange={(value) => setFormData({ ...formData, role: value })}
+              options={ROLE_OPTIONS}
+            />
 
-            {/* Department */}
-            <div>
-              <label className="text-sm font-semibold text-gray-700">
-                Department
-              </label>
-              <select
-                name="department"
-                value={formData.department}
-                onChange={handleChange}
-                className="mt-1 w-full h-11 px-3 rounded-lg border border-gray-300
-                focus:ring-2 focus:ring-purple-400 focus:border-purple-500 outline-none"
-              >
-                <option value="at">Automation Engineering</option>
-                <option value="ce">Civil Engineering</option>
-                <option value="ch">Chemical Engineering</option>
-                <option value="cs">Computer Science Engineering</option>
-                <option value="ec">
-                  Electronics & Communication Engineering
-                </option>
-                <option value="eee">
-                  Electrical & Electronics Engineering
-                </option>
-                <option value="me">Mechanical Engineering</option>
-                <option value="po">Polymer Technology</option>
-              </select>
-            </div>
+            <FilterSelect
+              label="Department"
+              name="department"
+              value={formData.department}
+              onChange={(value) => setFormData({ ...formData, department: value })}
+              options={DEPARTMENT_OPTIONS}
+            />
 
-            {/* Photo Upload */}
-            <div className="md:col-span-2">
-              <label className="text-sm font-semibold text-gray-700">
-                Profile Photo
-              </label>
+            <PhotoPicker label="Profile Photo" file={photo} onChange={setPhoto} required />
+          </div>
 
-              <label
-                className="mt-2 flex items-center justify-between px-4 h-14
-                border-2 border-dashed rounded-xl cursor-pointer
-                hover:bg-blue-50 transition"
-              >
-                <div className="flex items-center gap-3 text-gray-600">
-                  <FiUpload size={20} />
-                  <span className="text-sm">
-                    {photo ? photo.name : "Click to upload image"}
-                  </span>
-                </div>
-                {preview && (
-                  <img
-                    src={preview}
-                    alt="Preview"
-                    className="h-10 w-10 rounded-full object-cover border"
-                  />
-                )}
-                <input
-                  type="file"
-                  accept="image/*"
-                  onChange={handleFileChange}
-                  className="hidden"
-                />
-              </label>
-            </div>
+          <button type="submit" disabled={loading} className="btn btn-primary mt-6 w-full py-3">
+            {loading ? "Saving..." : "Add User"}
+          </button>
 
-            {/* Submit */}
-            <div className="md:col-span-2">
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full h-12 rounded-xl font-semibold text-white
-                bg-gradient-to-r from-blue-600 to-indigo-600
-                hover:from-blue-700 hover:to-indigo-700
-                disabled:opacity-60 shadow-lg transition"
-              >
-                {loading ? "Saving..." : "Add User"}
-              </button>
-            </div>
-          </form>
-
-          {/* Message */}
           {message && (
-            <div className="px-6 pb-6 text-center font-medium text-gray-700">
+            <p
+              className={`mt-4 text-center text-sm font-medium ${
+                message.startsWith("❌") ? "text-rose-600" : "text-emerald-700"
+              }`}
+            >
               {message}
-            </div>
+            </p>
           )}
-        </div>
-      </div>
+        </form>
+      </Page>
     </>
   );
 };

@@ -1,23 +1,15 @@
 // src/components/Navbar.jsx
-import {
-  UserButton,
-  SignedIn,
-  SignedOut,
-  useUser,
-  useClerk,
-  useAuth,
-} from "@clerk/clerk-react";
+import { UserButton, SignedIn, SignedOut, useUser, useClerk, useAuth } from "@clerk/clerk-react";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
 import axios from "axios";
-import logo from "../assets/logo.jpg";
+import { LayoutDashboard, LogIn } from "lucide-react";
+import AppNavbar from "./AppNavbar";
 
 export default function Navbar() {
   const { openSignIn } = useClerk();
-  const { user, isSignedIn } = useUser();
+  const { isSignedIn } = useUser();
   const { getToken } = useAuth();
   const navigate = useNavigate();
-  const [menuOpen, setMenuOpen] = useState(false);
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const handleSignIn = () => {
@@ -26,7 +18,7 @@ export default function Navbar() {
 
   const handleMyPage = async () => {
     if (!isSignedIn) {
-      openSignIn({ redirectUrl: "/redirect" });
+      handleSignIn();
       return;
     }
 
@@ -47,92 +39,37 @@ export default function Navbar() {
     } catch (err) {
       console.error("❌ Error fetching role from backend:", err);
       navigate("/dashboard");
-    } finally {
-      setMenuOpen(false);
     }
   };
 
   return (
-    <nav className="bg-white shadow sticky top-0 z-50">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex justify-between items-center h-16">
-          {/* Brand */}
-          <div
-            className="flex items-center gap-2 cursor-pointer"
-            onClick={() => navigate("/")}
-          >
-            <img
-              src={logo}
-              alt="Internship Portal Logo"
-              className="h-15 w-auto"
-            />
-            <span className="text-xl font-bold text-blue-600 hidden sm:block">
-              KPT Training & Placements
-            </span>
-          </div>
-
-          {/* Desktop Actions */}
-          <div className="hidden md:flex items-center gap-4">
-            <SignedIn>
-              <button
-                onClick={handleMyPage}
-                className="px-3 py-1 border cursor-pointer rounded hover:bg-gray-100"
-              >
-                My Dashboard
-              </button>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-
-            <SignedOut>
-              <button
-                onClick={handleSignIn}
-                className="px-3 py-1 bg-blue-600 text-white rounded"
-              >
-                Sign in
-              </button>
-            </SignedOut>
-          </div>
-
-          {/* Mobile Hamburger */}
-          <div className="md:hidden flex items-center gap-3">
-            <SignedIn>
-              <UserButton afterSignOutUrl="/" />
-            </SignedIn>
-
+    <AppNavbar
+      actions={
+        <>
+          <SignedIn>
             <button
-              onClick={() => setMenuOpen(!menuOpen)}
-              className="p-2 rounded-md hover:bg-gray-100 focus:outline-none"
+              type="button"
+              onClick={handleMyPage}
+              className="btn btn-secondary btn-sm"
             >
-              {menuOpen ? "✖" : "☰"}
+              <LayoutDashboard className="h-4 w-4" />
+              <span className="hidden sm:inline">My Dashboard</span>
             </button>
-          </div>
-        </div>
-      </div>
+            <UserButton afterSignOutUrl="/" />
+          </SignedIn>
 
-      {/* Mobile Dropdown */}
-      {menuOpen && (
-        <div className="md:hidden bg-white border-t shadow-inner">
-          <div className="flex flex-col items-start p-4 space-y-3">
-            <SignedIn>
-              <button
-                onClick={handleMyPage}
-                className="w-full text-left px-3 py-2 rounded hover:bg-gray-100"
-              >
-                My Page
-              </button>
-            </SignedIn>
-
-            <SignedOut>
-              <button
-                onClick={handleSignIn}
-                className="w-full text-left px-3 py-2 bg-blue-600 text-white rounded hover:bg-blue-700"
-              >
-                Sign in
-              </button>
-            </SignedOut>
-          </div>
-        </div>
-      )}
-    </nav>
+          <SignedOut>
+            <button
+              type="button"
+              onClick={handleSignIn}
+              className="btn btn-primary btn-sm"
+            >
+              <LogIn className="h-4 w-4" />
+              Sign in
+            </button>
+          </SignedOut>
+        </>
+      }
+    />
   );
 }

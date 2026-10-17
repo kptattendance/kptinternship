@@ -1,10 +1,35 @@
 import React, { useEffect, useState } from "react";
 import { useUser, useAuth } from "@clerk/clerk-react";
 import axios from "axios";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
 import ReviewModal from "./ReviewModal";
+import { ClipboardCheck, Inbox, SearchX } from "lucide-react";
+import {
+  Avatar,
+  EmptyState,
+  FilterBar,
+  FilterSelect,
+  Page,
+  PageHeader,
+  SearchInput,
+  Spinner,
+  StatusBadge,
+} from "../../components/ui";
+import {
+  DEPARTMENT_OPTIONS,
+  INTERNSHIP_TYPE_OPTIONS,
+  REVIEW_STAGES,
+  ROLE_LABELS,
+} from "../../constants";
+
+const CARD_GRADIENTS = [
+  "from-indigo-400 via-violet-400 to-pink-400",
+  "from-sky-400 via-indigo-400 to-violet-400",
+  "from-amber-300 via-pink-400 to-rose-400",
+  "from-emerald-300 via-teal-400 to-sky-400",
+];
 
 export default function ReviewList() {
   const { user, isLoaded } = useUser();
@@ -71,176 +96,164 @@ export default function ReviewList() {
     setLoading(false);
   }
 };
-  const filteredApps = apps.filter((app) => {
-    const term = search.toLowerCase().trim();
-    if (!term) return true;
+  const [departmentFilter, setDepartmentFilter] = useState("");
+  const [typeFilter, setTypeFilter] = useState("");
+  const [sortBy, setSortBy] = useState("reg");
 
-    return (
-      app.name?.toLowerCase().includes(term) ||
-      app.regNumber?.toLowerCase().includes(term)
+  const filteredApps = apps
+    .filter((app) => {
+      if (departmentFilter && app.department !== departmentFilter) return false;
+      if (typeFilter && app.internhsipType !== typeFilter) return false;
+
+      const term = search.toLowerCase().trim();
+      if (!term) return true;
+
+      return (
+        app.name?.toLowerCase().includes(term) ||
+        app.regNumber?.toLowerCase().includes(term) ||
+        app.companyName?.toLowerCase().includes(term)
+      );
+    })
+    .sort((a, b) =>
+      sortBy === "newest"
+        ? new Date(b.createdAt) - new Date(a.createdAt)
+        : sortBy === "oldest"
+        ? new Date(a.createdAt) - new Date(b.createdAt)
+        : (a.regNumber || "").localeCompare(b.regNumber || "", undefined, {
+            numeric: true,
+          })
     );
-  });
+
+  const resetFilters = () => {
+    setSearch("");
+    setDepartmentFilter("");
+    setTypeFilter("");
+    setSortBy("reg");
+  };
+
+  const title =
+    role === "hod"
+      ? `HOD Dashboard — ${department?.toUpperCase() || ""}`
+      : `${ROLE_LABELS[role] || "Reviewer"} Dashboard`;
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-[#e0f2ff] via-[#f0e7ff] to-[#ffe7f5]">
+    <>
       <ReviewerNavbar />
-      <div className="p-4 md:p-10 max-w-8xl mx-auto">
-        <ToastContainer position="top-right" autoClose={3000} />
+      <Page>
+        <PageHeader
+          icon={ClipboardCheck}
+          title={title}
+          subtitle="Applications waiting for your review"
+          actions={
+            <span className="badge badge-violet text-sm">
+              {apps.length} pending
+            </span>
+          }
+        />
 
-        {/* Header */}
-        <div className="mb-10 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold bg-gradient-to-r from-blue-700 via-purple-600 to-pink-500 bg-clip-text text-transparent tracking-tight drop-shadow-md">
-            {role === "hod"
-              ? `HOD Dashboard — ${department.toUpperCase()}`
-              : `${role
-                  .replace(/([A-Z])/g, " $1")
-                  .trim()
-                  .toUpperCase()} Dashboard`}
-          </h2>
-          <p className="text-gray-600 mt-3 text-sm md:text-base">
-            Review and manage internship applications with ease 🌟
-          </p>
-          <div className="mt-4 w-24 h-1 mx-auto bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 rounded-full shadow-md"></div>
-        </div>
-
-        {/* 🔍 Search Bar */}
-        <div className="max-w-md mx-auto mt-8 mb-10">
-          <input
-            type="text"
+        <FilterBar resultCount={filteredApps.length} onReset={resetFilters}>
+          <SearchInput
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by Name or Register Number..."
-            className="
-      w-full px-5 py-3 rounded-full 
-      bg-white/80 backdrop-blur-md
-      border border-purple-300 
-      shadow-md
-      focus:outline-none focus:ring-2 focus:ring-purple-500
-      text-sm
-      placeholder-gray-400
-      transition
-    "
+            onChange={setSearch}
+            placeholder="Name, reg no or company"
           />
-        </div>
+          <FilterSelect
+            label="Department"
+            value={departmentFilter}
+            onChange={setDepartmentFilter}
+            allLabel="All departments"
+            options={DEPARTMENT_OPTIONS}
+          />
+          <FilterSelect
+            label="Type"
+            value={typeFilter}
+            onChange={setTypeFilter}
+            allLabel="Internship & project"
+            options={INTERNSHIP_TYPE_OPTIONS}
+          />
+          <FilterSelect
+            label="Sort by"
+            value={sortBy}
+            onChange={setSortBy}
+            options={[
+              { value: "reg", label: "Reg No" },
+              { value: "newest", label: "Newest first" },
+              { value: "oldest", label: "Oldest first" },
+            ]}
+          />
+        </FilterBar>
 
-        {/* States */}
         {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 space-y-4">
-            <div className="w-14 h-14 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-purple-600 font-semibold animate-pulse text-lg">
-              Fetching applications...
-            </p>
-          </div>
+          <Spinner label="Fetching applications..." />
         ) : apps.length === 0 ? (
-          <div className="text-center py-24">
-            <div className="text-6xl mb-4">📭</div>
-            <h3 className="text-xl font-semibold text-gray-700">
-              No pending applications for review
-            </h3>
-            <p className="text-sm text-gray-400">
-              New applications will appear here automatically.
-            </p>
-          </div>
+          <EmptyState
+            icon={Inbox}
+            title="No pending applications"
+            message="New applications will appear here automatically."
+          />
         ) : filteredApps.length === 0 ? (
-          <div className="text-center py-20">
-            <div className="text-5xl mb-3">🔍</div>
-            <p className="text-gray-600 font-medium">
-              No applications match your search
-            </p>
-          </div>
+          <EmptyState
+            icon={SearchX}
+            title="No applications match your filters"
+            message="Try changing the filters or the search text."
+          />
         ) : (
-          <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-3">
+          <div className="grid gap-5 sm:grid-cols-2 xl:grid-cols-3">
             {filteredApps.map((app, idx) => (
               <div
                 key={app._id}
-                className={`relative overflow-hidden rounded-2xl p-[1px] transition-all duration-300 hover:scale-[1.02] ${
-                  idx % 3 === 0
-                    ? "bg-gradient-to-br from-pink-400 via-purple-400 to-blue-400"
-                    : idx % 3 === 1
-                    ? "bg-gradient-to-br from-cyan-400 via-blue-400 to-purple-400"
-                    : "bg-gradient-to-br from-amber-400 via-pink-400 to-red-400"
+                className={`rounded-2xl bg-gradient-to-br p-[1.5px] shadow-sm transition hover:-translate-y-0.5 hover:shadow-lg ${
+                  CARD_GRADIENTS[idx % CARD_GRADIENTS.length]
                 }`}
               >
-                <div className="bg-white/90 backdrop-blur-lg rounded-2xl shadow-lg p-6 flex flex-col h-full transition-all duration-300 hover:shadow-2xl">
-                  {/* Top: student info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      {app.image ? (
-                        <img
-                          src={app.image}
-                          alt={app.name}
-                          className="w-14 h-14 rounded-full border-2 border-white shadow-md object-cover"
-                        />
-                      ) : (
-                        <div className="w-14 h-14 flex items-center justify-center bg-gradient-to-br from-gray-300 to-gray-400 rounded-full text-gray-700 font-bold shadow-inner">
-                          {app.name?.[0]?.toUpperCase() || "?"}
-                        </div>
-                      )}
-                      <div>
-                        <h3 className="font-bold text-lg text-gray-800 drop-shadow-sm">
-                          {app.name}
-                        </h3>
-                        <p className="text-sm text-gray-600">
-                          {app.department?.toUpperCase()} • {app.regNumber}
-                        </p>
-                        <p className="text-xs text-gray-500 mt-0.5">
-                          Applied on{" "}
-                          <span className="font-medium text-gray-700">
-                            {new Date(app.createdAt).toLocaleDateString(
-                              "en-GB"
-                            )}
-                          </span>
-                        </p>
-                      </div>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-sm text-gray-600 flex items-center gap-1">
-                        <span className="text-pink-500">📞</span>
-                        {app.phoneNumber || "-"}
+                <div className="flex h-full flex-col rounded-[15px] bg-white p-5">
+                  {/* Student */}
+                  <div className="flex items-start gap-3">
+                    <Avatar src={app.image} name={app.name} size="h-14 w-14" />
+                    <div className="min-w-0 flex-1">
+                      <h3 className="truncate text-lg font-bold text-slate-800">
+                        {app.name}
+                      </h3>
+                      <p className="text-sm text-slate-500">
+                        <span className="font-semibold uppercase">{app.department}</span>
+                        {" • "}
+                        {app.regNumber}
+                      </p>
+                      <p className="mt-0.5 text-xs text-slate-400">
+                        Applied {new Date(app.createdAt).toLocaleDateString("en-GB")}
+                        {app.phoneNumber && ` • 📞 ${app.phoneNumber}`}
                       </p>
                     </div>
                   </div>
 
-                  {/* Status Badges */}
-                  <div className="mt-5 bg-gradient-to-r from-gray-50 to-gray-100 rounded-xl p-3 grid grid-cols-2 gap-x-6 gap-y-2 text-xs shadow-inner">
-                    {["cohortOwner", "hod", "placement", "principal"].map(
-                      (roleKey) => (
-                        <div
-                          key={roleKey}
-                          className="flex justify-between items-center w-full"
-                        >
-                          <span className="capitalize text-gray-600 font-medium">
-                            {roleKey.replace(/([A-Z])/g, " $1")}
-                          </span>
-                          <span
-                            className={`ml-3 px-4 py-1 rounded font-semibold text-white shadow-sm ${
-                              app[roleKey]?.status === "approved"
-                                ? "bg-green-700"
-                                : app[roleKey]?.status === "rejected"
-                                ? "bg-red-600"
-                                : "bg-yellow-600"
-                            }`}
-                          >
-                            {app[roleKey]?.status || "pending"}
-                          </span>
-                        </div>
-                      )
-                    )}
+                  {app.companyName && (
+                    <p className="mt-3 truncate rounded-xl bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-800">
+                      🏢 {app.companyName}
+                    </p>
+                  )}
+
+                  {/* Review progress */}
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {REVIEW_STAGES.map((stage) => (
+                      <div
+                        key={stage.key}
+                        className="flex items-center justify-between gap-2 rounded-lg bg-slate-50 px-2.5 py-1.5 text-xs text-slate-600"
+                      >
+                        {stage.label}
+                        <StatusBadge status={app[stage.key]?.status} />
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Buttons */}
-                  <div className="mt-6 flex gap-3">
-                    {["cohortOwner", "hod", "placement", "principal"].includes(
-                      role
-                    ) && (
-                      <button
-                        onClick={() => setSelected(app)}
-                        className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 text-white rounded-lg hover:shadow-lg transition font-medium"
-                      >
-                        Review
-                      </button>
-                    )}
-                  </div>
+                  {REVIEW_STAGES.some((stage) => stage.key === role) && (
+                    <button
+                      type="button"
+                      onClick={() => setSelected(app)}
+                      className="btn btn-primary mt-5 w-full"
+                    >
+                      Review Application
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -256,7 +269,7 @@ export default function ReviewList() {
             getToken={getToken}
           />
         )}
-      </div>
-    </div>
+      </Page>
+    </>
   );
 }

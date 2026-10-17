@@ -1,8 +1,16 @@
-"use client";
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
+import { BarChart3 } from "lucide-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
+import { FilterSelect, Page, PageHeader, Spinner } from "../../components/ui";
+
+// Passing years offered in the dropdown
+const THIS_YEAR = new Date().getFullYear();
+const YEAR_OPTIONS = Array.from({ length: 8 }, (_, i) => THIS_YEAR + 2 - i).map((y) => ({
+  value: String(y),
+  label: String(y),
+}));
 
 const DEPARTMENTS = [
   { value: "at", label: "Automobile Engineering" },
@@ -104,141 +112,123 @@ export default function YearStatistics() {
     }
   };
 
+  const isEditing = (stat) => editingId === (stat._id || stat.program);
+
   return (
     <>
       <ReviewerNavbar />
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-100 to-purple-200 p-6">
-        <div className="max-w-6xl mx-auto bg-white rounded-2xl shadow-lg p-6 border border-gray-100">
-          <div className="flex justify-between items-center mb-6">
-            <h2 className="text-3xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">
-              Final Year Statistics
-            </h2>
+      <Page>
+        <PageHeader
+          icon={BarChart3}
+          title="Final Year Statistics"
+          subtitle="Placed and higher-studies numbers for each program"
+          actions={
+            <FilterSelect
+              label="Passing year"
+              value={String(passingYear)}
+              onChange={(value) => {
+                setEditingId(null);
+                setPassingYear(Number(value));
+              }}
+              options={YEAR_OPTIONS}
+              className="w-40"
+            />
+          }
+        />
 
-            {/* 🔹 Editable Passing Year Input */}
-            <div className="flex items-center gap-3">
-              <label className="text-gray-700 font-medium">Passing Year:</label>
-              <input
-                type="number"
-                value={passingYear}
-                onChange={(e) => setPassingYear(e.target.value)}
-                className="border border-gray-300 rounded-lg px-3 py-1 w-28 text-center focus:ring-2 focus:ring-indigo-400 focus:outline-none"
-              />
-            </div>
-          </div>
+        {loading ? (
+          <Spinner label="Loading statistics..." />
+        ) : (
+          <div className="table-wrap">
+            <table className="table-std">
+              <thead>
+                <tr>
+                  <th rowSpan="2">#</th>
+                  <th rowSpan="2">Program</th>
+                  <th colSpan="3" className="text-center">Total Students</th>
+                  <th colSpan="3" className="text-center">Placed</th>
+                  <th colSpan="3" className="text-center">Higher Studies</th>
+                  <th rowSpan="2" className="text-center">Actions</th>
+                </tr>
+                <tr>
+                  {["Male", "Female", "Total", "Male", "Female", "Total", "Male", "Female", "Total"].map(
+                    (label, i) => (
+                      <th key={i} className="text-center">{label}</th>
+                    )
+                  )}
+                </tr>
+              </thead>
 
-          {loading ? (
-            <p className="text-center text-gray-500 py-10">Loading...</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-gray-300 rounded-lg overflow-hidden">
-                <thead className="bg-gradient-to-r from-indigo-500 to-purple-500 text-white">
-                  <tr>
-                    <th className="border p-2">Sl. No</th>
-                    <th className="border p-2">Program</th>
-                    <th className="border p-2" colSpan="3">
-                      Total Students
-                    </th>
-                    <th className="border p-2" colSpan="3">
-                      Placed
-                    </th>
-                    <th className="border p-2" colSpan="3">
-                      Higher Studies
-                    </th>
-                    <th className="border p-2">Actions</th>
-                  </tr>
-                  <tr className="bg-indigo-100 text-indigo-800">
-                    <th></th>
-                    <th></th>
-                    <th>Male</th>
-                    <th>Female</th>
-                    <th>Total</th>
-                    <th>Male</th>
-                    <th>Female</th>
-                    <th>Total</th>
-                    <th>Male</th>
-                    <th>Female</th>
-                    <th>Total</th>
-                    <th></th>
-                  </tr>
-                </thead>
+              <tbody>
+                {stats.map((stat, index) => (
+                  <tr key={stat._id || stat.program} className={isEditing(stat) ? "bg-indigo-50" : undefined}>
+                    <td className="text-slate-400">{index + 1}</td>
+                    <td className="min-w-48 font-semibold text-slate-800">
+                      {DEPARTMENTS.find((d) => d.value === stat.program)?.label || stat.program}
+                    </td>
 
-                <tbody>
-                  {stats.map((stat, index) => (
-                    <tr
-                      key={stat._id || stat.program}
-                      className="hover:bg-indigo-50 transition-all duration-200"
-                    >
-                      <td className="border p-2 text-center font-medium">
-                        {index + 1}
-                      </td>
-                      <td className="border p-2 text-left font-semibold text-gray-800">
-                        {DEPARTMENTS.find((d) => d.value === stat.program)
-                          ?.label || stat.program}
-                      </td>
+                    {["totalStudents", "placed", "higherStudies"].map((section) =>
+                      ["male", "female", "total"].map((field) => (
+                        <td key={section + field} className="text-center">
+                          {isEditing(stat) ? (
+                            <input
+                              type="number"
+                              min="0"
+                              value={formData?.[section]?.[field] ?? 0}
+                              onChange={(e) => handleChange(e, section, field)}
+                              className="w-16 rounded-lg border border-indigo-200 px-1 py-1 text-center font-semibold focus:ring-4 focus:ring-indigo-100 focus:outline-none"
+                            />
+                          ) : (
+                            <span className={field === "total" ? "font-bold text-indigo-700" : ""}>
+                              {stat[section]?.[field] ?? 0}
+                            </span>
+                          )}
+                        </td>
+                      ))
+                    )}
 
-                      {["totalStudents", "placed", "higherStudies"].map(
-                        (section) =>
-                          ["male", "female", "total"].map((field) => (
-                            <td
-                              key={section + field}
-                              className="border p-2 text-center"
+                    <td>
+                      <div className="flex justify-center gap-2">
+                        {isEditing(stat) ? (
+                          <>
+                            <button type="button" onClick={handleSave} className="btn btn-success btn-sm">
+                              Save
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setEditingId(null)}
+                              className="btn btn-secondary btn-sm"
                             >
-                              {editingId === (stat._id || stat.program) ? (
-                                <input
-                                  type="number"
-                                  value={formData?.[section]?.[field] ?? 0}
-                                  onChange={(e) =>
-                                    handleChange(e, section, field)
-                                  }
-                                  className="w-16 border border-gray-300 rounded px-1 py-0.5 text-center focus:ring-2 focus:ring-indigo-400"
-                                />
-                              ) : (
-                                stat[section]?.[field] ?? 0
-                              )}
-                            </td>
-                          ))
-                      )}
-
-                      <td className="border p-2 text-center space-x-2">
-                        {editingId === (stat._id || stat.program) ? (
-                          <button
-                            onClick={handleSave}
-                            className="bg-green-500 hover:bg-green-600 text-white px-2 py-1 rounded-lg"
-                          >
-                            Save
-                          </button>
+                              Cancel
+                            </button>
+                          </>
                         ) : stat._id ? (
                           <>
-                            <button
-                              onClick={() => handleEdit(stat)}
-                              className="bg-blue-500 hover:bg-blue-600 text-white px-2 py-1 rounded-lg"
-                            >
+                            <button type="button" onClick={() => handleEdit(stat)} className="btn btn-secondary btn-sm">
                               Edit
                             </button>
                             <button
+                              type="button"
                               onClick={() => handleDelete(stat)}
-                              className="bg-red-500 hover:bg-red-600 text-white px-2 py-1 rounded-lg"
+                              className="btn btn-sm border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
                             >
                               Delete
                             </button>
                           </>
                         ) : (
-                          <button
-                            onClick={() => handleEdit(stat)}
-                            className="bg-teal-500 hover:bg-teal-600 text-white px-2 py-1 rounded-lg"
-                          >
+                          <button type="button" onClick={() => handleEdit(stat)} className="btn btn-primary btn-sm">
                             Add
                           </button>
                         )}
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      </div>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </Page>
     </>
   );
 }

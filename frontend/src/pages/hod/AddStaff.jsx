@@ -1,37 +1,36 @@
 // src/pages/hod/AddStaff.jsx
 import { useState } from "react";
 import axios from "axios";
-import { useAuth } from "@clerk/clerk-react";
-import ReviewerNavbar from "../../components/ReviewerNavbar"; // HOD navbar
+import { useAuth, useUser } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css";
-
-const DEPARTMENTS = [
-  { value: "at", label: "Automobile Engineering" },
-  { value: "ch", label: "Chemical Engineering" },
-  { value: "civil", label: "Civil Engineering" },
-  { value: "cs", label: "Computer Science Engineering" },
-  { value: "ec", label: "Electronics & Communication Engineering" },
-  { value: "eee", label: "Electrical & Electronics Engineering" },
-  { value: "me", label: "Mechanical Engineering" },
-  { value: "po", label: "Polymer Engineering" },
-];
+import { UserPlus } from "lucide-react";
+import ReviewerNavbar from "../../components/ReviewerNavbar";
+import { FilterSelect, Page, PageHeader } from "../../components/ui";
+import { DEPARTMENT_OPTIONS } from "../../constants";
 
 const ROLES = [{ value: "cohortOwner", label: "Cohort Owner" }];
 
 export default function AddStaff() {
   const { getToken } = useAuth();
+  const { user } = useUser();
 
-  const [form, setForm] = useState({
+  // An HOD can only add staff to their own department
+  const ownDepartment = user?.publicMetadata?.department || "";
+  const isHod = user?.publicMetadata?.role === "hod";
+
+  const emptyForm = {
     email: "",
     name: "",
     phoneNumber: "",
-    role: "",
-    department: "",
-  });
+    role: "cohortOwner",
+    department: isHod ? ownDepartment : "",
+  };
+
+  const [form, setForm] = useState(emptyForm);
   const [loading, setLoading] = useState(false);
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
+
   const handleChange = (e) => {
     setForm({ ...form, [e.target.name]: e.target.value });
   };
@@ -44,19 +43,13 @@ export default function AddStaff() {
       const token = await getToken();
 
       const res = await axios.post(
-        backendUrl + "/api/users/create", // 👈 backend route
-        form,
+        backendUrl + "/api/users/create",
+        { ...form, department: isHod ? ownDepartment : form.department },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
       toast.success(res.data.message || "Staff added successfully!");
-      setForm({
-        email: "",
-        name: "",
-        phoneNumber: "",
-        role: "",
-        department: "",
-      });
+      setForm(emptyForm);
     } catch (err) {
       console.error(err);
       toast.error(err.response?.data?.message || "Error adding staff");
@@ -68,102 +61,81 @@ export default function AddStaff() {
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-2xl mx-auto p-6">
-        <h2 className="text-2xl font-bold mb-6">Add Staff</h2>
+      <Page className="max-w-3xl">
+        <PageHeader
+          icon={UserPlus}
+          title="Add Staff"
+          subtitle="Create a cohort owner login for your department"
+        />
 
-        <form
-          onSubmit={handleSubmit}
-          className="bg-white p-6 rounded-lg shadow-md space-y-4"
-        >
-          {/* Name */}
-          <div>
-            <label className="block font-medium">Name *</label>
-            <input
-              type="text"
-              name="name"
-              value={form.name}
-              onChange={handleChange}
-              className="w-full border p-2 rounded mt-1"
-              required
-            />
-          </div>
+        <form onSubmit={handleSubmit} className="card space-y-5 p-5 sm:p-7">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className="label">Name *</span>
+              <input
+                type="text"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+                className="input"
+                placeholder="Full name"
+                required
+              />
+            </label>
 
-          {/* Email */}
-          <div>
-            <label className="block font-medium">Email *</label>
-            <input
-              type="email"
-              name="email"
-              value={form.email}
-              onChange={handleChange}
-              className="w-full border p-2 rounded mt-1"
-              required
-            />
-          </div>
+            <label className="block">
+              <span className="label">Email *</span>
+              <input
+                type="email"
+                name="email"
+                value={form.email}
+                onChange={handleChange}
+                className="input"
+                placeholder="name@example.com"
+                required
+              />
+            </label>
 
-          {/* Phone */}
-          <div>
-            <label className="block font-medium">Phone Number *</label>
-            <input
-              type="tel"
-              name="phoneNumber"
-              value={form.phoneNumber}
-              onChange={handleChange}
-              className="w-full border p-2 rounded mt-1"
-              pattern="[0-9]{10}"
-              placeholder="10-digit number"
-              required
-            />
-          </div>
+            <label className="block">
+              <span className="label">Phone Number *</span>
+              <input
+                type="tel"
+                name="phoneNumber"
+                value={form.phoneNumber}
+                onChange={handleChange}
+                className="input"
+                pattern="[0-9]{10}"
+                placeholder="10-digit number"
+                required
+              />
+            </label>
 
-          {/* Role */}
-          <div>
-            <label className="block font-medium">Role *</label>
-            <select
+            <FilterSelect
+              label="Role *"
               name="role"
               value={form.role}
-              onChange={handleChange}
-              className="w-full border p-2 rounded mt-1"
+              onChange={(value) => setForm({ ...form, role: value })}
+              options={ROLES}
               required
-            >
-              <option value="">Select Role</option>
-              {ROLES.map((r) => (
-                <option key={r.value} value={r.value}>
-                  {r.label}
-                </option>
-              ))}
-            </select>
-          </div>
+            />
 
-          {/* Department */}
-          <div>
-            <label className="block font-medium">Department *</label>
-            <select
+            <FilterSelect
+              label="Department *"
               name="department"
-              value={form.department}
-              onChange={handleChange}
-              className="w-full border p-2 rounded mt-1"
+              value={isHod ? ownDepartment : form.department}
+              onChange={(value) => setForm({ ...form, department: value })}
+              allLabel="Select department"
+              options={DEPARTMENT_OPTIONS}
+              disabled={isHod}
               required
-            >
-              <option value="">Select Department</option>
-              {DEPARTMENTS.map((d) => (
-                <option key={d.value} value={d.value}>
-                  {d.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
 
-          {/* Submit */}
-          <button
-            type="submit"
-            disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-          >
+          <button type="submit" disabled={loading} className="btn btn-primary w-full py-3">
             {loading ? "Saving..." : "Save Staff"}
           </button>
         </form>
-      </div>
+      </Page>
     </>
   );
 }

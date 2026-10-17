@@ -1,150 +1,92 @@
-import React from "react";
-import {
-  FaFacebookF,
-  FaTwitter,
-  FaInstagram,
-  FaLinkedinIn,
-} from "react-icons/fa";
+import { Mail, MapPin, Phone } from "lucide-react";
+
+const QUICK_LINKS = [
+  { label: "KPT Website", href: "https://gpt.karnataka.gov.in/kptmangalore/public/112/milestones/en" },
+  { label: "Our Campus", href: "https://gpt.karnataka.gov.in/kptmangalore/public/10/campus-map/en" },
+  { label: "Admissions", href: "https://gpt.karnataka.gov.in/kptmangalore/public/50/fee-structure/en" },
+  { label: "Contact Us", href: "https://gpt.karnataka.gov.in/kptmangalore/public/18/contact/en" },
+];
+
+const RESOURCES = [
+  { label: "Placements", href: "https://gpt.karnataka.gov.in/kptmangalore/public/44/recently-visited-companies/en" },
+  { label: "Principal", href: "https://gpt.karnataka.gov.in/kptmangalore/public/57/list-of-principal%27s-/en" },
+  { label: "Alumni", href: "https://kptalumni.org/" },
+  { label: "Events", href: "https://gpt.karnataka.gov.in/kptmangalore/public/115/events-/en" },
+];
+
+function LinkList({ title, links }) {
+  return (
+    <div>
+      <h2 className="mb-3 text-sm font-bold tracking-widest text-pink-300 uppercase">
+        {title}
+      </h2>
+      <nav className="flex flex-col gap-2">
+        {links.map((link) => (
+          <a
+            key={link.href}
+            href={link.href}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-sm text-indigo-100/80 transition hover:translate-x-0.5 hover:text-white"
+          >
+            {link.label}
+          </a>
+        ))}
+      </nav>
+    </div>
+  );
+}
 
 const Footer = () => {
   return (
-    <footer className="text-gray-600 body-font bg-blue-50 shadow ">
-      {/* Top Section */}
-      <div className="container px-5 py-16 mx-auto flex flex-wrap md:flex-nowrap flex-col md:flex-row justify-between items-start gap-10">
-        {/* Left Logo & Address */}
-        <div className="flex flex-col items-center md:items-start text-center md:text-left w-full md:w-1/4">
-          <img
-            src="/logo.jpg" // your first logo
-            alt="KPT Logo"
-            className="h-24 w-auto mb-4"
-          />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Karnataka Govt. Polytechnic
+    <footer className="bg-gradient-to-br from-indigo-950 via-violet-950 to-slate-950 text-indigo-100">
+      <div className="h-1 bg-gradient-to-r from-indigo-500 via-violet-500 to-pink-500" />
+
+      <div className="mx-auto grid max-w-7xl grid-cols-1 gap-10 px-6 py-12 sm:grid-cols-2 lg:grid-cols-4 lg:px-8">
+        {/* College */}
+        <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+          <div className="rounded-2xl bg-white p-2 shadow-lg">
+            <img src="/logo.jpg" alt="KPT Logo" loading="lazy" className="h-16 w-auto" />
+          </div>
+          <h2 className="mt-4 text-lg font-bold text-white">
+            Karnataka (Govt.) Polytechnic
           </h2>
-          <p className="mt-2 text-sm text-gray-500 leading-6">
-            Kadri Hills, Mangalore, Karnataka - 575004
+          <p className="mt-2 flex items-start gap-2 text-sm text-indigo-100/80">
+            <MapPin className="mt-0.5 h-4 w-4 shrink-0 text-pink-300" />
+            Kadri Hills, Mangaluru, Karnataka - 575004
           </p>
-          <p className="mt-1 text-sm text-gray-500">
-            📧 kptmng@gmail.com (Official)
-          </p>
+          <a
+            href="mailto:kptmng@gmail.com"
+            className="mt-1 flex items-center gap-2 text-sm text-indigo-100/80 hover:text-white"
+          >
+            <Mail className="h-4 w-4 text-pink-300" />
+            kptmng@gmail.com
+          </a>
         </div>
 
-        {/* Quick Links */}
-        <div className="w-full md:w-1/4 px-4">
-          <h2 className="title-font font-semibold text-gray-900 tracking-widest text-sm mb-3">
-            QUICK LINKS
-          </h2>
-          <nav className="flex flex-col space-y-2">
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/112/milestones/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              KPT Website
-            </a>
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/10/campus-map/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Our Campus
-            </a>
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/50/fee-structure/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Admissions
-            </a>
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/18/contact/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Contact Us
-            </a>
-          </nav>
-        </div>
+        <LinkList title="Quick Links" links={QUICK_LINKS} />
+        <LinkList title="Resources" links={RESOURCES} />
 
-        {/* Resources */}
-        <div className="w-full md:w-1/4 px-4">
-          <h2 className="title-font font-semibold text-gray-900 tracking-widest text-sm mb-3">
-            RESOURCES
-          </h2>
-          <nav className="flex flex-col space-y-2">
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/44/recently-visited-companies/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Placements
-            </a>
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/57/list-of-principal%27s-/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Principal
-            </a>
-            <a
-              href="https://kptalumni.org/"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Alumni
-            </a>
-            <a
-              href="https://gpt.karnataka.gov.in/kptmangalore/public/115/events-/en"
-              className="text-gray-600 hover:text-blue-700 transition-colors"
-            >
-              Events
-            </a>
-          </nav>
-        </div>
-
-        {/* Contact Details & Second Logo */}
-        <div className="flex flex-col items-center md:items-start text-center md:text-left w-full md:w-1/4">
-          <img
-            src="/logo2.png" // your second logo
-            alt="KPT 75 Logo"
-            className="h-24 w-auto mb-4"
-          />
-          <h2 className="text-lg font-semibold text-gray-900">
-            Contact Details
-          </h2>
-          <p className="mt-1 text-sm text-gray-500">
-            📞 (0824) - 3516910, 3542476, 2211636, 3515889
+        {/* Contact */}
+        <div className="flex flex-col items-center text-center sm:items-start sm:text-left">
+          <div className="rounded-2xl bg-white p-2 shadow-lg">
+            <img src="/logo2.png" alt="KPT 75 Logo" loading="lazy" className="h-16 w-auto" />
+          </div>
+          <h2 className="mt-4 text-lg font-bold text-white">Contact Details</h2>
+          <p className="mt-2 flex items-start gap-2 text-sm text-indigo-100/80">
+            <Phone className="mt-0.5 h-4 w-4 shrink-0 text-pink-300" />
+            (0824) - 3516910, 3542476, 2211636, 3515889
           </p>
         </div>
       </div>
 
-      {/* Bottom Bar */}
-      <div className="bg-gray-350 border-t ">
-        <div className="container mx-auto py-4 px-5 flex flex-wrap flex-col sm:flex-row items-center justify-between">
-          <p className="text-gray-500 text-sm text-center sm:text-left">
-            © {new Date().getFullYear()} Karnataka Govt. Polytechnic — All
+      <div className="border-t border-white/10">
+        <div className="mx-auto flex max-w-7xl flex-col items-center justify-between gap-2 px-6 py-4 text-center text-xs text-indigo-100/70 sm:flex-row lg:px-8">
+          <p>
+            © {new Date().getFullYear()} Karnataka (Govt.) Polytechnic, Mangaluru — All
             Rights Reserved
           </p>
-          <span className="inline-flex mt-2 text-gray-500 text-sm sm:mt-0">
-            Maintained by KPT CSE Final year students
-            {/* <a
-              href="#"
-              className="text-gray-500 hover:text-white hover:bg-blue-600 rounded-full p-2 transition-colors"
-            >
-              <FaFacebookF className="w-4 h-4" />
-            </a>
-            <a
-              href="#"
-              className="ml-3 text-gray-500 hover:text-white hover:bg-blue-400 rounded-full p-2 transition-colors"
-            >
-              <FaTwitter className="w-4 h-4" />
-            </a>
-            <a
-              href="#"
-              className="ml-3 text-gray-500 hover:text-white hover:bg-pink-500 rounded-full p-2 transition-colors"
-            >
-              <FaInstagram className="w-4 h-4" />
-            </a>
-            <a
-              href="#"
-              className="ml-3 text-gray-500 hover:text-white hover:bg-blue-700 rounded-full p-2 transition-colors"
-            >
-              <FaLinkedinIn className="w-4 h-4" />
-            </a> */}
-          </span>
+          <p>Maintained by KPT CSE final year students</p>
         </div>
       </div>
     </footer>

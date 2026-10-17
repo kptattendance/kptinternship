@@ -3,7 +3,15 @@
 import { useEffect, useRef, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
+import { FileCheck2 } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
+import { PageHeader } from "../../components/ui";
+import { REVIEW_STAGES } from "../../constants";
+import {
+  IMAGE_PRESETS,
+  compressImage,
+  formatFileSize,
+} from "../../utils/compressImage";
 
 export default function InternshipApplicationStatus() {
   const { getToken } = useAuth();
@@ -149,13 +157,16 @@ const internshipImageUploaded =
 // Internship image selection
 // ---------------------------------------------------------
 
-const handleInternshipImageSelect = (event) => {
-  const file = event.target.files?.[0];
+const handleInternshipImageSelect = async (event) => {
+  const original = event.target.files?.[0];
 
   setInternshipImageMessage("");
   setInternshipImageError("");
 
-  if (!file) return;
+  if (!original) return;
+
+  // Shrink the photo first — phone photos of 5-10 MB become a few hundred KB
+  const file = await compressImage(original, IMAGE_PRESETS.photo);
 
   const allowedTypes = [
     "image/jpeg",
@@ -187,6 +198,12 @@ const handleInternshipImageSelect = (event) => {
 
   const objectUrl = URL.createObjectURL(file);
   setInternshipImagePreview(objectUrl);
+
+  if (file.size < original.size) {
+    setInternshipImageMessage(
+      `Photo compressed from ${formatFileSize(original.size)} to ${formatFileSize(file.size)}.`
+    );
+  }
 };
 
 
@@ -285,13 +302,16 @@ const handleUploadInternshipImage = async () => {
   // File selection
   // ---------------------------------------------------------
 
-  const handleFileSelect = (event) => {
-    const file = event.target.files?.[0];
+  const handleFileSelect = async (event) => {
+    const original = event.target.files?.[0];
 
     setUploadMessage("");
     setUploadError("");
 
-    if (!file) return;
+    if (!original) return;
+
+    // Shrink the scan first, keeping it large enough to read
+    const file = await compressImage(original, IMAGE_PRESETS.document);
 
     const allowedTypes = [
       "image/jpeg",
@@ -323,6 +343,12 @@ const handleUploadInternshipImage = async () => {
 
     const objectUrl = URL.createObjectURL(file);
     setPreviewUrl(objectUrl);
+
+    if (file.size < original.size) {
+      setUploadMessage(
+        `Letter compressed from ${formatFileSize(original.size)} to ${formatFileSize(file.size)}.`
+      );
+    }
   };
 
   // ---------------------------------------------------------
@@ -468,7 +494,7 @@ const handleUploadInternshipImage = async () => {
       <>
         <StudentNavbar />
 
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
+        <div className="page-bg flex items-center justify-center px-4">
 
           <div className="text-center">
 
@@ -494,7 +520,7 @@ const handleUploadInternshipImage = async () => {
       <>
         <StudentNavbar />
 
-        <div className="min-h-screen bg-slate-50 px-4 py-8">
+        <div className="page-bg px-4 py-8">
 
           <div className="max-w-3xl mx-auto">
 
@@ -529,11 +555,15 @@ const handleUploadInternshipImage = async () => {
     <>
       <StudentNavbar />
 
-      <main className="min-h-screen bg-slate-50">
+      <main className="page-bg">
 
         <div className="max-w-7xl mx-auto px-3 py-5 sm:px-5 sm:py-7 lg:px-8">
 
-
+          <PageHeader
+            icon={FileCheck2}
+            title="My Application"
+            subtitle="Follow your approval progress, then upload the consent letter and your internship photo."
+          />
 
           {/* =====================================================
               APPLICATION STATUS
@@ -568,15 +598,61 @@ const handleUploadInternshipImage = async () => {
             </div>
 
 
-            {/* Table */}
+            {/* Phones: one progress card per application */}
 
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="space-y-4 sm:hidden">
+              {apps.map((app) => (
+                <div key={app._id} className="card p-4">
+                  <p className="text-xs font-semibold text-slate-400">
+                    {app.regNumber} • <span className="uppercase">{app.department}</span>
+                  </p>
+                  <h3 className="font-bold text-slate-800">{app.name}</h3>
+                  <p className="text-sm text-slate-500">{app.companyName}</p>
 
-              {/* Mobile hint */}
+                  <ol className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
+                    {REVIEW_STAGES.map((stage) => (
+                      <li key={stage.key} className="relative">
+                        <span
+                          className={`absolute top-1.5 -left-[23px] h-3 w-3 rounded-full ring-4 ring-white ${
+                            app[stage.key]?.status === "approved"
+                              ? "bg-emerald-500"
+                              : app[stage.key]?.status === "rejected"
+                              ? "bg-rose-500"
+                              : "bg-amber-400"
+                          }`}
+                        />
+                        <div className="flex items-start justify-between gap-3">
+                          <span className="text-sm font-semibold text-slate-700">
+                            {stage.label}
+                          </span>
+                          <StatusWithComment reviewer={app[stage.key]} />
+                        </div>
+                      </li>
+                    ))}
+                  </ol>
 
-              <div className="sm:hidden px-4 py-2.5 bg-blue-50/50 border-b border-blue-100 text-center text-[11px] font-medium text-blue-600">
-                Swipe left or right to view all details →
-              </div>
+                  <div className="mt-4">
+                    {app.principal?.status === "approved" ? (
+                      <button
+                        type="button"
+                        onClick={() => handleViewLetter(app._id)}
+                        className="btn btn-success w-full"
+                      >
+                        ↗ View / Print Internship Letter
+                      </button>
+                    ) : (
+                      <button type="button" disabled className="btn btn-secondary w-full whitespace-normal">
+                        Letter available after principal approval
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Tablets & desktops: table */}
+
+            <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
 
               <div className="overflow-x-auto">
@@ -894,7 +970,7 @@ const handleUploadInternshipImage = async () => {
                 {/* Image preview */}
                 <div className="h-60 sm:h-72 md:h-64 rounded-xl bg-white border border-violet-100 overflow-hidden">
 
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={previewUrl}
                     alt="Consent letter preview"
                     className="w-full h-full object-contain"
@@ -957,7 +1033,7 @@ const handleUploadInternshipImage = async () => {
 
 
                   <p className="text-[10px] sm:text-xs text-slate-400 mt-4">
-                    JPG, JPEG or PNG • Maximum 5 MB
+                    JPG or PNG • compressed automatically before upload
                   </p>
 
                 </div>
@@ -1036,7 +1112,7 @@ const handleUploadInternshipImage = async () => {
           <input
             ref={fileInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png"
+            accept="image/*"
             onChange={handleFileSelect}
             className="hidden"
           />
@@ -1247,7 +1323,7 @@ const handleUploadInternshipImage = async () => {
                 {/* Image preview */}
                 <div className="h-60 sm:h-72 md:h-64 rounded-xl bg-white border border-sky-100 overflow-hidden">
 
-                  <img
+                  <img loading="lazy" decoding="async"
                     src={internshipImagePreview}
                     alt="Internship image preview"
                     className="w-full h-full object-contain"
@@ -1312,7 +1388,7 @@ const handleUploadInternshipImage = async () => {
 
 
                   <p className="text-[10px] sm:text-xs text-slate-400 mt-4">
-                    JPG, JPEG or PNG • Maximum 5 MB
+                    JPG or PNG • compressed automatically before upload
                   </p>
 
                 </div>
@@ -1391,7 +1467,7 @@ const handleUploadInternshipImage = async () => {
           <input
             ref={internshipImageInputRef}
             type="file"
-            accept="image/jpeg,image/jpg,image/png"
+            accept="image/*"
             onChange={handleInternshipImageSelect}
             className="hidden"
           />

@@ -3,6 +3,31 @@ import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
+import { CheckCircle2, Clock, FolderCheck, RefreshCw, Users } from "lucide-react";
+import {
+  FilterBar,
+  FilterSelect,
+  Page,
+  PageHeader,
+  SearchInput,
+  Spinner,
+  StatCard,
+} from "../../components/ui";
+import { DEPARTMENT_OPTIONS } from "../../constants";
+
+const CONSENT_OPTIONS = [
+  { value: "all", label: "All students" },
+  { value: "submitted", label: "✓ Letter submitted" },
+  { value: "pending", label: "! Letter pending" },
+];
+
+const PHOTO_OPTIONS = [
+  { value: "all", label: "All students" },
+  { value: "uploaded", label: "Photo uploaded" },
+  { value: "missing", label: "Photo not uploaded" },
+  { value: "awaiting", label: "Awaiting home page approval" },
+  { value: "approved", label: "Shown on home page" },
+];
 
 export default function PlacementParentConsent() {
   const { getToken } = useAuth();
@@ -14,6 +39,7 @@ export default function PlacementParentConsent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [photoFilter, setPhotoFilter] = useState("all");
 
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [selectedInternshipImage, setSelectedInternshipImage] = useState(null);
@@ -187,12 +213,25 @@ export default function PlacementParentConsent() {
       );
     }
 
+    // Internship photo
+    if (photoFilter !== "all") {
+      result = result.filter((app) => {
+        const uploaded = Boolean(app.internshipImage?.imageUrl);
+        const approved = Boolean(app.internshipImage?.approved);
+        if (photoFilter === "uploaded") return uploaded;
+        if (photoFilter === "missing") return !uploaded;
+        if (photoFilter === "awaiting") return uploaded && !approved;
+        return uploaded && approved;
+      });
+    }
+
     return result;
   }, [
     applications,
     searchTerm,
     statusFilter,
     departmentFilter,
+    photoFilter,
   ]);
 
   // =========================================================
@@ -472,22 +511,9 @@ export default function PlacementParentConsent() {
     return (
       <>
         <ReviewerNavbar />
-
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-          <div className="text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center">
-              <div className="w-7 h-7 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-            </div>
-
-            <p className="mt-4 text-sm font-semibold text-slate-600">
-              Loading document records...
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-              Please wait
-            </p>
-          </div>
-        </div>
+        <Page>
+          <Spinner label="Loading document records..." />
+        </Page>
       </>
     );
   }
@@ -500,192 +526,70 @@ export default function PlacementParentConsent() {
     <>
       <ReviewerNavbar />
 
-      <main className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-3 py-5 sm:px-5 sm:py-7 lg:px-8">
+      <Page>
+        <div>
+          <PageHeader
+            icon={FolderCheck}
+            title="Consent Letters & Internship Photos"
+            subtitle="Review uploaded documents and approve internship photos for the home page"
+            actions={
+              <button
+                type="button"
+                onClick={() => fetchData(true)}
+                disabled={refreshing}
+                className="btn btn-secondary"
+              >
+                <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                Refresh
+              </button>
+            }
+          />
 
-
-          {/* =================================================
-              STAT CARDS
-          ================================================== */}
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
-
-            {/* Total */}
-            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-
-                <div>
-                  <p className="text-xs font-semibold text-slate-400 uppercase tracking-wide">
-                    Total Students
-                  </p>
-
-                  <p className="mt-1 text-2xl sm:text-3xl font-bold text-slate-800">
-                    {totalCount}
-                  </p>
-                </div>
-
-                <div className="w-11 h-11 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center text-xl">
-                  👥
-                </div>
-
-              </div>
-            </div>
-
-
-            {/* Submitted */}
-            <div className="bg-white rounded-2xl border border-emerald-100 shadow-sm p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-
-                <div>
-                  <p className="text-xs font-semibold text-emerald-500 uppercase tracking-wide">
-                    Submitted
-                  </p>
-
-                  <p className="mt-1 text-2xl sm:text-3xl font-bold text-emerald-700">
-                    {submittedCount}
-                  </p>
-                </div>
-
-                <div className="w-11 h-11 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center text-xl">
-                  ✓
-                </div>
-
-              </div>
-            </div>
-
-
-            {/* Pending */}
-            <div className="bg-white rounded-2xl border border-amber-100 shadow-sm p-4 sm:p-5">
-              <div className="flex items-center justify-between">
-
-                <div>
-                  <p className="text-xs font-semibold text-amber-500 uppercase tracking-wide">
-                    Pending
-                  </p>
-
-                  <p className="mt-1 text-2xl sm:text-3xl font-bold text-amber-700">
-                    {pendingCount}
-                  </p>
-                </div>
-
-                <div className="w-11 h-11 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center text-xl">
-                  !
-                </div>
-
-              </div>
-            </div>
-
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Students" value={totalCount} icon={Users} tone="indigo" />
+            <StatCard
+              label="Consent submitted"
+              value={submittedCount}
+              icon={CheckCircle2}
+              tone="emerald"
+              hint={`${submissionPercentage}% complete`}
+            />
+            <StatCard label="Consent pending" value={pendingCount} icon={Clock} tone="amber" />
           </div>
 
-
-       
-
-          {/* =================================================
-              SEARCH + FILTERS
-          ================================================== */}
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-6">
-
-            <div className="flex flex-col lg:flex-row gap-3">
-
-              {/* Search */}
-              <div className="relative flex-1">
-
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  🔍
-                </span>
-
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) =>
-                    setSearchTerm(e.target.value)
-                  }
-                  placeholder="Search by name, register number or phone..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-50 transition"
-                />
-
-              </div>
-
-
-              {/* Status */}
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value)
-                }
-                className="h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-50"
-              >
-                <option value="all">
-                  All Status
-                </option>
-
-                <option value="submitted">
-                  ✓ Submitted
-                </option>
-
-                <option value="pending">
-                  ! Pending
-                </option>
-              </select>
-
-
-              {/* Department */}
-              <select
-                value={departmentFilter}
-                onChange={(e) =>
-                  setDepartmentFilter(e.target.value)
-                }
-                className="h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-50"
-              >
-                <option value="all">
-                  All Departments
-                </option>
-
-                <option value="cs">CS</option>
-                <option value="ec">EC</option>
-                <option value="eee">EEE</option>
-                <option value="me">ME</option>
-                <option value="po">PO</option>
-                <option value="ch">CH</option>
-                <option value="ce">CE</option>
-                <option value="at">AT</option>
-              </select>
-
-
-              {/* Clear */}
-              {(searchTerm ||
-                statusFilter !== "all" ||
-                departmentFilter !== "all") && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setDepartmentFilter("all");
-                  }}
-                  className="h-11 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold text-slate-600 transition"
-                >
-                  Clear
-                </button>
-              )}
-
-            </div>
-
-            <div className="mt-3 text-xs text-slate-400">
-              Showing{" "}
-              <span className="font-semibold text-slate-600">
-                {filteredApplications.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold text-slate-600">
-                {applications.length}
-              </span>{" "}
-              students
-            </div>
-
-          </div>
-
+          <FilterBar
+            resultCount={filteredApplications.length}
+            onReset={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setDepartmentFilter("all");
+              setPhotoFilter("all");
+            }}
+          >
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Name, register number or phone"
+            />
+            <FilterSelect
+              label="Department"
+              value={departmentFilter}
+              onChange={setDepartmentFilter}
+              options={[{ value: "all", label: "All departments" }, ...DEPARTMENT_OPTIONS]}
+            />
+            <FilterSelect
+              label="Consent letter"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={CONSENT_OPTIONS}
+            />
+            <FilterSelect
+              label="Internship photo"
+              value={photoFilter}
+              onChange={setPhotoFilter}
+              options={PHOTO_OPTIONS}
+            />
+          </FilterBar>
 
           {/* =================================================
               BULK DOCUMENT MANAGEMENT
@@ -961,10 +865,10 @@ export default function PlacementParentConsent() {
 
                             <div className="flex items-center gap-3">
 
-                              <img
+                              <img loading="lazy" decoding="async"
                                 src={
                                   app.image ||
-                                  "/default-avatar.png"
+                                  "/default-avatar.svg"
                                 }
                                 alt={app.name}
                                 className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm"
@@ -1152,10 +1056,10 @@ export default function PlacementParentConsent() {
 
                     <div className="flex items-start gap-3">
 
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={
                           app.image ||
-                          "/default-avatar.png"
+                          "/default-avatar.svg"
                         }
                         alt={app.name}
                         className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-sm shrink-0"
@@ -1304,7 +1208,7 @@ export default function PlacementParentConsent() {
           </div>
 
         </div>
-      </main>
+      </Page>
 
 
       {/* =====================================================
@@ -1327,10 +1231,10 @@ export default function PlacementParentConsent() {
 
               <div className="flex items-center gap-3 min-w-0">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedLetter.image ||
-                    "/default-avatar.png"
+                    "/default-avatar.svg"
                   }
                   alt={selectedLetter.name}
                   className="w-10 h-10 rounded-xl object-cover border border-slate-200"
@@ -1368,7 +1272,7 @@ export default function PlacementParentConsent() {
 
               <div className="min-h-full flex items-center justify-center">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedLetter.parentConsentLetter
                       ?.imageUrl
@@ -1446,10 +1350,10 @@ export default function PlacementParentConsent() {
 
               <div className="flex items-center gap-3 min-w-0">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedInternshipImage.image ||
-                    "/default-avatar.png"
+                    "/default-avatar.svg"
                   }
                   alt={selectedInternshipImage.name}
                   className="w-10 h-10 rounded-xl object-cover border border-slate-200"
@@ -1486,7 +1390,7 @@ export default function PlacementParentConsent() {
 
               <div className="min-h-full flex items-center justify-center">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedInternshipImage.internshipImage
                       ?.imageUrl

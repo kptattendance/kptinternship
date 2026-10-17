@@ -1,133 +1,92 @@
-// src/components/dashboard/DeptOverview.jsx
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+// src/components/homeDashboard/DeptOverview.jsx
+import { Building2 } from "lucide-react";
+
+// One colour per department card
+const ACCENTS = [
+  { ring: "#6366f1", soft: "from-indigo-50 to-violet-50", text: "text-indigo-700" },
+  { ring: "#ec4899", soft: "from-pink-50 to-rose-50", text: "text-pink-700" },
+  { ring: "#10b981", soft: "from-emerald-50 to-teal-50", text: "text-emerald-700" },
+  { ring: "#f59e0b", soft: "from-amber-50 to-orange-50", text: "text-amber-700" },
+  { ring: "#0ea5e9", soft: "from-sky-50 to-cyan-50", text: "text-sky-700" },
+  { ring: "#8b5cf6", soft: "from-violet-50 to-fuchsia-50", text: "text-violet-700" },
+  { ring: "#ef4444", soft: "from-red-50 to-rose-50", text: "text-red-700" },
+  { ring: "#14b8a6", soft: "from-teal-50 to-emerald-50", text: "text-teal-700" },
+];
+
+// Light-weight donut drawn with CSS (no chart library needed)
+function Donut({ percent, color }) {
+  return (
+    <div
+      className="relative h-20 w-20 shrink-0 rounded-full sm:h-24 sm:w-24"
+      style={{
+        background: `conic-gradient(${color} ${percent * 3.6}deg, #e2e8f0 0deg)`,
+      }}
+      role="img"
+      aria-label={`${percent}% applied`}
+    >
+      <div className="absolute inset-2.5 flex items-center justify-center rounded-full bg-white text-base font-extrabold text-slate-800 shadow-inner sm:inset-3 sm:text-lg">
+        {percent}%
+      </div>
+    </div>
+  );
+}
 
 export default function DeptOverview({ statsByDept }) {
   return (
-    <div className="space-y-10">
-      <h2 className="text-xl font-semibold text-gray-800">
-        📊 Department Overview
-      </h2>
+    <section>
+      <div className="mb-4 flex items-center gap-2">
+        <Building2 className="h-5 w-5 text-violet-600" />
+        <h2 className="text-xl font-bold text-slate-800 sm:text-2xl">
+          Department Overview
+        </h2>
+      </div>
 
-      {/* Cards with shiny pie charts */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-6">
-        {/* <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6"> */}
-        {statsByDept.map((dept) => {
-          const pieData = [
-            { name: "Applied", value: dept.applied },
-            { name: "Remaining", value: dept.remaining },
-          ];
-
+      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {statsByDept.map((dept, i) => {
+          const accent = ACCENTS[i % ACCENTS.length];
           const appliedPercent = dept.total
-            ? Math.round((dept.applied / dept.total) * 100)
+            ? Math.min(100, Math.round((dept.applied / dept.total) * 100))
             : 0;
 
           return (
             <div
               key={dept.value}
-              className="bg-white/70 backdrop-blur-lg rounded-2xl shadow-lg p-5 hover:shadow-2xl transition border border-gray-100"
+              className={`rounded-2xl border border-white bg-gradient-to-br ${accent.soft} p-4 shadow-sm transition hover:-translate-y-0.5 hover:shadow-md sm:p-5`}
             >
-              <h3 className="text-lg font-semibold text-blue-700 mb-3 text-center">
-                {dept.label}
-              </h3>
-
-              <div className="flex items-center justify-between gap-4">
-                {/* Text details */}
-                <div className="text-sm space-y-1 text-gray-700">
-                  <p>
-                    <span className="font-medium">Total:</span> {dept.total}
-                  </p>
-                  <p className="text-emerald-600 font-medium">
-                    Applied: {dept.applied}
-                  </p>
-                  <p className="text-rose-600 font-medium">
-                    Remaining: {dept.remaining}
-                  </p>
+              <div className="flex items-center justify-between gap-3">
+                <div className="min-w-0">
+                  <span
+                    className="badge text-white uppercase"
+                    style={{ backgroundColor: accent.ring }}
+                  >
+                    {dept.value}
+                  </span>
+                  <h3 className={`mt-2 text-sm leading-snug font-bold ${accent.text}`}>
+                    {dept.label}
+                  </h3>
+                  <dl className="mt-2 space-y-0.5 text-xs text-slate-600">
+                    <div className="flex gap-1">
+                      <dt>Total:</dt>
+                      <dd className="font-bold text-slate-800">{dept.total}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt>Applied:</dt>
+                      <dd className="font-bold text-emerald-700">{dept.applied}</dd>
+                    </div>
+                    <div className="flex gap-1">
+                      <dt>Remaining:</dt>
+                      <dd className="font-bold text-rose-600">
+                        {Math.max(0, dept.remaining)}
+                      </dd>
+                    </div>
+                  </dl>
                 </div>
-
-                {/* Shiny Pie Chart */}
-                <div className="w-28 h-28 relative">
-                  <ResponsiveContainer>
-                    <PieChart>
-                      <defs>
-                        <linearGradient
-                          id="appliedGradient"
-                          x1="0"
-                          y1="0"
-                          x2="1"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#34d399"
-                            stopOpacity={0.9}
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#059669"
-                            stopOpacity={1}
-                          />
-                        </linearGradient>
-                        <linearGradient
-                          id="remainingGradient"
-                          x1="0"
-                          y1="0"
-                          x2="1"
-                          y2="1"
-                        >
-                          <stop
-                            offset="0%"
-                            stopColor="#f87171"
-                            stopOpacity={0.9}
-                          />
-                          <stop
-                            offset="100%"
-                            stopColor="#dc2626"
-                            stopOpacity={1}
-                          />
-                        </linearGradient>
-                        <filter
-                          id="shadow"
-                          x="-20%"
-                          y="-20%"
-                          width="150%"
-                          height="150%"
-                        >
-                          <feDropShadow
-                            dx="0"
-                            dy="0"
-                            stdDeviation="3"
-                            floodColor="#000"
-                            floodOpacity="0.2"
-                          />
-                        </filter>
-                      </defs>
-
-                      <Pie
-                        data={pieData}
-                        dataKey="value"
-                        nameKey="name"
-                        outerRadius={50}
-                        innerRadius={30}
-                        labelLine={false}
-                        filter="url(#shadow)"
-                      >
-                        <Cell fill="url(#appliedGradient)" />
-                        <Cell fill="url(#remainingGradient)" />
-                      </Pie>
-                      <Tooltip />
-                    </PieChart>
-                  </ResponsiveContainer>
-
-                  {/* Center percentage label */}
-                  <div className="absolute inset-0 flex items-center justify-center font-semibold text-gray-800 text-sm">
-                    {appliedPercent}%
-                  </div>
-                </div>
+                <Donut percent={appliedPercent} color={accent.ring} />
               </div>
             </div>
           );
         })}
       </div>
-    </div>
+    </section>
   );
 }

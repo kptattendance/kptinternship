@@ -1,4 +1,4 @@
-// src/App.jsx (example)
+// src/App.jsx
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
@@ -7,30 +7,55 @@ import { ToastContainer } from "react-toastify";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Loader from "./pages/Loader";
 
-// Pages other than the home page are downloaded only when they are opened
-const Dashboard = lazy(() => import("./pages/students/Dashboard"));
-const InternshipApplicationForm = lazy(() => import("./pages/students/InternshipApplicationForm"));
-const InternshipApplicationStatus = lazy(() => import("./pages/students/InternshipApplicationStatus"));
-const Review = lazy(() => import("./pages/reviewers/Review"));
-const AddStaff = lazy(() => import("./pages/hod/AddStaff"));
-const StaffList = lazy(() => import("./pages/hod/StaffList"));
-const AllApplications = lazy(() => import("./pages/hod/AllApplications"));
-const PlacementAddUser = lazy(() => import("./pages/placement/PlacementAddUser"));
-const MembersList = lazy(() => import("./pages/placement/MembersList"));
-const PlacementAddCompany = lazy(() => import("./pages/placement/PlacementAddCompany"));
-const CompanyDashboard = lazy(() => import("./pages/company/CompanyDashboard"));
-const InternalMark = lazy(() => import("./pages/cohort/InternalMark"));
-const YearStatistics = lazy(() => import("./pages/placement/YearStatistics"));
-const AllPlaceApplications = lazy(() => import("./pages/placement/AllPlaceApplications"));
-const AddCompany = lazy(() => import("./pages/cohort/AddCompany"));
-const ParentConsent = lazy(() => import("./pages/cohort/ParentConsent"));
-const PlacementParentConsent = lazy(() => import("./pages/placement/PlacementParentConsent"));
+// Pages other than the home page are downloaded only when they are opened.
+// After a new deployment the old page files no longer exist, so if one fails
+// to download, reload once to get the new version instead of a blank page.
+const lazyPage = (importer) =>
+  lazy(() =>
+    importer()
+      .then((module) => {
+        sessionStorage.removeItem("pageReloaded");
+        return module;
+      })
+      .catch((err) => {
+        if (!sessionStorage.getItem("pageReloaded")) {
+          sessionStorage.setItem("pageReloaded", "1");
+          window.location.reload();
+          return new Promise(() => {});
+        }
+        throw err;
+      })
+  );
+
+const Dashboard = lazyPage(() => import("./pages/students/Dashboard"));
+const InternshipApplicationForm = lazyPage(() => import("./pages/students/InternshipApplicationForm"));
+const InternshipApplicationStatus = lazyPage(() => import("./pages/students/InternshipApplicationStatus"));
+const Review = lazyPage(() => import("./pages/reviewers/Review"));
+const AddStaff = lazyPage(() => import("./pages/hod/AddStaff"));
+const StaffList = lazyPage(() => import("./pages/hod/StaffList"));
+const AllApplications = lazyPage(() => import("./pages/hod/AllApplications"));
+const PlacementAddUser = lazyPage(() => import("./pages/placement/PlacementAddUser"));
+const MembersList = lazyPage(() => import("./pages/placement/MembersList"));
+const PlacementAddCompany = lazyPage(() => import("./pages/placement/PlacementAddCompany"));
+const CompanyDashboard = lazyPage(() => import("./pages/company/CompanyDashboard"));
+const InternalMark = lazyPage(() => import("./pages/cohort/InternalMark"));
+const YearStatistics = lazyPage(() => import("./pages/placement/YearStatistics"));
+const AllPlaceApplications = lazyPage(() => import("./pages/placement/AllPlaceApplications"));
+const AddCompany = lazyPage(() => import("./pages/cohort/AddCompany"));
+const ParentConsent = lazyPage(() => import("./pages/cohort/ParentConsent"));
+const PlacementParentConsent = lazyPage(() => import("./pages/placement/PlacementParentConsent"));
 
 export default function App() {
   return (
     <>
       <ToastContainer autoClose={3000} />
-      <Suspense fallback={<Loader />}>
+      <Suspense
+        fallback={
+          <div className="page-bg flex items-center justify-center">
+            <Loader message="Loading page..." />
+          </div>
+        }
+      >
       <Routes>
         <Route path="/" element={<Home />} />
         <Route path="/dashboard" element={<Dashboard />} />
@@ -45,7 +70,6 @@ export default function App() {
             </ProtectedRoute>
           }
         />
-        <Route path="/redirect" element={<RedirectAfterLogin />} />
         <Route
           path="/hod/list-staff"
           element={

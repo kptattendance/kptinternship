@@ -3,6 +3,20 @@ import axios from "axios";
 import { useAuth, useUser } from "@clerk/clerk-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
 import { toast } from "react-toastify";
+import { Pencil, Trash2, UsersRound, X } from "lucide-react";
+import Modal from "../../components/Modal";
+import PhotoPicker from "../../components/PhotoPicker";
+import {
+  Avatar,
+  EmptyState,
+  FilterBar,
+  FilterSelect,
+  Page,
+  PageHeader,
+  SearchInput,
+  Spinner,
+} from "../../components/ui";
+import { DEPARTMENT_OPTIONS, ROLE_LABELS } from "../../constants";
 
 const ROLES = [
   "principal",
@@ -13,7 +27,16 @@ const ROLES = [
   "student",
 ];
 
-const DEPARTMENTS = ["at", "ch", "ce", "cs", "ec", "eee", "me", "po"];
+const ROLE_OPTIONS = ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] || r }));
+
+const ROLE_BADGES = {
+  principal: "badge-red",
+  placement: "badge-violet",
+  hod: "badge-blue",
+  cohortOwner: "badge-green",
+  company: "badge-amber",
+  student: "badge-slate",
+};
 
 export default function MembersList() {
   const { getToken } = useAuth();
@@ -26,6 +49,8 @@ export default function MembersList() {
 
   const [roleFilter, setRoleFilter] = useState("");
   const [deptFilter, setDeptFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -35,8 +60,6 @@ export default function MembersList() {
 
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
-  const DEFAULT_AVATAR =
-    "https://www.gravatar.com/avatar/00000000000000000000000000000000?d=mp&f=y";
 
   // =========================================================
   // FETCH USERS
@@ -108,6 +131,7 @@ export default function MembersList() {
 
   const handleSave = async (id) => {
     try {
+      setSaving(true);
       const token = await getToken();
 
       const fd = new FormData();
@@ -135,6 +159,8 @@ export default function MembersList() {
       toast.error(
         err.response?.data?.message || "Update failed"
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -145,8 +171,12 @@ export default function MembersList() {
   const filteredUsers = users.filter((u) => {
     const r = roleFilter ? u.role === roleFilter : true;
     const d = deptFilter ? u.department === deptFilter : true;
+    const q = search.toLowerCase().trim();
+    const s =
+      !q ||
+      [u.name, u.email, u.phoneNumber].some((f) => (f || "").toLowerCase().includes(q));
 
-    return r && d;
+    return r && d && s;
   });
 
   // =========================================================
@@ -267,429 +297,261 @@ export default function MembersList() {
   // RENDER
   // =========================================================
 
+  const actions = (u) =>
+    isAdmin && (
+      <div className="flex justify-end gap-2">
+        <button type="button" onClick={() => handleEditClick(u)} className="btn btn-secondary btn-sm">
+          <Pencil className="h-3.5 w-3.5" /> Edit
+        </button>
+        <button
+          type="button"
+          onClick={() => handleDelete(u._id)}
+          className="btn btn-sm border border-rose-200 bg-white text-rose-600 hover:bg-rose-50"
+          aria-label={`Delete ${u.name || u.email}`}
+        >
+          <Trash2 className="h-3.5 w-3.5" />
+        </button>
+      </div>
+    );
+
+  const roleBadge = (u) => (
+    <span className={`badge ${ROLE_BADGES[u.role] || "badge-slate"}`}>
+      {ROLE_LABELS[u.role] || u.role}
+    </span>
+  );
+
   return (
     <>
       <ReviewerNavbar />
 
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 to-blue-100 p-6">
-        <div className="max-w-7xl mx-auto">
+      <Page>
+        <PageHeader
+          icon={UsersRound}
+          title="Members Directory"
+          subtitle="Manage users, roles and departments"
+          actions={<span className="badge badge-violet text-sm">{users.length} members</span>}
+        />
 
-          {/* =================================================
-              HEADER
-          ================================================== */}
+        <FilterBar
+          resultCount={filteredUsers.length}
+          onReset={() => {
+            setRoleFilter("");
+            setDeptFilter("");
+            setSearch("");
+          }}
+        >
+          <SearchInput value={search} onChange={setSearch} placeholder="Name, email or phone" />
+          <FilterSelect
+            label="Role"
+            value={roleFilter}
+            onChange={setRoleFilter}
+            allLabel="All roles"
+            options={ROLE_OPTIONS}
+          />
+          <FilterSelect
+            label="Department"
+            value={deptFilter}
+            onChange={setDeptFilter}
+            allLabel="All departments"
+            options={DEPARTMENT_OPTIONS}
+          />
+        </FilterBar>
 
-          <div className="bg-white rounded-2xl shadow-lg p-6 mb-6">
-            <h2 className="text-2xl font-bold text-indigo-700">
-              👥 Members Directory
-            </h2>
-
-            <p className="text-sm text-gray-600">
-              Manage users, roles & departments
-            </p>
-          </div>
-
-          {/* =================================================
-              FILTERS
-          ================================================== */}
-
-          <div className="bg-white rounded-xl shadow p-4 mb-4 flex flex-wrap gap-4 items-center">
-
-            <select
-              value={roleFilter}
-              onChange={(e) => setRoleFilter(e.target.value)}
-              className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
-            >
-              <option value="">All Roles</option>
-
-              {ROLES.map((r) => (
-                <option key={r} value={r}>
-                  {r}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="border rounded-lg px-3 py-2 focus:ring-2 focus:ring-indigo-400"
-            >
-              <option value="">All Departments</option>
-
-              {DEPARTMENTS.map((d) => (
-                <option key={d} value={d}>
-                  {d}
-                </option>
-              ))}
-            </select>
-
-            {/* Reset Filters */}
-            {(roleFilter || deptFilter) && (
+        {/* Bulk selection */}
+        {isAdmin && filteredUsers.length > 0 && (
+          <div className="card mb-4 flex flex-wrap items-center gap-2 px-4 py-3">
+            <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                ref={(el) => el && (el.indeterminate = someFilteredSelected && !allFilteredSelected)}
+                onChange={toggleSelectAll}
+                className="h-4 w-4 accent-indigo-600"
+              />
+              Select all {filteredUsers.length}
+            </label>
+            <span className={`badge ${selectedUsers.length ? "badge-violet" : "badge-slate"}`}>
+              {selectedUsers.length} selected
+            </span>
+            <div className="ml-auto flex gap-2">
               <button
-                onClick={() => {
-                  setRoleFilter("");
-                  setDeptFilter("");
-                }}
-                className="px-3 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+                type="button"
+                onClick={() => setSelectedUsers([])}
+                disabled={selectedUsers.length === 0}
+                className="btn btn-secondary btn-sm"
               >
-                Clear Filters
+                <X className="h-3.5 w-3.5" /> Clear
               </button>
-            )}
-          </div>
-
-          {/* =================================================
-              BULK SELECTION TOOLBAR
-          ================================================== */}
-
-          {isAdmin && (
-            <div className="bg-white rounded-xl shadow p-4 mb-6 flex flex-wrap items-center justify-between gap-4">
-
-              <div className="flex items-center gap-3">
-
-                {/* Selected Count */}
-                <span
-                  className={`px-4 py-2 rounded-full font-semibold ${
-                    selectedUsers.length > 0
-                      ? "bg-indigo-100 text-indigo-700"
-                      : "bg-gray-100 text-gray-500"
-                  }`}
-                >
-                  Selected: {selectedUsers.length}
-                </span>
-
-                {/* Clear Selection */}
-                <button
-                  onClick={() => setSelectedUsers([])}
-                  disabled={selectedUsers.length === 0}
-                  className={`px-3 py-2 rounded-lg text-sm ${
-                    selectedUsers.length > 0
-                      ? "bg-gray-200 text-gray-700 hover:bg-gray-300"
-                      : "bg-gray-100 text-gray-400 cursor-not-allowed"
-                  }`}
-                >
-                  Clear Selection
-                </button>
-              </div>
-
-              {/* Bulk Delete */}
               <button
+                type="button"
                 onClick={handleBulkDelete}
                 disabled={selectedUsers.length === 0}
-                className={`px-5 py-2 rounded-lg font-semibold ${
-                  selectedUsers.length > 0
-                    ? "bg-red-600 text-white hover:bg-red-700"
-                    : "bg-gray-300 text-gray-500 cursor-not-allowed"
-                }`}
+                className="btn btn-danger btn-sm"
               >
-                🗑️ Delete Selected
-                {selectedUsers.length > 0 &&
-                  ` (${selectedUsers.length})`}
+                <Trash2 className="h-3.5 w-3.5" /> Delete selected ({selectedUsers.length})
               </button>
             </div>
-          )}
+          </div>
+        )}
 
-          {/* =================================================
-              TABLE
-          ================================================== */}
+        {loading ? (
+          <Spinner label="Loading members..." />
+        ) : filteredUsers.length === 0 ? (
+          <EmptyState icon={UsersRound} title="No users found" message="Try changing the filters." />
+        ) : (
+          <>
+            {/* Phones: cards */}
+            <div className="space-y-3 md:hidden">
+              {filteredUsers.map((u) => (
+                <div
+                  key={u._id}
+                  className={selectedUsers.includes(u._id) ? "card p-4 ring-2 ring-rose-300" : "card p-4"}
+                >
+                  <div className="flex items-start gap-3">
+                    {isAdmin && (
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(u._id)}
+                        onChange={() => toggleUserSelection(u._id)}
+                        className="mt-1 h-4 w-4 accent-indigo-600"
+                      />
+                    )}
+                    <Avatar src={u.photoUrl} name={u.name || u.email} size="h-12 w-12" />
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate font-bold text-slate-800">{u.name || "-"}</p>
+                      <p className="truncate text-xs text-slate-500">{u.email}</p>
+                      <p className="text-xs text-slate-500">{u.phoneNumber || "-"}</p>
+                      <div className="mt-2 flex flex-wrap gap-1">
+                        {roleBadge(u)}
+                        {u.department && <span className="badge badge-blue uppercase">{u.department}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  {isAdmin && <div className="mt-3">{actions(u)}</div>}
+                </div>
+              ))}
+            </div>
 
-          {loading ? (
-            <p className="text-center text-gray-600">
-              Loading members…
-            </p>
-          ) : (
-            <div className="overflow-x-auto bg-white rounded-2xl shadow-lg">
-
-              <table className="min-w-full text-sm">
-
-                {/* =================================================
-                    TABLE HEADER
-                ================================================== */}
-
-                <thead className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white">
+            {/* Tablets & desktops: table */}
+            <div className="table-wrap hidden md:block">
+              <table className="table-std">
+                <thead>
                   <tr>
-
-                    {/* Select All Checkbox */}
-                    {isAdmin && (
-                      <th className="px-4 py-3 text-center">
-                        <input
-                          type="checkbox"
-                          checked={allFilteredSelected}
-                          onChange={toggleSelectAll}
-                          disabled={filteredUsers.length === 0}
-                          className="h-4 w-4 cursor-pointer accent-white"
-                          title={
-                            allFilteredSelected
-                              ? "Deselect all"
-                              : "Select all"
-                          }
-                        />
-                      </th>
-                    )}
-
-                    <th className="px-4 py-3">
-                      #
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Photo
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Name
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Email
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Phone
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Role
-                    </th>
-
-                    <th className="px-4 py-3">
-                      Dept
-                    </th>
-
-                    {isAdmin && (
-                      <th className="px-4 py-3">
-                        Actions
-                      </th>
-                    )}
-
+                    {isAdmin && <th className="w-10" />}
+                    <th>#</th>
+                    <th>Member</th>
+                    <th>Phone</th>
+                    <th>Role</th>
+                    <th>Dept</th>
+                    {isAdmin && <th className="text-right">Actions</th>}
                   </tr>
                 </thead>
-
-                {/* =================================================
-                    TABLE BODY
-                ================================================== */}
-
                 <tbody>
-
-                  {filteredUsers.length === 0 ? (
-                    <tr>
-                      <td
-                        colSpan={isAdmin ? 9 : 8}
-                        className="px-4 py-10 text-center text-gray-500"
-                      >
-                        No users found
+                  {filteredUsers.map((u, i) => (
+                    <tr key={u._id} className={selectedUsers.includes(u._id) ? "bg-rose-50/60" : undefined}>
+                      {isAdmin && (
+                        <td>
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.includes(u._id)}
+                            onChange={() => toggleUserSelection(u._id)}
+                            className="h-4 w-4 cursor-pointer accent-indigo-600"
+                          />
+                        </td>
+                      )}
+                      <td className="text-slate-400">{i + 1}</td>
+                      <td>
+                        <div className="flex items-center gap-3">
+                          <Avatar src={u.photoUrl} name={u.name || u.email} size="h-10 w-10" />
+                          <div className="min-w-0">
+                            <p className="font-semibold text-slate-800">{u.name || "-"}</p>
+                            <p className="text-xs text-slate-500">{u.email}</p>
+                          </div>
+                        </div>
                       </td>
+                      <td className="whitespace-nowrap">{u.phoneNumber || "-"}</td>
+                      <td>{roleBadge(u)}</td>
+                      <td>
+                        {u.department ? (
+                          <span className="badge badge-blue uppercase">{u.department}</span>
+                        ) : (
+                          <span className="text-slate-400">-</span>
+                        )}
+                      </td>
+                      {isAdmin && <td>{actions(u)}</td>}
                     </tr>
-                  ) : (
-                    filteredUsers.map((u, i) => {
-
-                      const editing =
-                        editingId === u._id;
-
-                      const isSelected =
-                        selectedUsers.includes(u._id);
-
-                      return (
-                        <tr
-                          key={u._id}
-                          className={`${
-                            isSelected
-                              ? "bg-red-50"
-                              : i % 2
-                              ? "bg-indigo-50"
-                              : "bg-white"
-                          } hover:bg-indigo-100 transition`}
-                        >
-
-                          {/* =================================================
-                              SELECT CHECKBOX
-                          ================================================== */}
-
-                          {isAdmin && (
-                            <td className="px-4 py-3 text-center">
-
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                onChange={() =>
-                                  toggleUserSelection(u._id)
-                                }
-                                className="h-4 w-4 cursor-pointer"
-                              />
-
-                            </td>
-                          )}
-
-                          {/* =================================================
-                              NUMBER
-                          ================================================== */}
-
-                          <td className="px-4 py-3">
-                            {i + 1}
-                          </td>
-
-                          {/* =================================================
-                              PHOTO
-                          ================================================== */}
-
-                          <td className="px-4 py-3 text-center">
-
-                            <img
-                              src={
-                                u.photoUrl ||
-                                DEFAULT_AVATAR
-                              }
-                              className="h-12 w-12 rounded-full mx-auto border shadow"
-                              alt={u.name || "User"}
-                            />
-
-                            {editing && (
-                              <input
-                                type="file"
-                                accept="image/*"
-                                onChange={(e) =>
-                                  setEditForm((p) => ({
-                                    ...p,
-                                    imageFile:
-                                      e.target.files[0],
-                                  }))
-                                }
-                                className="mt-1 text-xs"
-                              />
-                            )}
-
-                          </td>
-
-                          {/* =================================================
-                              NAME
-                          ================================================== */}
-
-                          <td className="px-4 py-3 font-semibold">
-
-                            {editing ? (
-                              <input
-                                value={editForm.name || ""}
-                                onChange={(e) =>
-                                  setEditForm({
-                                    ...editForm,
-                                    name: e.target.value,
-                                  })
-                                }
-                                className="border rounded px-2 py-1 w-full"
-                              />
-                            ) : (
-                              u.name || "-"
-                            )}
-
-                          </td>
-
-                          {/* =================================================
-                              EMAIL
-                          ================================================== */}
-
-                          <td className="px-4 py-3">
-                            {u.email}
-                          </td>
-
-                          {/* =================================================
-                              PHONE
-                          ================================================== */}
-
-                          <td className="px-4 py-3">
-                            {u.phoneNumber || "-"}
-                          </td>
-
-                          {/* =================================================
-                              ROLE
-                          ================================================== */}
-
-                          <td className="px-4 py-3">
-
-                            <span className="px-2 py-1 rounded-full text-xs bg-indigo-200 text-indigo-800 font-semibold">
-                              {u.role}
-                            </span>
-
-                          </td>
-
-                          {/* =================================================
-                              DEPARTMENT
-                          ================================================== */}
-
-                          <td className="px-4 py-3">
-
-                            <span className="px-2 py-1 rounded-full text-xs bg-blue-200 text-blue-800 font-semibold uppercase">
-                              {u.department || "-"}
-                            </span>
-
-                          </td>
-
-                          {/* =================================================
-                              ACTIONS
-                          ================================================== */}
-
-                          {isAdmin && (
-                            <td className="px-4 py-3 text-center">
-
-                              {editing ? (
-                                <div className="flex justify-center gap-2">
-
-                                  <button
-                                    onClick={() =>
-                                      handleSave(u._id)
-                                    }
-                                    className="px-3 py-1 bg-green-600 text-white rounded hover:bg-green-700"
-                                  >
-                                    Save
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      setEditingId(null)
-                                    }
-                                    className="px-3 py-1 bg-gray-500 text-white rounded hover:bg-gray-600"
-                                  >
-                                    Cancel
-                                  </button>
-
-                                </div>
-                              ) : (
-                                <div className="flex justify-center gap-2">
-
-                                  <button
-                                    onClick={() =>
-                                      handleEditClick(u)
-                                    }
-                                    className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
-                                  >
-                                    Edit
-                                  </button>
-
-                                  <button
-                                    onClick={() =>
-                                      handleDelete(u._id)
-                                    }
-                                    className="px-3 py-1 bg-red-600 text-white rounded hover:bg-red-700"
-                                  >
-                                    Delete
-                                  </button>
-
-                                </div>
-                              )}
-
-                            </td>
-                          )}
-
-                        </tr>
-                      );
-                    })
-                  )}
-
+                  ))}
                 </tbody>
-
               </table>
-
             </div>
-          )}
+          </>
+        )}
+      </Page>
 
-        </div>
-      </div>
+      {/* Edit member */}
+      {editingId && (
+        <Modal
+          title="Edit Member"
+          maxWidth="max-w-lg"
+          onClose={() => setEditingId(null)}
+          footer={
+            <div className="flex justify-end gap-2">
+              <button type="button" onClick={() => setEditingId(null)} className="btn btn-secondary">
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={() => handleSave(editingId)}
+                disabled={saving}
+                className="btn btn-primary"
+              >
+                {saving ? "Saving..." : "Save changes"}
+              </button>
+            </div>
+          }
+        >
+          <div className="space-y-4">
+            <p className="text-sm text-slate-500">{editForm.email}</p>
+            <label className="block">
+              <span className="label">Name</span>
+              <input
+                value={editForm.name || ""}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                className="input"
+              />
+            </label>
+            <label className="block">
+              <span className="label">Phone</span>
+              <input
+                type="tel"
+                value={editForm.phoneNumber || ""}
+                onChange={(e) => setEditForm({ ...editForm, phoneNumber: e.target.value })}
+                className="input"
+              />
+            </label>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <FilterSelect
+                label="Role"
+                value={editForm.role || ""}
+                onChange={(v) => setEditForm({ ...editForm, role: v })}
+                options={ROLE_OPTIONS}
+              />
+              <FilterSelect
+                label="Department"
+                value={editForm.department || ""}
+                onChange={(v) => setEditForm({ ...editForm, department: v })}
+                allLabel="None"
+                options={DEPARTMENT_OPTIONS}
+              />
+            </div>
+            <PhotoPicker
+              label="New photo (optional)"
+              file={editForm.imageFile || null}
+              onChange={(file) => setEditForm((p) => ({ ...p, imageFile: file }))}
+            />
+          </div>
+        </Modal>
+      )}
     </>
   );
 }

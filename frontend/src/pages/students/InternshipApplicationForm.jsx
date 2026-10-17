@@ -4,7 +4,15 @@ import { useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { ClipboardList } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
+import { PageHeader } from "../../components/ui";
+import { DEPARTMENTS } from "../../constants";
+import {
+  IMAGE_PRESETS,
+  compressImage,
+  formatFileSize,
+} from "../../utils/compressImage";
 
 
 // =============================================================
@@ -305,6 +313,30 @@ export default function InternshipApplicationForm() {
 
   const [form, setForm] = useState(initialFormState);
 
+  const [imagePreview, setImagePreview] = useState("");
+  const [imageInfo, setImageInfo] = useState("");
+  const [compressing, setCompressing] = useState(false);
+
+  // Shrink the photo before upload (faster upload, less storage)
+  const handleImageChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    setCompressing(true);
+    const compressed = await compressImage(file, IMAGE_PRESETS.profile);
+    setCompressing(false);
+
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImagePreview(URL.createObjectURL(compressed));
+    setImageInfo(
+      compressed.size < file.size
+        ? `Compressed ${formatFileSize(file.size)} → ${formatFileSize(compressed.size)}`
+        : formatFileSize(file.size)
+    );
+
+    setForm((prev) => ({ ...prev, image: compressed }));
+  };
+
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 
@@ -410,6 +442,9 @@ export default function InternshipApplicationForm() {
       );
 
       setForm(initialFormState);
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+      setImagePreview("");
+      setImageInfo("");
 
     } catch (err) {
       console.error(
@@ -439,9 +474,15 @@ export default function InternshipApplicationForm() {
     <>
       <StudentNavbar />
 
-      <main className="min-h-screen bg-slate-50">
+      <main className="page-bg">
 
         <div className="max-w-5xl mx-auto px-3 py-5 sm:px-5 sm:py-8 lg:px-8">
+
+          <PageHeader
+            icon={ClipboardList}
+            title="Internship Application"
+            subtitle="Fill in your details carefully — your application goes to the cohort owner, HOD, placement officer and principal for approval."
+          />
 
           <form
             onSubmit={handleSubmit}
@@ -487,37 +528,11 @@ export default function InternshipApplicationForm() {
                         Select Department
                       </option>
 
-                      <option value="at">
-                        Automobile Engineering
-                      </option>
-
-                      <option value="ch">
-                        Chemical Engineering
-                      </option>
-
-                      <option value="ce">
-                        Civil Engineering
-                      </option>
-
-                      <option value="cs">
-                        Computer Science and Engineering
-                      </option>
-
-                      <option value="ec">
-                        Electronics & Communication Engineering
-                      </option>
-
-                      <option value="eee">
-                        Electrical & Electronics Engineering
-                      </option>
-
-                      <option value="me">
-                        Mechanical Engineering
-                      </option>
-
-                      <option value="po">
-                        Polymer Technology
-                      </option>
+                      {DEPARTMENTS.map((d) => (
+                        <option key={d.value} value={d.value}>
+                          {d.label}
+                        </option>
+                      ))}
 
                     </select>
                   </Field>
@@ -593,11 +608,9 @@ export default function InternshipApplicationForm() {
 
                         <div className="w-24 h-24 rounded-2xl bg-white border border-blue-100 overflow-hidden flex items-center justify-center shrink-0 shadow-sm">
 
-                          {form.image ? (
+                          {imagePreview ? (
                             <img
-                              src={URL.createObjectURL(
-                                form.image
-                              )}
+                              src={imagePreview}
                               alt="Student Preview"
                               className="w-full h-full object-cover"
                             />
@@ -623,17 +636,7 @@ export default function InternshipApplicationForm() {
                             type="file"
                             name="image"
                             accept="image/*"
-                            onChange={(e) => {
-                              const file =
-                                e.target.files[0];
-
-                              if (file) {
-                                setForm({
-                                  ...form,
-                                  image: file,
-                                });
-                              }
-                            }}
+                            onChange={handleImageChange}
                             required
                             className="block w-full text-sm text-slate-500
                             file:mr-3 file:py-2.5 file:px-4
@@ -645,8 +648,15 @@ export default function InternshipApplicationForm() {
                           />
 
                           <p className="mt-2 text-[11px] text-slate-400">
-                            Upload a clear recent photograph.
+                            Upload a clear recent photograph. It is
+                            compressed automatically before upload.
                           </p>
+
+                          {(compressing || imageInfo) && (
+                            <p className="mt-1 text-[11px] font-semibold text-emerald-600">
+                              {compressing ? "Compressing photo..." : `✓ ${imageInfo}`}
+                            </p>
+                          )}
 
                         </div>
 
@@ -1102,8 +1112,8 @@ export default function InternshipApplicationForm() {
 
               <button
                 type="submit"
-                disabled={loading}
-                className="w-full min-h-12 sm:min-h-14 rounded-2xl bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-blue-300 text-white font-bold text-sm sm:text-base transition-all shadow-md shadow-blue-100 hover:shadow-lg hover:shadow-blue-200 flex items-center justify-center gap-2"
+                disabled={loading || compressing}
+                className="btn btn-primary w-full min-h-12 sm:min-h-14 rounded-2xl text-sm sm:text-base"
               >
 
                 {loading ? (

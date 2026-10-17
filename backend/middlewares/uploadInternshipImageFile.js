@@ -9,13 +9,14 @@ const storage = new CloudinaryStorage({
 
     allowed_formats: ["jpg", "jpeg", "png"],
 
+    // Stored as a compressed JPEG
+    format: "jpg",
     transformation: [
       {
         width: 1600,
-        height: 2200,
+        height: 1600,
         crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
+        quality: "auto:good",
       },
     ],
   },

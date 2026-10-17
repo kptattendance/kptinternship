@@ -3,6 +3,29 @@ import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import { toast } from "react-toastify";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
+import { CheckCircle2, Clock, FileSignature, RefreshCw, Users } from "lucide-react";
+import {
+  FilterBar,
+  FilterSelect,
+  Page,
+  PageHeader,
+  SearchInput,
+  Spinner,
+  StatCard,
+} from "../../components/ui";
+import { DEPARTMENT_OPTIONS } from "../../constants";
+
+const STATUS_OPTIONS = [
+  { value: "all", label: "All students" },
+  { value: "submitted", label: "✓ Submitted" },
+  { value: "pending", label: "! Pending" },
+];
+
+const SORT_OPTIONS = [
+  { value: "reg", label: "Reg No" },
+  { value: "name", label: "Name (A–Z)" },
+  { value: "recent", label: "Recently uploaded" },
+];
 
 export default function ParentConsent() {
   const { getToken } = useAuth();
@@ -14,6 +37,7 @@ export default function ParentConsent() {
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [departmentFilter, setDepartmentFilter] = useState("all");
+  const [sortBy, setSortBy] = useState("reg");
 
   const [selectedLetter, setSelectedLetter] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
@@ -157,12 +181,23 @@ export default function ParentConsent() {
       );
     }
 
+    if (sortBy === "name") {
+      result.sort((a, b) => (a.name || "").localeCompare(b.name || ""));
+    } else if (sortBy === "recent") {
+      result.sort(
+        (a, b) =>
+          new Date(b.parentConsentLetter?.uploadedAt || 0) -
+          new Date(a.parentConsentLetter?.uploadedAt || 0)
+      );
+    }
+
     return result;
   }, [
     applications,
     searchTerm,
     statusFilter,
     departmentFilter,
+    sortBy,
   ]);
 
   // =========================================================
@@ -200,22 +235,9 @@ export default function ParentConsent() {
     return (
       <>
         <ReviewerNavbar />
-
-        <div className="min-h-screen bg-slate-50 flex items-center justify-center px-4">
-          <div className="text-center">
-            <div className="w-14 h-14 mx-auto rounded-2xl bg-violet-50 border border-violet-100 flex items-center justify-center">
-              <div className="w-7 h-7 border-4 border-violet-200 border-t-violet-600 rounded-full animate-spin" />
-            </div>
-
-            <p className="mt-4 text-sm font-semibold text-slate-600">
-              Loading parent consent records...
-            </p>
-
-            <p className="mt-1 text-xs text-slate-400">
-              Please wait
-            </p>
-          </div>
-        </div>
+        <Page>
+          <Spinner label="Loading parent consent records..." />
+        </Page>
       </>
     );
   }
@@ -228,95 +250,67 @@ export default function ParentConsent() {
     <>
       <ReviewerNavbar />
 
-      <main className="min-h-screen bg-slate-50">
-        <div className="max-w-7xl mx-auto px-3 py-5 sm:px-5 sm:py-7 lg:px-8">
-
-
-       
-
-          {/* =================================================
-              SEARCH + FILTERS
-          ================================================== */}
-
-          <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-4 sm:p-5 mb-6">
-
-            <div className="flex flex-col lg:flex-row gap-3">
-
-              {/* Search */}
-              <div className="relative flex-1">
-
-                <span className="absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400">
-                  🔍
-                </span>
-
-                <input
-                  type="text"
-                  value={searchTerm}
-                  onChange={(e) =>
-                    setSearchTerm(e.target.value)
-                  }
-                  placeholder="Search by name, register number or phone..."
-                  className="w-full h-11 pl-10 pr-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 placeholder:text-slate-400 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-50 transition"
-                />
-
-              </div>
-
-
-              {/* Status */}
-              <select
-                value={statusFilter}
-                onChange={(e) =>
-                  setStatusFilter(e.target.value)
-                }
-                className="h-11 px-4 rounded-xl border border-slate-200 bg-slate-50 text-sm text-slate-700 outline-none focus:bg-white focus:border-violet-400 focus:ring-4 focus:ring-violet-50"
+      <Page>
+        <div>
+          <PageHeader
+            icon={FileSignature}
+            title="Parent Consent Letters"
+            subtitle="Check which students have uploaded the signed parent consent / undertaking"
+            actions={
+              <button
+                type="button"
+                onClick={() => fetchData(true)}
+                disabled={refreshing}
+                className="btn btn-secondary"
               >
-                <option value="all">
-                  All Status
-                </option>
+                <RefreshCw className={refreshing ? "h-4 w-4 animate-spin" : "h-4 w-4"} />
+                Refresh
+              </button>
+            }
+          />
 
-                <option value="submitted">
-                  ✓ Submitted
-                </option>
-
-                <option value="pending">
-                  ! Pending
-                </option>
-              </select>
-
-
-              {/* Clear */}
-              {(searchTerm ||
-                statusFilter !== "all" ||
-                departmentFilter !== "all") && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setSearchTerm("");
-                    setStatusFilter("all");
-                    setDepartmentFilter("all");
-                  }}
-                  className="h-11 px-4 rounded-xl border border-slate-200 bg-white hover:bg-slate-50 text-sm font-semibold text-slate-600 transition"
-                >
-                  Clear
-                </button>
-              )}
-
-            </div>
-
-            <div className="mt-3 text-xs text-slate-400">
-              Showing{" "}
-              <span className="font-semibold text-slate-600">
-                {filteredApplications.length}
-              </span>{" "}
-              of{" "}
-              <span className="font-semibold text-slate-600">
-                {applications.length}
-              </span>{" "}
-              students
-            </div>
-
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Students" value={totalCount} icon={Users} tone="indigo" />
+            <StatCard
+              label="Submitted"
+              value={submittedCount}
+              icon={CheckCircle2}
+              tone="emerald"
+              hint={`${submissionPercentage}% complete`}
+            />
+            <StatCard label="Pending" value={pendingCount} icon={Clock} tone="amber" />
           </div>
 
+          <FilterBar
+            resultCount={filteredApplications.length}
+            onReset={() => {
+              setSearchTerm("");
+              setStatusFilter("all");
+              setDepartmentFilter("all");
+              setSortBy("reg");
+            }}
+          >
+            <SearchInput
+              value={searchTerm}
+              onChange={setSearchTerm}
+              placeholder="Name, register number or phone"
+            />
+            <FilterSelect
+              label="Consent status"
+              value={statusFilter}
+              onChange={setStatusFilter}
+              options={STATUS_OPTIONS}
+            />
+            {currentUser?.role !== "cohortOwner" && (
+              <FilterSelect
+                label="Department"
+                value={departmentFilter}
+                onChange={setDepartmentFilter}
+                options={[{ value: "all", label: "All departments" }, ...DEPARTMENT_OPTIONS]}
+              />
+            )}
+            <FilterSelect label="Sort by" value={sortBy} onChange={setSortBy} options={SORT_OPTIONS} />
+          </FilterBar>
 
           {/* =================================================
               DESKTOP TABLE
@@ -413,10 +407,10 @@ export default function ParentConsent() {
 
                             <div className="flex items-center gap-3">
 
-                              <img
+                              <img loading="lazy" decoding="async"
                                 src={
                                   app.image ||
-                                  "/default-avatar.png"
+                                  "/default-avatar.svg"
                                 }
                                 alt={app.name}
                                 className="w-11 h-11 rounded-xl object-cover border border-slate-200 shadow-sm"
@@ -561,10 +555,10 @@ export default function ParentConsent() {
 
                     <div className="flex items-start gap-3">
 
-                      <img
+                      <img loading="lazy" decoding="async"
                         src={
                           app.image ||
-                          "/default-avatar.png"
+                          "/default-avatar.svg"
                         }
                         alt={app.name}
                         className="w-14 h-14 rounded-2xl object-cover border border-slate-200 shadow-sm shrink-0"
@@ -664,7 +658,7 @@ export default function ParentConsent() {
           </div>
 
         </div>
-      </main>
+      </Page>
 
 
       {/* =====================================================
@@ -687,10 +681,10 @@ export default function ParentConsent() {
 
               <div className="flex items-center gap-3 min-w-0">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedLetter.image ||
-                    "/default-avatar.png"
+                    "/default-avatar.svg"
                   }
                   alt={selectedLetter.name}
                   className="w-10 h-10 rounded-xl object-cover border border-slate-200"
@@ -728,7 +722,7 @@ export default function ParentConsent() {
 
               <div className="min-h-full flex items-center justify-center">
 
-                <img
+                <img loading="lazy" decoding="async"
                   src={
                     selectedLetter.parentConsentLetter
                       ?.imageUrl

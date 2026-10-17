@@ -37,9 +37,9 @@ export default function RedirectAfterLogin() {
   }, [getToken, navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen text-center px-4">
-      <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-blue-600 mb-6"></div>
-      <h2 className="text-xl font-semibold text-gray-800 mb-2">
+    <div className="page-bg flex flex-col items-center justify-center text-center px-4">
+      <div className="animate-spin rounded-full h-16 w-16 border-4 border-indigo-200 border-t-violet-600 mb-6"></div>
+      <h2 className="text-xl font-bold text-slate-800 mb-2">
         Signing you in…
       </h2>
       <p className="text-gray-500 text-sm max-w-xs">

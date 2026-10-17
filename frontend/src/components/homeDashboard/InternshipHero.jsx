@@ -1,6 +1,7 @@
 // src/components/homeDashboard/InternshipHero.jsx
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { cloudinaryThumb } from "../../constants";
 
 const SLIDE_PAUSE_MS = 4000; // how long each photo stays on screen
 const SLIDE_MOVE_MS = 700; // how long the scroll to the next photo takes
@@ -98,14 +99,14 @@ export default function InternshipHero() {
           >
             {/* Blurred copy fills the sides so the photo is never cropped */}
             <img
-              src={photo.imageUrl}
+              src={cloudinaryThumb(photo.imageUrl, 400)}
               alt=""
               aria-hidden="true"
               className="absolute inset-0 h-full w-full object-cover blur-2xl scale-110 opacity-60"
             />
 
             <img
-              src={photo.imageUrl}
+              src={cloudinaryThumb(photo.imageUrl, 1600)}
               alt={`${photo.name} at ${photo.companyName}`}
               loading={i === 0 ? "eager" : "lazy"}
               className="relative h-full w-full object-contain"

@@ -7,13 +7,14 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "internship-consent",
     allowed_formats: ["jpg", "jpeg", "png"],
+    // Stored as a compressed JPEG (large enough to stay readable)
+    format: "jpg",
     transformation: [
       {
         width: 1600,
         height: 2200,
         crop: "limit",
-        quality: "auto",
-        fetch_format: "auto",
+        quality: "auto:good",
       },
     ],
   },

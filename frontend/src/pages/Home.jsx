@@ -6,6 +6,7 @@ import StatsCards from "../components/homeDashboard/StatsCards";
 import DeptOverview from "../components/homeDashboard/DeptOverview";
 import ApplicationsTable from "../components/homeDashboard/ApplicationsTable";
 import Footer from "./Footer";
+import { Spinner } from "../components/ui";
 import InternshipHero from "../components/homeDashboard/InternshipHero";
 
 const DEPARTMENTS = [
@@ -39,7 +40,7 @@ export default function Home() {
       }
     };
     fetchApplications();
-  }, []);
+  }, [backendUrl]);
 
   // Stats
   const statsByDept = DEPARTMENTS.map((dept) => {
@@ -61,36 +62,35 @@ export default function Home() {
     <>
       <Navbar />
       <InternshipHero />
-      <div className="p-6 space-y-10">
-        {/* Header */}
-        <div className="text-center space-y-2">
-          <h1 className="text-3xl md:text-4xl font-bold text-blue-700">
-            Internship Application Dashboard
-          </h1>
-          <p className="text-gray-600">
-            Track applications, approvals, and department-wise stats at a glance
-          </p>
-        </div>
-
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-20">
-            <div className="animate-spin rounded-full h-12 w-12 border-t-4 border-blue-600 border-solid"></div>
-            <p className="mt-4 text-gray-600">Fetching applications...</p>
+      <div className="bg-gradient-to-br from-indigo-50 via-white to-pink-50">
+        <main className="page-container space-y-10 sm:space-y-12">
+          {/* Header */}
+          <div className="text-center">
+            <h1 className="bg-gradient-to-r from-indigo-700 via-violet-700 to-pink-600 bg-clip-text text-3xl font-extrabold text-transparent md:text-4xl">
+              Internship Application Dashboard
+            </h1>
+            <p className="mt-2 text-slate-500">
+              Track applications, approvals and department-wise progress at a glance
+            </p>
           </div>
-        ) : (
-          <>
-            <StatsCards
-              totalStudents={totalStudents}
-              totalApplied={totalApplied}
-              totalRemaining={totalRemaining}
-            />
-            <DeptOverview statsByDept={statsByDept} />
-            <ApplicationsTable
-              applications={applications}
-              departments={DEPARTMENTS}
-            />
-          </>
-        )}
+
+          {loading ? (
+            <Spinner label="Fetching applications..." />
+          ) : (
+            <>
+              <StatsCards
+                totalStudents={totalStudents}
+                totalApplied={totalApplied}
+                totalRemaining={totalRemaining}
+              />
+              <DeptOverview statsByDept={statsByDept} />
+              <ApplicationsTable
+                applications={applications}
+                departments={DEPARTMENTS}
+              />
+            </>
+          )}
+        </main>
       </div>
       <Footer />
     </>

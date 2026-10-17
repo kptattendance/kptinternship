@@ -7,7 +7,11 @@ const storage = new CloudinaryStorage({
   params: {
     folder: "internship-applications",
     allowed_formats: ["jpg", "jpeg", "png"],
-    transformation: [{ width: 500, height: 500, crop: "limit" }],
+    // Stored as a small, compressed JPEG to save space
+    format: "jpg",
+    transformation: [
+      { width: 500, height: 500, crop: "limit", quality: "auto:good" },
+    ],
   },
 });
 

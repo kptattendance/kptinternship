@@ -10,6 +10,19 @@ export default defineConfig(({ command }) => {
   return {
     plugins: [react(), tailwindcss()],
 
+    // Keep big libraries in their own files so browsers can cache them
+    // between deployments, and pages download only what they need
+    build: {
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            react: ["react", "react-dom", "react-router-dom"],
+            clerk: ["@clerk/clerk-react"],
+          },
+        },
+      },
+    },
+
     // HTTPS is required only for local development
     server: isDev
       ? {

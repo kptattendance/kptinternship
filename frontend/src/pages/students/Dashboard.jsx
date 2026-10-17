@@ -4,6 +4,18 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import StudentNavbar from "../../components/StudentNavbar";
 import { useNavigate } from "react-router-dom";
+import {
+  BookOpen,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  FileCheck2,
+  IdCard,
+  Mail,
+  Phone,
+} from "lucide-react";
+import { Avatar, EmptyState, Page, Spinner, StatusBadge } from "../../components/ui";
+import { departmentLabel, overallStatus } from "../../constants";
 
 export default function Dashboard() {
   const { user, isLoaded } = useUser();
@@ -41,89 +53,96 @@ export default function Dashboard() {
 
   const email = user?.primaryEmailAddress?.emailAddress || "-";
 
+  const details = student
+    ? [
+        { icon: BookOpen, label: "Department", value: departmentLabel(student.department) },
+        { icon: IdCard, label: "Register No.", value: student.regNumber },
+        { icon: Phone, label: "Phone", value: student.phoneNumber },
+        { icon: Mail, label: "Email", value: email },
+        { icon: Building2, label: "Company", value: student.companyName },
+        { icon: CalendarDays, label: "Applied on", value: new Date(student.createdAt).toLocaleDateString("en-GB") },
+      ]
+    : [];
+
   return (
     <>
-      {/* ✅ Navbar always visible */}
       <StudentNavbar />
 
-      <div className="max-w-3xl mx-auto p-4 sm:p-6">
+      <Page className="max-w-4xl">
         {!isLoaded || loading ? (
-          // ✅ Loading spinner shown in content area (not full screen)
-          <div className="flex flex-col items-center justify-center py-20 space-y-4">
-            <div className="w-14 h-14 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-            <p className="text-blue-600 font-medium animate-pulse">
-              Loading profile...
-            </p>
-          </div>
+          <Spinner label="Loading profile..." />
         ) : student ? (
-          <div className="bg-white shadow-xl rounded-2xl p-6 border border-gray-100">
-            {/* Profile Section */}
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
-              {/* Profile Image */}
-              <div className="flex-shrink-0">
-                <img
+          <div className="card overflow-hidden">
+            {/* Colourful banner */}
+            <div className="h-28 bg-gradient-to-r from-indigo-500 via-violet-500 to-pink-500 sm:h-32" />
+
+            <div className="px-5 pb-6 sm:px-8">
+              <div className="-mt-14 flex flex-col items-center gap-4 sm:flex-row sm:items-end">
+                <Avatar
                   src={student.image}
-                  alt={student.name}
-                  className="w-24 h-24 sm:w-28 sm:h-28 rounded-full object-cover border-4 border-blue-200 shadow-md"
+                  name={student.name}
+                  size="h-28 w-28 border-4"
                 />
-              </div>
-
-              {/* Info */}
-              <div className="flex-1 text-center sm:text-left">
-                <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-                  {student.name}
-                </h1>
-                <p className="text-gray-600 capitalize">{student.department}</p>
-                <p className="text-sm text-gray-500">
-                  Member since {new Date(user.createdAt).toLocaleDateString()}
-                </p>
-
-                {/* Details Grid */}
-                <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                  <p>
-                    <span className="font-semibold text-gray-700">
-                      📘 Department:
-                    </span>{" "}
-                    {student.department.toUpperCase()}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-700">
-                      🆔 Reg. No:
-                    </span>{" "}
-                    {student.regNumber}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-700">
-                      📞 Phone:
-                    </span>{" "}
-                    {student.phoneNumber}
-                  </p>
-                  <p>
-                    <span className="font-semibold text-gray-700">
-                      📧 Email:
-                    </span>{" "}
-                    {email}
+                <div className="text-center sm:pb-2 sm:text-left">
+                  <h1 className="text-2xl font-extrabold text-slate-800">{student.name}</h1>
+                  <p className="text-sm text-slate-500">
+                    Member since {new Date(user.createdAt).toLocaleDateString("en-GB")}
                   </p>
                 </div>
+                <div className="sm:ml-auto sm:pb-2">
+                  <StatusBadge status={overallStatus(student)} />
+                </div>
               </div>
-            </div>
 
-            {/* Button */}
-            <div className="mt-6 flex justify-center sm:justify-end">
-              <button
-                onClick={() => navigate("/internship-application-status")}
-                className="px-5 py-2 bg-blue-600 text-white rounded-lg shadow hover:bg-blue-700 transition cursor-pointer w-full sm:w-auto"
-              >
-                ✏️ Application Status
-              </button>
+              <div className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
+                {details.map(({ icon: Icon, label, value }) => (
+                  <div
+                    key={label}
+                    className="flex items-center gap-3 rounded-xl bg-slate-50 p-3"
+                  >
+                    <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="text-[11px] font-semibold tracking-wide text-slate-400 uppercase">
+                        {label}
+                      </p>
+                      <p className="truncate text-sm font-semibold text-slate-700">
+                        {value || "-"}
+                      </p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-6 flex justify-center sm:justify-end">
+                <button
+                  type="button"
+                  onClick={() => navigate("/internship-application-status")}
+                  className="btn btn-primary w-full sm:w-auto"
+                >
+                  <FileCheck2 className="h-4 w-4" /> View Application Status
+                </button>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="text-center text-gray-600">
-            No application found. Please submit your internship application.
-          </div>
+          <EmptyState
+            icon={ClipboardList}
+            title="No application yet"
+            message="Submit your internship application to start the approval process."
+            action={
+              <button
+                type="button"
+                onClick={() => navigate("/internship-application-submit")}
+                className="btn btn-primary"
+              >
+                Apply for Internship
+              </button>
+            }
+          />
         )}
-      </div>
+      </Page>
     </>
   );
 }

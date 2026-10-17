@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@clerk/clerk-react";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
@@ -7,6 +7,19 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { FaSave } from "react-icons/fa";
 import AttendanceNotePanel from "./AttendanceNotePanel";
+import { Briefcase, CalendarCheck, Mail, Phone, SearchX, Users } from "lucide-react";
+import {
+  Avatar,
+  EmptyState,
+  FilterBar,
+  FilterSelect,
+  Page,
+  PageHeader,
+  SearchInput,
+  Spinner,
+  StatCard,
+} from "../../components/ui";
+import { DEPARTMENT_OPTIONS } from "../../constants";
 
 export default function CompanyDashboard() {
   const { getToken } = useAuth();
@@ -23,6 +36,24 @@ export default function CompanyDashboard() {
 
   const [loading, setLoading] = useState(true);
   const [showCIE, setShowCIE] = useState(false); // toggle CIE details
+  const [search, setSearch] = useState("");
+  const [departmentFilter, setDepartmentFilter] = useState("");
+
+  // Filters only change what is shown — "Save" still saves every student
+  const filteredApplications = useMemo(() => {
+    const q = search.toLowerCase().trim();
+    return applications.filter(
+      (a) =>
+        (!departmentFilter || a.department === departmentFilter) &&
+        (!q ||
+          a.name?.toLowerCase().includes(q) ||
+          a.regNumber?.toLowerCase().includes(q))
+    );
+  }, [applications, search, departmentFilter]);
+
+  const departmentOptions = DEPARTMENT_OPTIONS.filter((o) =>
+    applications.some((a) => a.department === o.value)
+  );
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   const fetchDashboard = async () => {
@@ -115,8 +146,8 @@ export default function CompanyDashboard() {
         ${compact ? "w-44 p-4" : "w-56 p-6"}
       `}
       >
-        <img
-          src={person.photoUrl || "/default-avatar.png"}
+        <img loading="lazy" decoding="async"
+          src={person.photoUrl || "/default-avatar.svg"}
           alt={person.name}
           className={`rounded-full object-cover border-2 border-white shadow
           ${compact ? "h-16 w-16" : "h-20 w-20"}
@@ -206,115 +237,129 @@ export default function CompanyDashboard() {
   return (
     <>
       <ReviewerNavbar />
-      <div className="max-w-9xl mx-auto p-6">
-        {/* <h2 className="text-2xl font-bold mb-6">Company Dashboard</h2> */}
-
-        {/* ===== Company Info ===== */}
+      <Page className="max-w-[1600px]">
         {loading ? (
-          <p>Loading...</p>
+          <Spinner label="Loading dashboard..." />
         ) : (
           <>
             {company && (
-              <div className="mb-8 p-6 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl shadow-md border border-blue-100">
-                <h2 className="text-2xl font-bold align-center justify-center flex mb-6">
-                  Company Dashboard
-                </h2>
-                <h2 className="text-2xl font-extrabold text-gray-800 mb-2">
-                  👋 Welcome,{" "}
-                  <span className="text-blue-600">{company.name}</span>
-                </h2>
-                <p className="text-gray-600 mb-4">
-                  Here’s your company dashboard. Manage students, track their
-                  progress, and update evaluations with ease.
-                </p>
+              <>
+                <PageHeader
+                  icon={Briefcase}
+                  title={`Welcome, ${company.name}`}
+                  subtitle="Track your interns, enter monthly attendance and CIE-II / CIE-III marks"
+                >
+                  <div className="mt-3 flex flex-wrap gap-2 text-sm">
+                    {company.email && (
+                      <span className="badge badge-blue">
+                        <Mail className="h-3.5 w-3.5" /> {company.email}
+                      </span>
+                    )}
+                    {company.phoneNumber && (
+                      <span className="badge badge-violet">
+                        <Phone className="h-3.5 w-3.5" /> {company.phoneNumber}
+                      </span>
+                    )}
+                  </div>
+                </PageHeader>
 
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-gray-700">
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-600 font-semibold">
-                      📧 Email:
-                    </span>
-                    <span>{company.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-blue-600 font-semibold">
-                      📞 Phone:
-                    </span>
-                    <span>{company.phoneNumber}</span>
-                  </div>
+                <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+                  <StatCard label="Interns" value={applications.length} icon={Users} tone="indigo" />
+                  <StatCard
+                    label="CIE-II entered"
+                    value={applications.filter((a) => a.marks?.cie2?.total > 0).length}
+                    icon={CalendarCheck}
+                    tone="amber"
+                  />
+                  <StatCard
+                    label="CIE-III entered"
+                    value={applications.filter((a) => a.marks?.cie3?.total > 0).length}
+                    icon={CalendarCheck}
+                    tone="emerald"
+                  />
                 </div>
-              </div>
+              </>
             )}
 
-            {/* 🔔 Company Action Banner */}
-            <div className="mb-4 flex items-center justify-center">
-              <div
-                className="px-6 py-2 rounded-full 
-    bg-gradient-to-r from-amber-500 to-orange-500 
-    text-white text-sm font-semibold shadow-lg animate-pulse"
-              >
-                🏭 Company Evaluation → Enter Internal-2 & Internal-3 Marks
-              </div>
+            <FilterBar
+              resultCount={filteredApplications.length}
+              onReset={() => {
+                setSearch("");
+                setDepartmentFilter("");
+              }}
+            >
+              <SearchInput value={search} onChange={setSearch} placeholder="Reg no or name" />
+              <FilterSelect
+                label="Department"
+                value={departmentFilter}
+                onChange={setDepartmentFilter}
+                allLabel="All departments"
+                options={departmentOptions}
+              />
+            </FilterBar>
+
+            <div className="mb-4 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-5 py-3 text-center text-sm font-semibold text-white shadow-md">
+              🏭 Enter monthly attendance and Internal-2 & Internal-3 marks, then press Save below
             </div>
 
-            {/* ===== TABLE ===== */}
-            <div className="overflow-x-auto rounded-2xl shadow-xl border bg-white">
-              <table className="min-w-full text-sm text-gray-700">
+            {filteredApplications.length === 0 ? (
+              <EmptyState
+                icon={SearchX}
+                title={applications.length ? "No students match your filters" : "No interns yet"}
+                message={
+                  applications.length
+                    ? "Try changing the filters."
+                    : "Students who list your company email will appear here."
+                }
+              />
+            ) : (
+            <div className="table-wrap">
+              <table className="min-w-full text-sm text-slate-700">
                 <thead className="sticky top-0 z-10">
-                  <tr className="text-center text-white">
-                    <th className="p-3 bg-slate-600">Photo</th>
-                    <th className="p-3 bg-slate-600">Roll No</th>
-                    <th className="p-3 bg-slate-600">Name</th>
-                    <th className="p-3 bg-slate-600">Phone</th>
-                    <th className="p-3 bg-slate-600">Dept</th>
+                  <tr className="text-center text-xs font-bold tracking-wide text-white uppercase">
+                    <th className="bg-indigo-600 p-3 text-left" colSpan="2">Student</th>
+                    <th className="bg-indigo-600 p-3">Phone</th>
+                    <th className="bg-indigo-600 p-3">Dept</th>
 
-                    {/* Attendance (GREEN) */}
-                    <th className="p-3 bg-emerald-600">Month-1</th>
-                    <th className="p-3 bg-emerald-600">Month-2</th>
-                    <th className="p-3 bg-emerald-600">Month-3</th>
-                    <th className="p-3 bg-emerald-600">Month-4</th>
-                    <th className="p-3 bg-emerald-600">Month-5</th>
+                    {/* Attendance */}
+                    {[1, 2, 3, 4, 5].map((m) => (
+                      <th key={m} className="bg-emerald-600 p-3">Month-{m}</th>
+                    ))}
 
-                    {/* Internal 1 (PURPLE) */}
-                    <th className="p-3 bg-purple-600">
+                    {/* Internal 1 */}
+                    <th className="bg-violet-600 p-3">
                       Internal Mark-1 <br />
-                      <span className="text-xs font-normal">(College)</span>
+                      <span className="text-[10px] font-normal normal-case">(College)</span>
                     </th>
 
-                    {/* Company Marks (ORANGE) */}
-                    <th className="p-3 bg-orange-600 border-l-4 border-orange-300">
-                      Internal Mark-2
-                      <br />
-                      <span className="text-xs font-normal">(Company)</span>
+                    {/* Company marks */}
+                    <th className="bg-orange-600 p-3">
+                      Internal Mark-2 <br />
+                      <span className="text-[10px] font-normal normal-case">(Company)</span>
                     </th>
-                    <th className="p-3 bg-orange-600 border-r-4 border-orange-300">
-                      Internal Mark-3
-                      <br />
-                      <span className="text-xs font-normal">(Company)</span>
+                    <th className="bg-orange-600 p-3">
+                      Internal Mark-3 <br />
+                      <span className="text-[10px] font-normal normal-case">(Company)</span>
                     </th>
                   </tr>
                 </thead>
 
                 <tbody>
-                  {applications.map((app, index) => (
+                  {filteredApplications.map((app, index) => (
                     <tr
                       key={app._id}
                       className={`border-b hover:bg-slate-50 transition ${
                         index % 2 === 0 ? "bg-white" : "bg-gray-50"
                       }`}
                     >
-                      {/* Photo */}
-                      <td className="p-3 text-center">
-                        <img
-                          src={app.image}
-                          alt={app.name}
-                          className="h-11 w-11 rounded-full mx-auto shadow"
-                        />
+                      {/* Student */}
+                      <td className="p-3">
+                        <Avatar src={app.image} name={app.name} size="h-10 w-10" />
                       </td>
-
-                      <td className="p-3 text-center font-semibold">
-                        {app.regNumber}
+                      <td className="p-3">
+                        <p className="font-semibold whitespace-nowrap text-slate-800">{app.name}</p>
+                        <p className="text-xs text-slate-500">{app.regNumber}</p>
                       </td>
-                      <td className="p-3">{app.name}</td>
                       <td className="p-3 text-center">{app.phoneNumber}</td>
                       <td className="p-3 text-center font-semibold uppercase text-slate-600">
                         {app.department}
@@ -332,7 +377,7 @@ export default function CompanyDashboard() {
                               inputMode="numeric"
                               min="0"
                               max="30"
-                              value={app.attendance[month] ?? ""}
+                              value={app.attendance?.[month] ?? ""}
                               onChange={(e) => {
                                 const val = e.target.value;
                                 if (/^\d{0,2}$/.test(val)) {
@@ -569,6 +614,7 @@ export default function CompanyDashboard() {
                 </tbody>
               </table>
             </div>
+            )}
 
             {/* ===== ACTION BUTTONS ===== */}
             <div className="mt-8 mb-4 flex flex-wrap gap-6 justify-center">
@@ -740,7 +786,7 @@ ${savingMarks ? "bg-gray-400" : "bg-orange-600 hover:bg-orange-700"}`}
             </div>
           </>
         )}
-      </div>
+      </Page>
       <Footer />
     </>
   );

@@ -5,7 +5,7 @@ import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { FileCheck2 } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
-import { PageHeader } from "../../components/ui";
+import { PageHeader, StatusBadge } from "../../components/ui";
 import { REVIEW_STAGES } from "../../constants";
 import {
   IMAGE_PRESETS,
@@ -638,9 +638,9 @@ const handleUploadInternshipImage = async () => {
             </div>
 
 
-            {/* Phones: one progress card per application */}
+            {/* Phones & tablets: one progress card per application */}
 
-            <div className="space-y-4 sm:hidden">
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:hidden">
               {apps.map((app) => (
                 <div key={app._id} className="card p-4">
                   <p className="text-xs font-semibold text-slate-400">
@@ -663,12 +663,17 @@ const handleUploadInternshipImage = async () => {
                               : "bg-amber-400"
                           }`}
                         />
-                        <div className="flex items-start justify-between gap-3">
+                        <div className="flex items-center justify-between gap-3">
                           <span className="text-sm font-semibold text-slate-700">
                             {stage.label}
                           </span>
-                          <StatusWithComment reviewer={app[stage.key]} />
+                          <StatusBadge status={app[stage.key]?.status} />
                         </div>
+                        {app[stage.key]?.comment && (
+                          <p className="mt-1 text-xs italic text-slate-500">
+                            “{app[stage.key].comment}”
+                          </p>
+                        )}
                       </li>
                     ))}
                   </ol>
@@ -696,9 +701,9 @@ const handleUploadInternshipImage = async () => {
               ))}
             </div>
 
-            {/* Tablets & desktops: table */}
+            {/* Laptops & desktops: table */}
 
-            <div className="hidden sm:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+            <div className="hidden lg:block bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
 
 
               <div className="overflow-x-auto">

@@ -4,9 +4,11 @@ import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { ClipboardList } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { ClipboardList, FileCheck2 } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
-import { PageHeader } from "../../components/ui";
+import { EmptyState, Page, PageHeader, Spinner } from "../../components/ui";
+import useMyApplication, { markApplicationSubmitted } from "../../hooks/useMyApplication";
 import { DEPARTMENTS } from "../../constants";
 import {
   IMAGE_PRESETS,
@@ -309,6 +311,8 @@ const TextAreaField = ({
 
 export default function InternshipApplicationForm() {
   const { getToken } = useAuth();
+  const navigate = useNavigate();
+  const { loading: checkingApplication, hasApplication } = useMyApplication();
 
   const [loading, setLoading] = useState(false);
 
@@ -515,6 +519,9 @@ export default function InternshipApplicationForm() {
       setImagePreview("");
       setImageInfo("");
 
+      markApplicationSubmitted();
+      navigate("/internship-application-status");
+
     } catch (err) {
       console.error(
         "Error submitting application:",
@@ -538,6 +545,34 @@ export default function InternshipApplicationForm() {
   // =============================================================
   // JSX
   // =============================================================
+
+  if (checkingApplication || hasApplication) {
+    return (
+      <>
+        <StudentNavbar />
+        <Page className="max-w-3xl">
+          {checkingApplication ? (
+            <Spinner label="Checking your application..." />
+          ) : (
+            <EmptyState
+              icon={FileCheck2}
+              title="You have already applied"
+              message="Each student submits one application. You can follow its approval and upload your documents on the Application Status page."
+              action={
+                <button
+                  type="button"
+                  onClick={() => navigate("/internship-application-status")}
+                  className="btn btn-primary"
+                >
+                  Go to Application Status
+                </button>
+              }
+            />
+          )}
+        </Page>
+      </>
+    );
+  }
 
   return (
     <>

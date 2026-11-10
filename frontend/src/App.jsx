@@ -5,6 +5,7 @@ import Home from "./pages/Home";
 import RedirectAfterLogin from "./pages/RedirectAfterLogin";
 import { ToastContainer } from "react-toastify";
 import ProtectedRoute from "./components/ProtectedRoute";
+import ScrollToTop from "./components/ScrollToTop";
 import Loader from "./pages/Loader";
 
 // Pages other than the home page are downloaded only when they are opened.
@@ -49,6 +50,7 @@ export default function App() {
   return (
     <>
       <ToastContainer autoClose={3000} />
+      <ScrollToTop />
       <Suspense
         fallback={
           <div className="page-bg flex items-center justify-center">

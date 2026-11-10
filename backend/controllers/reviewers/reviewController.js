@@ -1,4 +1,5 @@
 // backend/controllers/applicationController.js
+import mongoose from "mongoose";
 import Application from "../../model/Application.js";
 
 /**
@@ -174,6 +175,98 @@ export const reviewApplication = async (req, res) => {
     });
   } catch (err) {
     console.error("Error in reviewApplication:", err);
+    return res.status(500).json({ success: false, message: err.message });
+  }
+};
+
+// Which applications each role may approve in bulk: the previous stage must be
+// approved and the role's own stage still pending (same rules as one by one)
+const BULK_APPROVE_RULES = {
+  hod: (department) => ({
+    department,
+    "cohortOwner.status": "approved",
+    "hod.status": "pending",
+  }),
+  placement: () => ({
+    "hod.status": "approved",
+    "placement.status": "pending",
+  }),
+  principal: () => ({
+    "placement.status": "approved",
+    "principal.status": "pending",
+  }),
+};
+
+const MAX_BULK_APPROVE = 500;
+
+/**
+ * Approve many applications at once (HOD, placement, principal)
+ * PUT /api/reviewers/bulk-approve
+ * body: { applicationIds: [...], comment: "..." }
+ */
+export const bulkApproveApplications = async (req, res) => {
+  try {
+    const role = req.userRole;
+    const { applicationIds, comment } = req.body || {};
+    const rule = BULK_APPROVE_RULES[role];
+
+    if (!rule) {
+      return res.status(403).json({ success: false, message: "Not authorized" });
+    }
+
+    if (role === "hod" && !req.userDepartment) {
+      return res
+        .status(400)
+        .json({ success: false, message: "No department assigned" });
+    }
+
+    if (!Array.isArray(applicationIds) || applicationIds.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Please select at least one application.",
+      });
+    }
+
+    if (applicationIds.length > MAX_BULK_APPROVE) {
+      return res.status(400).json({
+        success: false,
+        message: `You can approve at most ${MAX_BULK_APPROVE} applications at once.`,
+      });
+    }
+
+    if (comment !== undefined && typeof comment !== "string") {
+      return res.status(400).json({ success: false, message: "Invalid comment" });
+    }
+
+    const ids = applicationIds.filter((id) => mongoose.isValidObjectId(id));
+
+    // Only the applications that are really waiting for this reviewer
+    const ready = await Application.find(
+      { _id: { $in: ids }, ...rule(req.userDepartment) },
+      "_id"
+    ).lean();
+    const approvedIds = ready.map((app) => app._id);
+
+    if (approvedIds.length > 0) {
+      await Application.updateMany(
+        { _id: { $in: approvedIds }, ...rule(req.userDepartment) },
+        {
+          $set: {
+            [`${role}.status`]: "approved",
+            [`${role}.comment`]: comment?.trim() || "Approved",
+          },
+        }
+      );
+    }
+
+    return res.json({
+      success: true,
+      message: `${approvedIds.length} application(s) approved.`,
+      approvedIds,
+      skippedCount: applicationIds.length - approvedIds.length,
+    });
+  } catch (err) {
+    console.error("Error in bulkApproveApplications:", err);
     return res.status(500).json({ success: false, message: err.message });
   }
 };

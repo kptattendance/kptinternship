@@ -1,6 +1,7 @@
 // backend/routes/applicationRoutes.js
 import express from "express";
 import {
+  bulkApproveApplications,
   getPendingForReviewer,
   reviewApplication,
 } from "../../controllers/reviewers/reviewController.js";
@@ -19,6 +20,11 @@ const requireReviewer = requireRole([
 // review-specific endpoints
 router.get("/list", requireReviewer, getPendingForReviewer); // list pending for current reviewer
 router.put("/:id/review", requireReviewer, reviewApplication); // approve/reject
+router.put(
+  "/bulk-approve",
+  requireRole(["hod", "placement", "principal"]),
+  bulkApproveApplications
+); // select many → approve
 router.get(
   "/parent-consent",
   requireRole(["cohortOwner", "hod", "placement", "admin"]),

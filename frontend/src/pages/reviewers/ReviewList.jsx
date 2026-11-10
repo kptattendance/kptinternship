@@ -5,7 +5,7 @@ import { toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import ReviewerNavbar from "../../components/ReviewerNavbar";
 import ReviewModal from "./ReviewModal";
-import { ClipboardCheck, Inbox, SearchX } from "lucide-react";
+import { CheckCheck, ClipboardCheck, Inbox, SearchX, X } from "lucide-react";
 import {
   Avatar,
   EmptyState,
@@ -126,6 +126,69 @@ export default function ReviewList() {
           })
     );
 
+  // ---------- Bulk approve (HOD, placement, principal) ----------
+  const canBulkApprove = ["hod", "placement", "principal"].includes(role);
+  const [selectedIds, setSelectedIds] = useState([]);
+  const [bulkComment, setBulkComment] = useState("");
+  const [bulkApproving, setBulkApproving] = useState(false);
+
+  const filteredIds = filteredApps.map((app) => app._id);
+  const allFilteredSelected =
+    filteredIds.length > 0 && filteredIds.every((id) => selectedIds.includes(id));
+  const someFilteredSelected =
+    !allFilteredSelected && filteredIds.some((id) => selectedIds.includes(id));
+
+  const toggleSelection = (id) =>
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+    );
+
+  // "Select all" covers every application matching the current filters
+  const toggleSelectAll = () =>
+    setSelectedIds((prev) =>
+      allFilteredSelected
+        ? prev.filter((id) => !filteredIds.includes(id))
+        : [...new Set([...prev, ...filteredIds])]
+    );
+
+  const handleBulkApprove = async () => {
+    if (selectedIds.length === 0) return;
+
+    const confirmed = window.confirm(
+      `Approve ${selectedIds.length} selected application(s)?\n\nThey will move to the next stage of review.`
+    );
+    if (!confirmed) return;
+
+    try {
+      setBulkApproving(true);
+      const token = await getToken();
+
+      // One request approves all selected applications
+      const res = await axios.put(
+        `${backendUrl}/api/reviewers/bulk-approve`,
+        { applicationIds: selectedIds, comment: bulkComment },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      const approvedIds = res.data.approvedIds || [];
+      setApps((prev) => prev.filter((app) => !approvedIds.includes(app._id)));
+      setSelectedIds((prev) => prev.filter((id) => !approvedIds.includes(id)));
+      setBulkComment("");
+
+      if (res.data.skippedCount) {
+        toast.warning(
+          `${approvedIds.length} approved. ${res.data.skippedCount} skipped (not ready for your review).`
+        );
+      } else {
+        toast.success(`${approvedIds.length} application(s) approved`);
+      }
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Bulk approval failed");
+    } finally {
+      setBulkApproving(false);
+    }
+  };
+
   const resetFilters = () => {
     setSearch("");
     setDepartmentFilter("");
@@ -185,6 +248,56 @@ export default function ReviewList() {
           />
         </FilterBar>
 
+        {/* Bulk approve bar */}
+        {canBulkApprove && !loading && filteredApps.length > 0 && (
+          <div className="card mb-5 flex flex-col gap-3 p-4 lg:flex-row lg:items-center">
+            <div className="flex flex-wrap items-center gap-3">
+              <label className="flex cursor-pointer items-center gap-2 text-sm font-semibold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={allFilteredSelected}
+                  ref={(el) => el && (el.indeterminate = someFilteredSelected)}
+                  onChange={toggleSelectAll}
+                  className="h-4 w-4 accent-indigo-600"
+                />
+                Select all {filteredApps.length}
+              </label>
+              <span className={`badge ${selectedIds.length ? "badge-violet" : "badge-slate"}`}>
+                {selectedIds.length} selected
+              </span>
+            </div>
+
+            <input
+              type="text"
+              value={bulkComment}
+              onChange={(e) => setBulkComment(e.target.value)}
+              placeholder='Comment for all (optional — default "Approved")'
+              className="input lg:flex-1"
+              maxLength={300}
+            />
+
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setSelectedIds([])}
+                disabled={selectedIds.length === 0 || bulkApproving}
+                className="btn btn-secondary"
+              >
+                <X className="h-4 w-4" /> Clear
+              </button>
+              <button
+                type="button"
+                onClick={handleBulkApprove}
+                disabled={selectedIds.length === 0 || bulkApproving}
+                className="btn btn-success flex-1 lg:flex-none"
+              >
+                <CheckCheck className="h-4 w-4" />
+                {bulkApproving ? "Approving..." : `Approve selected (${selectedIds.length})`}
+              </button>
+            </div>
+          </div>
+        )}
+
         {loading ? (
           <Spinner label="Fetching applications..." />
         ) : apps.length === 0 ? (
@@ -211,6 +324,15 @@ export default function ReviewList() {
                 <div className="flex h-full flex-col rounded-[15px] bg-white p-5">
                   {/* Student */}
                   <div className="flex items-start gap-3">
+                    {canBulkApprove && (
+                      <input
+                        type="checkbox"
+                        checked={selectedIds.includes(app._id)}
+                        onChange={() => toggleSelection(app._id)}
+                        aria-label={`Select ${app.name}`}
+                        className="mt-1 h-5 w-5 shrink-0 cursor-pointer accent-emerald-600"
+                      />
+                    )}
                     <Avatar src={app.image} name={app.name} size="h-14 w-14" />
                     <div className="min-w-0 flex-1">
                       <h3 className="truncate text-lg font-bold text-slate-800">

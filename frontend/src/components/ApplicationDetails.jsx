@@ -2,7 +2,7 @@
 // Full view of one internship application, used in the review pop-ups.
 import { Briefcase, Building2, Users } from "lucide-react";
 import { Avatar, StatusBadge } from "./ui";
-import { REVIEW_STAGES } from "../constants";
+import { REVIEW_STAGES, isProject } from "../constants";
 
 const formatDate = (value) =>
   value ? new Date(value).toLocaleDateString("en-GB") : "-";
@@ -48,6 +48,20 @@ export default function ApplicationDetails({ app }) {
       </div>
 
       <div className="grid grid-cols-1 gap-5 lg:grid-cols-2">
+        {isProject(app) ? (
+          <DetailCard
+            icon={Building2}
+            title="Project at College"
+            tone="border-violet-100 bg-violet-50/50 text-violet-800"
+            rows={[
+              ["Project Title", app.projectTitle],
+              ["Guide", app.contactPerson],
+              ["Guide Email", app.companyEmail],
+              ["Guide Phone", app.companyContact],
+              ["Description", app.companyProfile],
+            ]}
+          />
+        ) : (
         <DetailCard
           icon={Building2}
           title="Company Details"
@@ -65,9 +79,10 @@ export default function ApplicationDetails({ app }) {
             ["Profile", app.companyProfile],
           ]}
         />
+        )}
         <DetailCard
           icon={Briefcase}
-          title="Internship Details"
+          title={isProject(app) ? "Project Details" : "Internship Details"}
           tone="border-indigo-100 bg-indigo-50/50 text-indigo-800"
           rows={[
             ["Start", formatDate(app.startDate)],

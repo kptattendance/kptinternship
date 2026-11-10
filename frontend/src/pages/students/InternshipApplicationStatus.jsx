@@ -607,7 +607,9 @@ const handleUploadInternshipImage = async () => {
                     {app.regNumber} • <span className="uppercase">{app.department}</span>
                   </p>
                   <h3 className="font-bold text-slate-800">{app.name}</h3>
-                  <p className="text-sm text-slate-500">{app.companyName}</p>
+                  <p className="text-sm text-slate-500">
+                    {app.internhsipType === "Project" ? `Project: ${app.projectTitle}` : app.companyName}
+                  </p>
 
                   <ol className="mt-4 space-y-3 border-l-2 border-indigo-100 pl-4">
                     {REVIEW_STAGES.map((stage) => (
@@ -632,7 +634,11 @@ const handleUploadInternshipImage = async () => {
                   </ol>
 
                   <div className="mt-4">
-                    {app.principal?.status === "approved" ? (
+                    {app.internhsipType === "Project" ? (
+                      <p className="rounded-xl bg-violet-50 px-4 py-3 text-center text-sm font-medium text-violet-700">
+                        🎓 College project — no internship letter is needed
+                      </p>
+                    ) : app.principal?.status === "approved" ? (
                       <button
                         type="button"
                         onClick={() => handleViewLetter(app._id)}
@@ -727,7 +733,9 @@ const handleUploadInternshipImage = async () => {
 
                         <td className="px-4 py-4 border-b border-slate-100 text-slate-700 max-w-[200px]">
                           <span className="block truncate">
-                            {app.companyName}
+                            {app.internhsipType === "Project"
+                              ? `Project: ${app.projectTitle}`
+                              : app.companyName}
                           </span>
                         </td>
 
@@ -757,7 +765,13 @@ const handleUploadInternshipImage = async () => {
 
                         <td className="px-4 py-4 border-b border-slate-100">
 
-                          {app.principal?.status ===
+                          {app.internhsipType === "Project" ? (
+
+                            <span className="text-xs font-semibold text-violet-600 whitespace-nowrap">
+                              Not needed (project)
+                            </span>
+
+                          ) : app.principal?.status ===
                           "approved" ? (
 
                             <button

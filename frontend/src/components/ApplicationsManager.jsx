@@ -33,6 +33,7 @@ import {
   INTERNSHIP_TYPE_OPTIONS,
   REVIEW_STATUS_OPTIONS,
   overallStatus,
+  workplaceLabel,
 } from "../constants";
 import { exportApplicationsExcel } from "../utils/exportExcel";
 
@@ -144,7 +145,7 @@ export default function ApplicationsManager({ canDelete = false }) {
       if (filters.marks === "incomplete" && hasAllMarks(app)) return false;
       if (!q) return true;
 
-      return [app.regNumber, app.name, app.companyName, app.phoneNumber].some(
+      return [app.regNumber, app.name, app.companyName, app.projectTitle, app.phoneNumber].some(
         (field) => (field || "").toLowerCase().includes(q)
       );
     });
@@ -425,7 +426,7 @@ export default function ApplicationsManager({ canDelete = false }) {
                       <p className="text-xs text-slate-500">
                         {app.regNumber} • <span className="uppercase">{app.department}</span>
                       </p>
-                      <p className="truncate text-xs text-slate-500">{app.companyName}</p>
+                      <p className="truncate text-xs text-slate-500">{workplaceLabel(app)}</p>
                     </div>
                     <StatusBadge status={overallStatus(app)} />
                   </div>
@@ -520,7 +521,7 @@ export default function ApplicationsManager({ canDelete = false }) {
                       )}
                       <td className="whitespace-nowrap">{app.phoneNumber || "-"}</td>
                       <td className="min-w-40">
-                        <p className="font-medium">{app.companyName || "-"}</p>
+                        <p className="font-medium">{workplaceLabel(app)}</p>
                         <p className="text-xs text-slate-400">{app.companyEmail}</p>
                       </td>
                       {[1, 2, 3, 4, 5].map((m) => (

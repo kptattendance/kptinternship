@@ -50,6 +50,13 @@ export const generateInternshipLetter = async (req, res) => {
       return res.status(404).json({ error: "Application not found" });
     }
 
+    // The letter asks a company to accept the student, so projects have none
+    if (app.internhsipType === "Project") {
+      return res
+        .status(400)
+        .json({ error: "The internship letter is only for internships" });
+    }
+
     // ✅ Only allow if principal approved
     if (app.principal?.status !== "approved") {
       return res.status(403).json({ error: "Principal approval required" });

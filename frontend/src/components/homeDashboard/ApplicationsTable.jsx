@@ -13,6 +13,7 @@ import {
   REVIEW_STAGES,
   REVIEW_STATUS_OPTIONS,
   overallStatus,
+  workplaceLabel,
 } from "../../constants";
 
 const SORT_OPTIONS = [
@@ -63,6 +64,7 @@ export default function ApplicationsTable({ applications, departments }) {
         app.regNumber,
         app.name,
         app.companyName,
+        app.projectTitle,
         app.companyVillage,
         app.companyCity,
         app.companyTaluk,
@@ -184,7 +186,7 @@ export default function ApplicationsTable({ applications, departments }) {
                 </div>
 
                 <div className="mt-3 rounded-xl bg-slate-50 p-3 text-sm">
-                  <p className="font-semibold text-slate-700">{app.companyName || "-"}</p>
+                  <p className="font-semibold text-slate-700">{workplaceLabel(app)}</p>
                   <p className="text-xs text-slate-500">
                     {location(app)}
                     {app.stipendAmount ? ` • Stipend ₹${app.stipendAmount}` : ""}
@@ -246,7 +248,7 @@ export default function ApplicationsTable({ applications, departments }) {
                     </td>
                     <td>{app.internhsipType || "-"}</td>
                     <td>{app.stipendAmount ? `₹${app.stipendAmount}` : "-"}</td>
-                    <td className="min-w-40">{app.companyName || "-"}</td>
+                    <td className="min-w-40">{workplaceLabel(app)}</td>
                     <td>{location(app)}</td>
                     <td>{app.PlacedCompany || "-"}</td>
                     {REVIEW_STAGES.map((stage) => (

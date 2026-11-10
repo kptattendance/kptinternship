@@ -1,6 +1,15 @@
 // backend/models/Application.js
 import mongoose from "mongoose";
 
+// Some details are asked only for an internship, others only for a project
+function isProject() {
+  return this.internhsipType === "Project";
+}
+
+function isInternship() {
+  return this.internhsipType !== "Project";
+}
+
 const applicationSchema = new mongoose.Schema(
   {
     studentId: {
@@ -64,6 +73,14 @@ const applicationSchema = new mongoose.Schema(
       required: [true, "Internship or Project is required"],
     },
 
+    // Only for a project done at the college
+    projectTitle: {
+      type: String,
+      trim: true,
+      default: "",
+      required: [isProject, "Project title is required"],
+    },
+
     // Company Info
     companyName: {
       type: String,
@@ -101,9 +118,10 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Optional for a college project (guide's phone)
     companyContact: {
       type: String,
-      required: [true, "Company contact number is required"],
+      required: [isInternship, "Company contact number is required"],
     },
 
     companyEmail: {
@@ -149,7 +167,7 @@ const applicationSchema = new mongoose.Schema(
 
     workingHours: {
       type: String,
-      required: [true, "Working hours are required"],
+      required: [isInternship, "Working hours are required"],
     },
 
     duties: {
@@ -184,7 +202,7 @@ const applicationSchema = new mongoose.Schema(
 
     jobOpportunity: {
       type: String,
-      required: [true, "Job opportunity info is required"],
+      required: [isInternship, "Job opportunity info is required"],
     },
 
     // 💡 New Fields

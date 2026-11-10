@@ -59,7 +59,11 @@ export default function Dashboard() {
         { icon: IdCard, label: "Register No.", value: student.regNumber },
         { icon: Phone, label: "Phone", value: student.phoneNumber },
         { icon: Mail, label: "Email", value: email },
-        { icon: Building2, label: "Company", value: student.companyName },
+        {
+          icon: Building2,
+          label: student.internhsipType === "Project" ? "Project" : "Company",
+          value: student.internhsipType === "Project" ? student.projectTitle : student.companyName,
+        },
         { icon: CalendarDays, label: "Applied on", value: new Date(student.createdAt).toLocaleDateString("en-GB") },
       ]
     : [];

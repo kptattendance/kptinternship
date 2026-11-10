@@ -17,6 +17,7 @@ const EDITABLE_FIELDS = [
   "department",
   "subName",
   "internhsipType",
+  "projectTitle",
   "companyName",
   "companyVillage",
   "companyCity",
@@ -49,6 +50,7 @@ const PUBLIC_FIELDS = [
   "department",
   "dateOfApplication",
   "internhsipType",
+  "projectTitle",
   "stipendAmount",
   "companyName",
   "companyVillage",
@@ -79,11 +81,34 @@ const emptyDocument = (field) =>
 // Most recently approved photos shown in the home page hero section
 const MAX_HERO_PHOTOS = 30;
 
-const pickEditableFields = (body = {}) => {
+// A project is done at the college, so the "company" is the college itself.
+// The guide's name and email stay in contactPerson / companyEmail, which is
+// the login that enters attendance and CIE-II / CIE-III marks.
+const COLLEGE_AS_COMPANY = {
+  companyName: "Karnataka (Govt.) Polytechnic, Mangaluru",
+  companyVillage: "Kadri Hills",
+  companyCity: "Mangaluru",
+  companyTaluk: "Mangaluru",
+  companyDistrict: "Dakshina Kannada",
+  companyState: "Karnataka",
+};
+
+const pickEditableFields = (body = {}, currentType) => {
   const picked = {};
 
   for (const field of EDITABLE_FIELDS) {
     if (body[field] !== undefined) picked[field] = body[field];
+  }
+
+  const type = picked.internhsipType || currentType;
+
+  if (type === "Project") {
+    Object.assign(picked, COLLEGE_AS_COMPANY, {
+      stipendAmount: 0,
+      jobOpportunity: "",
+    });
+  } else if (type === "Internship") {
+    picked.projectTitle = "";
   }
 
   return picked;
@@ -232,7 +257,7 @@ export const updateApplication = async (req, res) => {
       });
     }
 
-    app.set(pickEditableFields(req.body));
+    app.set(pickEditableFields(req.body, app.internhsipType));
     await app.save();
 
     return res.json({

@@ -27,6 +27,7 @@ const initialFormState = {
   image: "",
   subName: "",
   internhsipType: "",
+  projectTitle: "",
   companyName: "",
   companyVillage: "",
   companyCity: "",
@@ -340,6 +341,10 @@ export default function InternshipApplicationForm() {
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
 
+  const isProject = form.internhsipType === "Project";
+  const typeChosen = Boolean(form.internhsipType);
+  const workLabel = isProject ? "Project" : "Internship";
+
   // =============================================================
   // HANDLE FORM CHANGE
   // =============================================================
@@ -372,7 +377,7 @@ export default function InternshipApplicationForm() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    // Required fields check
+    // Required fields check — a college project needs no company address
     const requiredFields = {
       department: "Department",
       regNumber: "Register Number",
@@ -380,16 +385,26 @@ export default function InternshipApplicationForm() {
       phoneNumber: "Phone Number",
       image: "Student Image URL",
       subName: "Subject Name",
-      companyName: "Company Name",
-      companyVillage: "Company Village",
-      companyCity: "Company City",
-      companyTaluk: "Company Taluk",
-      companyDistrict: "Company District",
-      companyState: "Company State",
-      companyContact: "Company Contact Number",
-      companyEmail: "Company Email",
-      contactPerson: "Contact Person",
-      companyProfile: "Company Profile",
+      internhsipType: "Internship / Project",
+      ...(isProject
+        ? {
+            projectTitle: "Project Title",
+            contactPerson: "Project Guide Name",
+            companyEmail: "Guide / Supervisor Email",
+            companyProfile: "Project Description",
+          }
+        : {
+            companyName: "Company Name",
+            companyVillage: "Company Village",
+            companyCity: "Company City",
+            companyTaluk: "Company Taluk",
+            companyDistrict: "Company District",
+            companyState: "Company State",
+            companyContact: "Company Contact Number",
+            companyEmail: "Company Email",
+            contactPerson: "Contact Person",
+            companyProfile: "Company Profile",
+          }),
       startDate: "Start Date",
       endDate: "End Date",
     };
@@ -721,162 +736,244 @@ export default function InternshipApplicationForm() {
 
 
             {/* =================================================
-                2. COMPANY INFORMATION
+                2. INTERNSHIP OR PROJECT
             ================================================== */}
 
             <section className="bg-white rounded-3xl border border-violet-100 shadow-sm overflow-hidden">
 
               <SectionHeader
-                icon="🏢"
-                title="Company Information"
-                description="Provide complete details about the internship organization."
+                icon="🧭"
+                title="Internship or Project?"
+                description="Choose an internship at a company, or a project done at the college."
                 color="violet"
               />
 
               <div className="px-4 pb-5 sm:px-6 sm:pb-7">
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4" role="radiogroup" aria-label="Internship or project">
+                  {[
+                    {
+                      value: "Internship",
+                      icon: "🏢",
+                      title: "Internship at a company",
+                      text: "You will work at an outside company or organisation.",
+                    },
+                    {
+                      value: "Project",
+                      icon: "🎓",
+                      title: "Project at the college",
+                      text: "You will do a project in the college under a guide.",
+                    },
+                  ].map((option) => {
+                    const selected = form.internhsipType === option.value;
+                    return (
+                      <button
+                        key={option.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={selected}
+                        onClick={() =>
+                          setForm({ ...form, internhsipType: option.value })
+                        }
+                        className={`text-left rounded-2xl border-2 p-4 sm:p-5 transition ${
+                          selected
+                            ? "border-violet-500 bg-violet-50 shadow-md ring-4 ring-violet-100"
+                            : "border-slate-200 bg-white hover:border-violet-300 hover:bg-violet-50/40"
+                        }`}
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="text-3xl">{option.icon}</span>
+                          <div className="min-w-0">
+                            <p className="font-bold text-slate-800">{option.title}</p>
+                            <p className="mt-0.5 text-xs text-slate-500">{option.text}</p>
+                          </div>
+                          <span
+                            className={`ml-auto mt-1 h-5 w-5 shrink-0 rounded-full border-2 ${
+                              selected
+                                ? "border-violet-600 bg-violet-600 shadow-[inset_0_0_0_3px_white]"
+                                : "border-slate-300"
+                            }`}
+                          />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
 
+                {!typeChosen && (
+                  <p className="mt-4 text-center text-sm text-slate-500">
+                    Select one option to continue.
+                  </p>
+                )}
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Internship / Project"
-                    name="internhsipType"
-                    required
-                  >
-                    <select
-                      id="internhsipType"
-                      name="internhsipType"
-                      value={form.internhsipType}
-                      onChange={handleChange}
+                {/* ---------- PROJECT AT COLLEGE ---------- */}
+                {isProject && (
+                  <div className="mt-6 space-y-5">
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+
+                      <div className="md:col-span-2">
+                        <Field
+                          form={form}
+                          handleChange={handleChange}
+                          label="Project Title"
+                          name="projectTitle"
+                          placeholder="e.g. Smart Attendance System using IoT"
+                          required
+                        />
+                      </div>
+
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Project Guide / Supervisor Name"
+                        name="contactPerson"
+                        placeholder="Name of your guide"
+                        required
+                      />
+
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Guide / Supervisor Email"
+                        name="companyEmail"
+                        type="email"
+                        placeholder="guide@example.com"
+                        required
+                        help="Attendance and internal marks (CIE-II, CIE-III) are entered from this email's login."
+                      />
+
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Guide Phone Number"
+                        name="companyContact"
+                        type="tel"
+                        placeholder="Optional"
+                      />
+
+                    </div>
+
+                    <TextAreaField
+                      form={form}
+                      handleChange={handleChange}
+                      label="Project Description"
+                      name="companyProfile"
+                      placeholder="Briefly describe the project — the problem, what you will build and the technology used."
                       required
-                      className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all focus:border-violet-400 focus:ring-4 focus:ring-violet-50 hover:border-slate-300"
-                    >
-                      <option value="">
-                        Select Type
-                      </option>
+                      rows={5}
+                    />
 
-                      <option value="Internship">
-                        Internship
-                      </option>
+                  </div>
+                )}
 
-                      <option value="Project">
-                        Project
-                      </option>
+                {/* ---------- INTERNSHIP AT A COMPANY ---------- */}
+                {typeChosen && !isProject && (
+                  <div className="mt-6">
 
-                    </select>
-                  </Field>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Company Name"
+                        name="companyName"
+                        placeholder="Enter company name"
+                        required
+                      />
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Company Name"
-                    name="companyName"
-                    placeholder="Enter company name"
-                    required
-                  />
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Village / Area / Block"
+                        name="companyVillage"
+                        placeholder="Enter village, area or block"
+                        required
+                      />
 
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="City"
+                        name="companyCity"
+                        placeholder="Enter company city"
+                        required
+                      />
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Village / Area / Block"
-                    name="companyVillage"
-                    placeholder="Enter village, area or block"
-                    required
-                  />
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Taluk"
+                        name="companyTaluk"
+                        placeholder="Enter company taluk"
+                        required
+                      />
 
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="District"
+                        name="companyDistrict"
+                        placeholder="Enter company district"
+                        required
+                      />
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="City"
-                    name="companyCity"
-                    placeholder="Enter company city"
-                    required
-                  />
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="State"
+                        name="companyState"
+                        placeholder="Enter company state"
+                        required
+                      />
 
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Company Contact Number"
+                        name="companyContact"
+                        type="tel"
+                        placeholder="Enter company contact number"
+                        required
+                      />
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Taluk"
-                    name="companyTaluk"
-                    placeholder="Enter company taluk"
-                    required
-                  />
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Company Email"
+                        name="companyEmail"
+                        type="email"
+                        placeholder="company@example.com"
+                        required
+                        help="Attendance and internal marks (CIE-II, CIE-III) are entered from this email's login."
+                      />
 
+                      <Field
+                        form={form}
+                        handleChange={handleChange}
+                        label="Contact Person"
+                        name="contactPerson"
+                        placeholder="HR / Team Lead / Supervisor"
+                        required
+                      />
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="District"
-                    name="companyDistrict"
-                    placeholder="Enter company district"
-                    required
-                  />
+                    </div>
 
+                    <div className="mt-5">
+                      <TextAreaField
+                        form={form}
+                        handleChange={handleChange}
+                        label="Company Profile"
+                        name="companyProfile"
+                        placeholder="Briefly describe the company, products/services, established year, turnover, website, etc."
+                        required
+                        rows={5}
+                        help="Provide enough information for the institution to understand the organization."
+                      />
+                    </div>
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="State"
-                    name="companyState"
-                    placeholder="Enter company state"
-                    required
-                  />
-
-
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Company Contact Number"
-                    name="companyContact"
-                    type="tel"
-                    placeholder="Enter company contact number"
-                    required
-                  />
-
-
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Company Email"
-                    name="companyEmail"
-                    type="email"
-                    placeholder="company@example.com"
-                    required
-                  />
-
-
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Contact Person"
-                    name="contactPerson"
-                    placeholder="HR / Team Lead / Supervisor"
-                    required
-                  />
-
-                </div>
-
-
-                <div className="mt-5">
-
-                  <TextAreaField
-                    form={form}
-                    handleChange={handleChange}
-                    label="Company Profile"
-                    name="companyProfile"
-                    placeholder="Briefly describe the company, products/services, established year, turnover, website, etc."
-                    required
-                    rows={5}
-                    help="Provide enough information for the institution to understand the organization."
-                  />
-
-                </div>
+                  </div>
+                )}
 
               </div>
 
@@ -891,8 +988,8 @@ export default function InternshipApplicationForm() {
 
               <SectionHeader
                 icon="💼"
-                title="Internship Details"
-                description="Describe your internship schedule, duties and expected learning."
+                title={`${workLabel} Details`}
+                description={`Describe your ${workLabel.toLowerCase()} schedule, work and expected learning.`}
                 color="emerald"
               />
 
@@ -903,7 +1000,7 @@ export default function InternshipApplicationForm() {
                   <Field
                     form={form}
                     handleChange={handleChange}
-                    label="Internship Start Date"
+                    label={`${workLabel} Start Date`}
                     name="startDate"
                     type="date"
                     required
@@ -914,7 +1011,7 @@ export default function InternshipApplicationForm() {
                   <Field
                     form={form}
                     handleChange={handleChange}
-                    label="Internship End Date"
+                    label={`${workLabel} End Date`}
                     name="endDate"
                     type="date"
                     required
@@ -927,7 +1024,7 @@ export default function InternshipApplicationForm() {
                     label="Working Hours"
                     name="workingHours"
                     placeholder="e.g. 9:00 AM - 5:00 PM"
-                    required
+                    required={!isProject}
                   />
 
                 </div>
@@ -1001,15 +1098,17 @@ export default function InternshipApplicationForm() {
                   />
 
 
-                  <TextAreaField
-                    form={form}
-                    handleChange={handleChange}
-                    label="Expected Job Opportunity"
-                    name="jobOpportunity"
-                    placeholder="Mention possible job opportunities in the same company or other companies after the internship."
-                    required
-                    rows={4}
-                  />
+                  {!isProject && (
+                    <TextAreaField
+                      form={form}
+                      handleChange={handleChange}
+                      label="Expected Job Opportunity"
+                      name="jobOpportunity"
+                      placeholder="Mention possible job opportunities in the same company or other companies after the internship."
+                      required
+                      rows={4}
+                    />
+                  )}
 
                 </div>
 
@@ -1035,15 +1134,17 @@ export default function InternshipApplicationForm() {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
 
-                  <Field
-                    form={form}
-                    handleChange={handleChange}
-                    label="Stipend Amount"
-                    name="stipendAmount"
-                    type="number"
-                    placeholder="Enter stipend amount"
-                    help="Enter 0 if you are not receiving any stipend/salary during the internship."
-                  />
+                  {!isProject && (
+                    <Field
+                      form={form}
+                      handleChange={handleChange}
+                      label="Stipend Amount"
+                      name="stipendAmount"
+                      type="number"
+                      placeholder="Enter stipend amount"
+                      help="Enter 0 if you are not receiving any stipend/salary during the internship."
+                    />
+                  )}
 
 
                   <Field
@@ -1126,7 +1227,7 @@ export default function InternshipApplicationForm() {
                   <>
                     <span>✓</span>
 
-                    Submit Internship Application
+                    Submit {workLabel} Application
                   </>
                 )}
 

@@ -55,6 +55,14 @@ export const ROLE_OPTIONS = Object.entries(ROLE_LABELS).map(
   ([value, label]) => ({ value, label })
 );
 
+export const isProject = (app) => app?.internhsipType === "Project";
+
+/** Company name for an internship, or the project title for a college project */
+export const workplaceLabel = (app) =>
+  isProject(app)
+    ? `Project: ${app.projectTitle || "College project"}`
+    : app?.companyName || "-";
+
 /**
  * Overall status of an application across all review stages:
  * "rejected" if any stage rejected, "approved" once the principal approved,

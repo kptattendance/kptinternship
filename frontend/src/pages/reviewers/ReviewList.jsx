@@ -22,6 +22,7 @@ import {
   INTERNSHIP_TYPE_OPTIONS,
   REVIEW_STAGES,
   ROLE_LABELS,
+  workplaceLabel,
 } from "../../constants";
 
 const CARD_GRADIENTS = [
@@ -111,7 +112,8 @@ export default function ReviewList() {
       return (
         app.name?.toLowerCase().includes(term) ||
         app.regNumber?.toLowerCase().includes(term) ||
-        app.companyName?.toLowerCase().includes(term)
+        app.companyName?.toLowerCase().includes(term) ||
+        app.projectTitle?.toLowerCase().includes(term)
       );
     })
     .sort((a, b) =>
@@ -228,7 +230,7 @@ export default function ReviewList() {
 
                   {app.companyName && (
                     <p className="mt-3 truncate rounded-xl bg-indigo-50 px-3 py-2 text-sm font-medium text-indigo-800">
-                      🏢 {app.companyName}
+                      {app.internhsipType === "Project" ? "🎓" : "🏢"} {workplaceLabel(app)}
                     </p>
                   )}
 

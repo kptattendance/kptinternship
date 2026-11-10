@@ -132,6 +132,46 @@ const internshipImageInputRef = useRef(null);
   };
 
   // ---------------------------------------------------------
+  // Download the pre-filled undertaking (parent consent) form
+  // ---------------------------------------------------------
+
+  const [downloadingUndertaking, setDownloadingUndertaking] = useState(false);
+
+  const handleDownloadUndertaking = async (application) => {
+    try {
+      setDownloadingUndertaking(true);
+      const token = await getToken();
+
+      const res = await axios.get(
+        `${backendUrl}/api/students/undertaking/${application._id}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          responseType: "blob",
+        }
+      );
+
+      const url = URL.createObjectURL(
+        new Blob([res.data], { type: "application/pdf" })
+      );
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `Undertaking_${application.regNumber || "form"}.pdf`;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 60 * 1000);
+    } catch (err) {
+      console.error(
+        "❌ Failed to download undertaking:",
+        err.response?.status || err.message
+      );
+      alert("Unable to download the undertaking form. Please try again.");
+    } finally {
+      setDownloadingUndertaking(false);
+    }
+  };
+
+  // ---------------------------------------------------------
   // Current application
   // ---------------------------------------------------------
 
@@ -856,6 +896,41 @@ const handleUploadInternshipImage = async () => {
   <div className="bg-white rounded-2xl border border-violet-100 shadow-sm overflow-hidden">
 
     <div className="p-4 sm:p-6 md:p-7">
+
+      {/* =================================================
+          STEP 1: DOWNLOAD THE PRE-FILLED FORM
+      ================================================= */}
+
+      {!consentUploaded && currentApplication && (
+        <div className="mb-5 rounded-2xl bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 border border-violet-100 p-4 sm:p-5">
+          <ol className="grid grid-cols-1 gap-3 sm:grid-cols-3 text-sm">
+            {[
+              ["1", "Download", "Your form comes filled with your name, photo, register number and department."],
+              ["2", "Sign", "Print it and sign it with your parent/guardian and two witnesses."],
+              ["3", "Upload", "Take a clear photo or scan of the signed page and upload it below."],
+            ].map(([n, title, text]) => (
+              <li key={n} className="flex gap-3">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-indigo-500 to-pink-500 text-xs font-bold text-white">
+                  {n}
+                </span>
+                <span>
+                  <span className="block font-bold text-slate-800">{title}</span>
+                  <span className="text-xs text-slate-500">{text}</span>
+                </span>
+              </li>
+            ))}
+          </ol>
+
+          <button
+            type="button"
+            onClick={() => handleDownloadUndertaking(currentApplication)}
+            disabled={downloadingUndertaking}
+            className="btn btn-primary mt-4 w-full sm:w-auto"
+          >
+            {downloadingUndertaking ? "Preparing form..." : "⬇ Download pre-filled undertaking form"}
+          </button>
+        </div>
+      )}
 
       {/* =================================================
           ALREADY SUBMITTED

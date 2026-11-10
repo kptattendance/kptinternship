@@ -26,6 +26,7 @@ import {
   requireRole,
 } from "../../middlewares/requireRole.js";
 import { generateInternshipLetter } from "../../controllers/students/pdfController.js";
+import { generateUndertaking } from "../../controllers/students/undertakingController.js";
 import upload from "../../middlewares/uploadMiddleware.js";
 import uploadConsent from "../../middlewares/consentUpload.js";
 import uploadInternshipImageFile from "../../middlewares/uploadInternshipImageFile.js";
@@ -78,6 +79,9 @@ router.get("/myApplications", requireAuthMiddleware, getMyApplications);
 
 // Download internship letter (PDF) → owner or staff
 router.get("/download/:id", attachUserRole, generateInternshipLetter);
+
+// Pre-filled undertaking (parent consent) form to print and sign → owner or staff
+router.get("/undertaking/:id", attachUserRole, generateUndertaking);
 
 router.post(
   "/myApplications/parent-consent",

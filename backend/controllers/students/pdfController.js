@@ -5,9 +5,9 @@ import { canAccessApplication } from "../../middlewares/requireRole.js";
 
 // ✅ Cloudinary image URLs
 const LOGO_URLS = [
-  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932916/logo3_vptob4.jpg",
-  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo4_q0ujtn.png",
-  "https://res.cloudinary.com/dnreqxbdw/image/upload/v1757932915/logo5_czeuoz.png",
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/w_240,c_limit/v1757932916/logo3_vptob4.jpg",
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/w_240,c_limit/v1757932915/logo4_q0ujtn.png",
+  "https://res.cloudinary.com/dnreqxbdw/image/upload/w_240,c_limit/v1757932915/logo5_czeuoz.png",
 ];
 
 // The logos never change, so download them once and reuse them for every letter
@@ -20,7 +20,7 @@ const fetchLogo = async (url) => {
   return Buffer.from(await response.arrayBuffer());
 };
 
-const getLogos = () => {
+export const getLogos = () => {
   if (!logosPromise) {
     logosPromise = Promise.all(LOGO_URLS.map(fetchLogo)).catch((err) => {
       logosPromise = null; // retry on the next request

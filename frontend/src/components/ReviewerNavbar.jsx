@@ -9,6 +9,7 @@ const TABS_BY_ROLE = {
     { name: "Add Staff", path: "/hod/add-staffs" },
     { name: "Staff List", path: "/hod/list-staff" },
     { name: "Applications", path: "/hod/applications" },
+    { name: "My Students", path: "/company" },
   ],
   placement: [
     { name: "Dashboard", path: "/review" },
@@ -24,6 +25,7 @@ const TABS_BY_ROLE = {
     { name: "Companies", path: "/cohortOwner/AddCompany" },
     { name: "Internal Marks", path: "/cohortOwner/internal-mark" },
     { name: "Consent Letters", path: "/cohortOwner/parentConsent" },
+    { name: "My Students", path: "/company" },
   ],
   principal: [
     { name: "Dashboard", path: "/review" },

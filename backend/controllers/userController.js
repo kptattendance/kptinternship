@@ -355,6 +355,37 @@ export const getAllUsers = async (req, res) => {
   }
 };
 
+const DEPARTMENTS = ["cs", "eee", "me", "po", "ch", "ce", "at", "ec"];
+
+/**
+ * ✅ Staff of a department who can guide a college project.
+ * Students pick their guide from this list instead of typing an email.
+ */
+export const getProjectGuides = async (req, res) => {
+  try {
+    const department = String(req.query.department || "").toLowerCase();
+
+    if (!DEPARTMENTS.includes(department)) {
+      return res.status(400).json({ ok: false, message: "Invalid department" });
+    }
+
+    const guides = await User.find(
+      { role: { $in: ["cohortOwner", "hod"] }, department },
+      "name email role"
+    )
+      .sort({ name: 1 })
+      .lean();
+
+    return res.json({
+      ok: true,
+      guides: guides.map(({ name, email, role }) => ({ name, email, role })),
+    });
+  } catch (err) {
+    console.error("❌ Error fetching guides:", err);
+    return res.status(500).json({ ok: false, error: err.message });
+  }
+};
+
 /**
  * ✅ Get single user by ID
  */

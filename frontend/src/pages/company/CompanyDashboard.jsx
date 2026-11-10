@@ -35,6 +35,7 @@ export default function CompanyDashboard() {
   const [savingMarks, setSavingMarks] = useState(false);
 
   const [loading, setLoading] = useState(true);
+  const [isGuide, setIsGuide] = useState(false);
   const [showCIE, setShowCIE] = useState(false); // toggle CIE details
   const [search, setSearch] = useState("");
   const [departmentFilter, setDepartmentFilter] = useState("");
@@ -69,7 +70,12 @@ export default function CompanyDashboard() {
       if (res.data.ok) {
         setCompany(res.data.company);
         setApplications(res.data.applications);
+        setIsGuide(Boolean(res.data.isGuide));
       }
+
+      // Staff guides are college staff themselves — the college contacts
+      // section is only for companies
+      if (res.data.isGuide) return;
 
       // Fetch staff (principal, hod, cohort owners)
       const staffRes = await axios.get(`${backendUrl}/api/users`, {
@@ -246,8 +252,12 @@ export default function CompanyDashboard() {
               <>
                 <PageHeader
                   icon={Briefcase}
-                  title={`Welcome, ${company.name}`}
-                  subtitle="Track your interns, enter monthly attendance and CIE-II / CIE-III marks"
+                  title={isGuide ? "My Students (Guide)" : `Welcome, ${company.name}`}
+                  subtitle={
+                    isGuide
+                      ? "Students who chose you as their project guide — enter monthly attendance and CIE-II / CIE-III marks"
+                      : "Track your interns, enter monthly attendance and CIE-II / CIE-III marks"
+                  }
                 >
                   <div className="mt-3 flex flex-wrap gap-2 text-sm">
                     {company.email && (
@@ -309,6 +319,8 @@ export default function CompanyDashboard() {
                 message={
                   applications.length
                     ? "Try changing the filters."
+                    : isGuide
+                    ? "Students who choose you as their project guide will appear here."
                     : "Students who list your company email will appear here."
                 }
               />

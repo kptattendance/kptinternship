@@ -12,28 +12,39 @@ import {
   updateCompanyCIEMarks,
 } from "../controllers/companyController.js";
 import { requireAuthMiddleware } from "../middlewares/authMiddleware.js"; // Clerk auth middleware
-import { attachUserRole, requireRole } from "../middlewares/requireRole.js";
+import { requireRole } from "../middlewares/requireRole.js";
 import upload from "../middlewares/uploadMiddleware.js";
 
 const router = express.Router();
 
-const requireCompany = requireRole(["company"]);
+// Who enters attendance and CIE-II / CIE-III: the company, or — for a college
+// project — the staff member chosen as guide. Each of them only ever sees and
+// updates applications that list their own email (checked in the controller),
+// so students are never allowed here.
+const requireEvaluator = requireRole([
+  "company",
+  "cohortOwner",
+  "hod",
+  "placement",
+  "principal",
+  "admin",
+]);
 
-// Get dashboard info (company + applications)
-router.get("/dashboard", attachUserRole, getCompanyDashboard);
+// Get dashboard info (company / guide + their students)
+router.get("/dashboard", requireEvaluator, getCompanyDashboard);
 
 // Company saves marks / attendance of all its students in one request
 router.put(
   "/applications/company-marks",
-  requireCompany,
+  requireEvaluator,
   bulkUpdateCompanyCIEMarks
 );
 
-router.put("/applications/attendance", requireCompany, bulkUpdateAttendance);
+router.put("/applications/attendance", requireEvaluator, bulkUpdateAttendance);
 
 router.put(
   "/applications/:applicationId/company-marks",
-  requireCompany,
+  requireEvaluator,
   updateCompanyCIEMarks
 );
 
@@ -45,7 +56,7 @@ router.put(
 
 router.put(
   "/applications/:applicationId/attendance",
-  requireCompany,
+  requireEvaluator,
   updateAttendance
 );
 

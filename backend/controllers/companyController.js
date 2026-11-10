@@ -115,16 +115,15 @@ export const getCompanyDashboard = async (req, res) => {
   try {
     const companyEmail = req.userEmail;
 
-    // Find company in MongoDB
-    const company = companyEmail
-      ? await User.findOne({
-          email: companyEmail,
-          role: "company",
-        })
-      : null;
+    if (!companyEmail)
+      return res.status(404).json({ ok: false, message: "Account email not found" });
 
-    if (!company)
-      return res.status(404).json({ ok: false, message: "Company not found" });
+    // A company login, or a staff member acting as a project guide
+    const company = (await User.findOne({ email: companyEmail }).lean()) || {
+      name: req.userName || companyEmail,
+      email: companyEmail,
+      role: req.userRole,
+    };
 
     // Get all applications for this company
     const applications = await Application.find({
@@ -133,7 +132,12 @@ export const getCompanyDashboard = async (req, res) => {
       dateOfApplication: -1,
     });
 
-    return res.json({ ok: true, company, applications });
+    return res.json({
+      ok: true,
+      company,
+      applications,
+      isGuide: req.userRole !== "company",
+    });
   } catch (err) {
     console.error(err);
     res.status(500).json({ ok: false, error: err.message });

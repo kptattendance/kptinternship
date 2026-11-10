@@ -1,6 +1,6 @@
 // src/pages/students/InternshipApplicationForm.jsx
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { toast } from "react-toastify";
@@ -344,6 +344,60 @@ export default function InternshipApplicationForm() {
   const isProject = form.internhsipType === "Project";
   const typeChosen = Boolean(form.internhsipType);
   const workLabel = isProject ? "Project" : "Internship";
+
+  // ---------- Project guide: staff of the student's department ----------
+  const [guides, setGuides] = useState([]);
+  const [guidesLoading, setGuidesLoading] = useState(false);
+  const [manualGuide, setManualGuide] = useState(false);
+
+  useEffect(() => {
+    if (!isProject || !form.department) {
+      setGuides([]);
+      return;
+    }
+
+    let cancelled = false;
+
+    const fetchGuides = async () => {
+      try {
+        setGuidesLoading(true);
+        const token = await getToken();
+        const res = await axios.get(`${backendUrl}/api/users/guides`, {
+          params: { department: form.department },
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        if (!cancelled) setGuides(res.data.guides || []);
+      } catch (err) {
+        console.error("Failed to load guides:", err);
+        if (!cancelled) setGuides([]);
+      } finally {
+        if (!cancelled) setGuidesLoading(false);
+      }
+    };
+
+    fetchGuides();
+    return () => {
+      cancelled = true;
+    };
+  }, [isProject, form.department, getToken, backendUrl]);
+
+  const handleGuideSelect = (e) => {
+    const email = e.target.value;
+
+    if (email === "__other__") {
+      setManualGuide(true);
+      setForm((prev) => ({ ...prev, contactPerson: "", companyEmail: "" }));
+      return;
+    }
+
+    const guide = guides.find((g) => g.email === email);
+    setManualGuide(false);
+    setForm((prev) => ({
+      ...prev,
+      contactPerson: guide?.name || "",
+      companyEmail: guide?.email || "",
+    }));
+  };
 
   // =============================================================
   // HANDLE FORM CHANGE
@@ -823,25 +877,67 @@ export default function InternshipApplicationForm() {
                         />
                       </div>
 
-                      <Field
-                        form={form}
-                        handleChange={handleChange}
-                        label="Project Guide / Supervisor Name"
-                        name="contactPerson"
-                        placeholder="Name of your guide"
-                        required
-                      />
+                      <div className="md:col-span-2">
+                        <Field
+                          form={form}
+                          handleChange={handleChange}
+                          label="Project Guide"
+                          name="guideSelect"
+                          required
+                          help={
+                            form.department
+                              ? "Your guide enters your attendance and internal marks (CIE-II, CIE-III) from their own login."
+                              : "Select your department above to see the guides."
+                          }
+                        >
+                          <select
+                            id="guideSelect"
+                            value={manualGuide ? "__other__" : form.companyEmail}
+                            onChange={handleGuideSelect}
+                            disabled={!form.department || guidesLoading}
+                            required
+                            className="w-full h-11 px-3.5 rounded-xl border border-slate-200 bg-white text-sm text-slate-700 outline-none transition-all focus:border-violet-400 focus:ring-4 focus:ring-violet-50 hover:border-slate-300 disabled:bg-slate-100 disabled:text-slate-400"
+                          >
+                            <option value="">
+                              {guidesLoading
+                                ? "Loading guides..."
+                                : form.department
+                                ? "Select your guide"
+                                : "Select department first"}
+                            </option>
+                            {guides.map((g) => (
+                              <option key={g.email} value={g.email}>
+                                {g.name || g.email} {g.role === "hod" ? "(HOD)" : "(Cohort Owner)"}
+                              </option>
+                            ))}
+                            <option value="__other__">My guide is not in this list</option>
+                          </select>
+                        </Field>
+                      </div>
 
-                      <Field
-                        form={form}
-                        handleChange={handleChange}
-                        label="Guide / Supervisor Email"
-                        name="companyEmail"
-                        type="email"
-                        placeholder="guide@example.com"
-                        required
-                        help="Attendance and internal marks (CIE-II, CIE-III) are entered from this email's login."
-                      />
+                      {manualGuide && (
+                        <>
+                          <Field
+                            form={form}
+                            handleChange={handleChange}
+                            label="Guide Name"
+                            name="contactPerson"
+                            placeholder="Name of your guide"
+                            required
+                          />
+
+                          <Field
+                            form={form}
+                            handleChange={handleChange}
+                            label="Guide Email"
+                            name="companyEmail"
+                            type="email"
+                            placeholder="guide@example.com"
+                            required
+                            help="Ask your guide for the email they use to log in to this portal."
+                          />
+                        </>
+                      )}
 
                       <Field
                         form={form}

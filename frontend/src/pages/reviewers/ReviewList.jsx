@@ -271,7 +271,11 @@ export default function ReviewList() {
               type="text"
               value={bulkComment}
               onChange={(e) => setBulkComment(e.target.value)}
-              placeholder='Comment for all (optional — default "Approved")'
+              placeholder={
+                role === "placement"
+                  ? 'Comment (optional) — also approves for the Principal'
+                  : 'Comment for all (optional — default "Approved")'
+              }
               className="input lg:flex-1"
               maxLength={300}
             />

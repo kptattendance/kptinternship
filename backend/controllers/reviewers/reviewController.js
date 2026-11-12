@@ -2,6 +2,10 @@
 import mongoose from "mongoose";
 import Application from "../../model/Application.js";
 
+// The Principal has asked the Placement Cell to approve on his behalf, so a
+// placement approval also counts as the Principal's approval.
+const PRINCIPAL_BY_PLACEMENT = "Approved by Placement Cell on behalf of the Principal";
+
 /**
  * Return applications the current reviewer is allowed to see
  * GET /api/applications/review
@@ -148,6 +152,12 @@ export const reviewApplication = async (req, res) => {
           .json({ success: false, message: "Already reviewed by placement" });
 
       setStatusAndComment("placement");
+
+      // One click approves for the Principal too (see PRINCIPAL_BY_PLACEMENT)
+      if (action === "approve" && app.principal.status === "pending") {
+        app.principal.status = "approved";
+        app.principal.comment = PRINCIPAL_BY_PLACEMENT;
+      }
     } else if (role === "principal") {
       if (app.placement.status !== "approved")
         return res.status(400).json({
@@ -254,6 +264,11 @@ export const bulkApproveApplications = async (req, res) => {
           $set: {
             [`${role}.status`]: "approved",
             [`${role}.comment`]: comment?.trim() || "Approved",
+            // Placement approval also approves for the Principal
+            ...(role === "placement" && {
+              "principal.status": "approved",
+              "principal.comment": PRINCIPAL_BY_PLACEMENT,
+            }),
           },
         }
       );

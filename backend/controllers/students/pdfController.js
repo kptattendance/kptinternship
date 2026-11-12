@@ -31,6 +31,17 @@ export const getLogos = () => {
   return logosPromise;
 };
 
+export const DEPARTMENT_NAMES = {
+  at: "Automobile Engineering",
+  ch: "Chemical Engineering",
+  ce: "Civil Engineering",
+  cs: "Computer Science & Engineering",
+  ec: "Electronics & Communication Engineering",
+  eee: "Electrical & Electronics Engineering",
+  me: "Mechanical Engineering",
+  po: "Polymer Technology",
+};
+
 // Cloudinary can hand us a small JPEG (PDFs only accept JPEG / PNG)
 const photoUrl = (url) =>
   url?.includes("res.cloudinary.com") && url.includes("/upload/")
@@ -88,7 +99,14 @@ export const generateInternshipLetter = async (req, res) => {
     // regNumber is typed by the student — keep only safe filename characters
     const safeRegNumber = app.regNumber.replace(/[^a-zA-Z0-9_-]/g, "");
 
-    const doc = new PDFDocument({ margin: 50 });
+    // Formal letter style: serif font, black text, one dark-blue accent
+    const FONT = { regular: "Times-Roman", bold: "Times-Bold", italic: "Times-Italic" };
+    const INK = "#111111";
+    const NAVY = "#1e3a8a";
+    const MUTED = "#4b5563";
+    const RULE = "#9ca3af";
+
+    const doc = new PDFDocument({ size: "A4", margins: { top: 40, bottom: 30, left: 56, right: 56 } });
     res.setHeader("Content-Type", "application/pdf");
     res.setHeader(
       "Content-Disposition",
@@ -96,209 +114,137 @@ export const generateInternshipLetter = async (req, res) => {
     );
     doc.pipe(res);
 
-// Header logos
-doc.image(logo3, 30, 32, { width: 60 });
-doc.image(logo4, 500, 32, { width: 60 });
+    const pageWidth = doc.page.width;
+    const left = 56;
+    const width = pageWidth - 112;
+    const department = app.department.toUpperCase();
+    const formatDate = (value) =>
+      value ? new Date(value).toLocaleDateString("en-GB") : "____";
 
-// Small Karnataka emblem
-doc.image(logo5, 296, 22, { width: 20 });
-    // --- Header ---
-   doc
-  .font("Helvetica-Bold")
-  .fontSize(14)
-  .fillColor("black")
-  .text("GOVERNMENT OF KARNATAKA", { align: "center" });
+    // ---------- Letterhead ----------
+    doc.image(logo3, 40, 30, { fit: [62, 62] });
+    doc.image(logo4, pageWidth - 102, 30, { fit: [62, 62] });
+    doc.image(logo5, pageWidth / 2 - 10, 18, { width: 20 });
 
-doc
-  .font("Helvetica")
-  .fontSize(11)
-  .fillColor("red")
-  .text("DEPARTMENT OF COLLEGIATE AND TECHNICAL EDUCATION", {
-    align: "center",
-  });
+    const head = { align: "center", width: pageWidth - 200 };
+    doc
+      .fillColor(INK)
+      .font(FONT.bold)
+      .fontSize(11)
+      .text("GOVERNMENT OF KARNATAKA", 100, 42, head)
+      .font(FONT.regular)
+      .fontSize(9.5)
+      .text("DEPARTMENT OF COLLEGIATE AND TECHNICAL EDUCATION", head)
+      .moveDown(0.15)
+      .font(FONT.bold)
+      .fontSize(14)
+      .fillColor(NAVY)
+      .text("KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU", head)
+      .fillColor(INK)
+      .font(FONT.italic)
+      .fontSize(9.5)
+      .text("(First Autonomous Polytechnic in India from AICTE, New Delhi)", head)
+      .font(FONT.regular)
+      .text("Kadri Hills, Mangaluru – 575004, Dakshina Kannada, Karnataka", head);
 
-doc
-  .font("Helvetica-Bold")
-  .fontSize(13)
-  .fillColor("green")
-  .text("KARNATAKA (GOVT.) POLYTECHNIC, MANGALURU", {
-    align: "center",
-  });
+    // Double rule under the letterhead
+    const ruleY = Math.max(doc.y + 6, 112);
+    doc.strokeColor(NAVY).lineWidth(1.4).moveTo(40, ruleY).lineTo(pageWidth - 40, ruleY).stroke();
+    doc.lineWidth(0.5).moveTo(40, ruleY + 3).lineTo(pageWidth - 40, ruleY + 3).stroke();
 
-doc
-  .font("Helvetica-Bold")
-  .fontSize(10)
-  .fillColor("blue")
-  .text("(First Autonomous Polytechnic in India from AICTE, New Delhi)", {
-    align: "center",
-  });
-
-doc
-  .font("Helvetica")
-  .fillColor("orange")
-  .text("Kadri Hills, Mangaluru–575004, Dakshina Kannada, Karnataka", {
-    align: "center",
-  });
-
-    const today = new Date().toLocaleDateString("en-GB");
-    doc.moveTo(0, doc.y).lineTo(750, doc.y).stroke();
+    // ---------- Reference number and date ----------
     const regPart = app.regNumber.slice(3);
     const currentYear = new Date().getFullYear();
-    const nextYear = currentYear + 1;
-    // ✅ Use last updated date instead of today's date
-    const updatedDate = app.updatedAt
-      ? new Date(app.updatedAt).toLocaleDateString("en-GB")
-      : new Date().toLocaleDateString("en-GB");
+    // The letter date is when the application was last updated (approved)
+    const letterDate = formatDate(app.updatedAt || new Date());
 
-    doc.moveDown(1);
-    doc
-      .fontSize(11)
-      .fillColor("black")
-      .text(`No.KPM/INTSP/${currentYear}-${nextYear}/${regPart}`, {
-        align: "left",
-      })
-      .text(`Date: ${updatedDate}`, { align: "right" });
+    doc.font(FONT.regular).fontSize(11.5).fillColor(INK);
+    doc.text(`No. KPM/INTSP/${currentYear}-${currentYear + 1}/${regPart}`, left, ruleY + 16);
+    doc.text(`Date: ${letterDate}`, left, ruleY + 16, { width, align: "right" });
 
-    doc.moveDown(0.5);
-
-    // ✅ Recipient
-    doc.text("To");
-    doc.text("The HR Manager,", 60);
-    doc.text(`${toTitleCase(app.companyName || "")},`, 60);
-    // if (app.companyVillage) doc.text(toTitleCase(app.companyVillage) + ",", 60);
-    // if (app.companyCity) doc.text(toTitleCase(app.companyCity) + ",", 60);
-    // if (app.companyTaluk) doc.text(toTitleCase(app.companyTaluk) + ",", 60);
-    // if (app.companyDistrict)
-    //   doc.text(toTitleCase(app.companyDistrict) + ",", 60);
-    // if (app.companyState) doc.text(toTitleCase(app.companyState) + ",", 60);
-    // Collect all address fields and remove empty ones
-    let addressParts = [
-      app.companyVillage,
-      app.companyCity,
-      app.companyTaluk,
-      app.companyDistrict,
-      app.companyState,
-    ].filter(Boolean);
-
-    // Normalize (Title Case) and remove duplicates
-    addressParts = [...new Set(addressParts.map((v) => toTitleCase(v.trim())))];
-
-    // Print each unique value once
-    addressParts.forEach((part) => {
-      doc.text(part + ",", 60);
-    });
-
-    if (app.contactPerson) doc.text("Ph: " + app.contactPerson + ".", 60);
-
-    doc.moveDown(1);
-
-    // ✅ Subject line
-    doc
-      .font("Helvetica-Bold")
-      .text(
-        `Sub: Requisition for 16 weeks internship training for a student of Diploma in ${app.department.toUpperCase()} department.`
-      )
-      .moveDown(1);
-
-    // ✅ Body
-    const paragraphOptions = { align: "justify", lineGap: 3.5 };
-    doc
-      .font("Helvetica")
-      .text(
-        `With reference to the above subject, we hereby request you to kindly permit our student (Listed below), pursuing fifth semester Diploma in ${app.department.toUpperCase()} department at Karnataka (Govt.) Polytechnic, Mangaluru and trained in “${app.subName.toUpperCase()}” specialization pathway in boot camp mode to render on-the job internship training in your prestigious organization.`,
-        50,
-        doc.y,
-        paragraphOptions
-      )
-      .moveDown(1)
-      .text(
-        `As per the curriculum of Diploma in ${app.department.toUpperCase()} Program, the students are required to complete six hundred and forty (640) hours of internship starting from ${
-          app.startDate
-            ? new Date(app.startDate).toLocaleDateString("en-GB")
-            : "____"
-        } to ${
-          app.endDate
-            ? new Date(app.endDate).toLocaleDateString("en-GB")
-            : "____"
-        }. Your support in this regard is highly appreciated. We hope that you will oblige us in our effort to achieve excellent academic standards of the students of our Polytechnic.`,
-        50,
-        doc.y,
-        paragraphOptions
-      )
-      .moveDown(0.5)
-      .text(
-        `Details of the student are enclosed herewith for your kind perusal.`,
-        paragraphOptions
-      )
-      .moveDown(0.5);
-
-    // ✅ Student Info Table
-    // const tableTop = doc.y;
-    // doc.font("Helvetica-Bold");
-    // doc.text("Sl. No.", 50, tableTop);
-    // doc.text("Name", 100, tableTop);
-    // doc.text("Register Number", 300, tableTop);
-    // doc.text("Mobile Number", 470, tableTop);
-
-    // const rowY = tableTop + 20;
-    // doc.font("Helvetica");
-    // doc.text("1", 50, rowY);
-    // doc.text(app.name, 100, rowY);
-    // doc.text(app.regNumber, 300, rowY);
-    // doc.text(app.phoneNumber, 470, rowY);
-    // --------------------------------------------
-    // STUDENT INFO TABLE WITH BORDER
-    // --------------------------------------------
-
-    const tableTop = doc.y + 10;
-    const startX = 40;
-    const headerHeight = 25;
-    const rowHeight = 76; // tall enough for the student's photo
-
-    // Column widths: Sl No | Photo | Name | Register Number | Mobile Number
-    const columns = [
-      { title: "Sl. No.", width: 50 },
-      { title: "Photo", width: 76 },
-      { title: "Name", width: 170 },
-      { title: "Register Number", width: 122 },
-      { title: "Mobile Number", width: 114 },
+    // ---------- Recipient ----------
+    const addressParts = [
+      ...new Set(
+        [app.companyVillage, app.companyCity, app.companyTaluk, app.companyDistrict, app.companyState]
+          .filter(Boolean)
+          .map((v) => toTitleCase(v.trim()))
+      ),
     ];
-    const tableWidth = columns.reduce((sum, c) => sum + c.width, 0);
-    const tableHeight = headerHeight + rowHeight;
-    const columnX = columns.map((_, i) =>
-      columns.slice(0, i).reduce((x, c) => x + c.width, startX)
+
+    doc.text("To,", left, ruleY + 44);
+    doc.text("The HR Manager,", left + 16);
+    doc.font(FONT.bold).text(`${toTitleCase(app.companyName || "")},`);
+    doc.font(FONT.regular);
+    // Address on as few lines as possible
+    doc.text(`${addressParts.join(", ")}.`, { width: width / 1.6 });
+    if (app.contactPerson) doc.text(`Ph: ${app.contactPerson}`);
+
+    // ---------- Subject ----------
+    doc.moveDown(0.9);
+    const subjectY = doc.y;
+    doc.font(FONT.bold).text("Sub:", left, subjectY);
+    doc.text(
+      `Requisition for 16 weeks internship training for a student of Diploma in ${department} department.`,
+      left + 32,
+      subjectY,
+      { width: width - 32, underline: false }
     );
 
-    // Light shading on the header row
-    doc.rect(startX, tableTop, tableWidth, headerHeight).fill("#f1f5f9");
-    doc.fillColor("black").lineWidth(0.8).strokeColor("black");
-
-    // Outer border, header line and column lines
-    doc.rect(startX, tableTop, tableWidth, tableHeight).stroke();
+    // ---------- Body ----------
+    const paragraph = { width, align: "justify", lineGap: 2.5, indent: 28 };
+    doc.moveDown(0.8);
     doc
-      .moveTo(startX, tableTop + headerHeight)
-      .lineTo(startX + tableWidth, tableTop + headerHeight)
-      .stroke();
-    columnX.slice(1).forEach((x) =>
-      doc.moveTo(x, tableTop).lineTo(x, tableTop + tableHeight).stroke()
-    );
+      .font(FONT.regular)
+      .text("Respected Sir/Madam,", left, doc.y)
+      .moveDown(0.4)
+      .text(
+        `With reference to the above subject, we hereby request you to kindly permit our student (listed below), pursuing fifth semester Diploma in ${department} department at Karnataka (Govt.) Polytechnic, Mangaluru and trained in “${app.subName.toUpperCase()}” specialization pathway in boot camp mode, to render on-the-job internship training in your prestigious organization.`,
+        left,
+        doc.y,
+        paragraph
+      )
+      .moveDown(0.6)
+      .text(
+        `As per the curriculum of the Diploma in ${department} Program, the students are required to complete six hundred and forty (640) hours of internship starting from ${formatDate(app.startDate)} to ${formatDate(app.endDate)}. Your support in this regard is highly appreciated. We hope that you will oblige us in our effort to achieve excellent academic standards of the students of our Polytechnic.`,
+        paragraph
+      )
+      .moveDown(0.6)
+      .text("The details of the student are given below for your kind perusal.", paragraph);
 
-    // Header text
-    doc.font("Helvetica-Bold").fontSize(10);
-    columns.forEach((c, i) =>
-      doc.text(c.title, columnX[i] + 6, tableTop + 8, {
-        width: c.width - 12,
-        align: i <= 1 ? "center" : "left",
-      })
-    );
+    // ---------- Student details: details on the left, photo on the right ----------
+    const panelTop = doc.y + 12;
+    const panelHeight = 112;
+    const photoBox = { w: 78, h: 94, x: left + width - 78 - 10, y: panelTop + 9 };
 
-    // Student photo, so the company can match the student who reports
-    const photo = { x: columnX[1] + 6, y: tableTop + headerHeight + 6, w: columns[1].width - 12, h: rowHeight - 12 };
+    doc.lineWidth(0.8).strokeColor(RULE).roundedRect(left, panelTop, width, panelHeight, 4).stroke();
+
+    const details = [
+      ["Name of the Student", toTitleCase(app.name || "")],
+      ["Register Number", app.regNumber],
+      ["Department", DEPARTMENT_NAMES[app.department] || department],
+      ["Mobile Number", app.phoneNumber],
+    ];
+
+    const labelX = left + 14;
+    const colonX = labelX + 118;
+    const valueX = colonX + 12;
+    const valueWidth = photoBox.x - valueX - 12;
+    let rowY = panelTop + 18;
+
+    for (const [label, value] of details) {
+      doc.font(FONT.regular).fontSize(11.5).fillColor(MUTED).text(label, labelX, rowY);
+      doc.fillColor(INK).text(":", colonX, rowY);
+      doc.font(FONT.bold).text(value || "-", valueX, rowY, { width: valueWidth, lineBreak: false, ellipsis: true });
+      rowY += 21;
+    }
+
+    // Photo, so the company can be sure who is reporting
+    doc.lineWidth(0.8).strokeColor(INK).rect(photoBox.x, photoBox.y, photoBox.w, photoBox.h).stroke();
     let photoPlaced = false;
     if (studentPhoto) {
       try {
-        doc.image(studentPhoto, photo.x, photo.y, {
-          fit: [photo.w, photo.h],
+        doc.image(studentPhoto, photoBox.x + 2, photoBox.y + 2, {
+          fit: [photoBox.w - 4, photoBox.h - 4],
           align: "center",
           valign: "center",
         });
@@ -309,71 +255,41 @@ doc
     }
     if (!photoPlaced) {
       doc
-        .font("Helvetica")
-        .fontSize(7.5)
-        .fillColor("gray")
-        .text("Affix photo", photo.x, photo.y + photo.h / 2 - 5, { width: photo.w, align: "center" })
-        .fillColor("black");
+        .font(FONT.italic)
+        .fontSize(8.5)
+        .fillColor(MUTED)
+        .text("Affix passport size photograph", photoBox.x + 6, photoBox.y + 36, { width: photoBox.w - 12, align: "center" });
     }
 
-    // Row text, vertically centred in the tall row
-    const textY = tableTop + headerHeight + rowHeight / 2 - 6;
-    doc.font("Helvetica").fontSize(11);
-    doc.text("1", columnX[0] + 6, textY, { width: columns[0].width - 12, align: "center" });
-    doc.text(app.name, columnX[2] + 6, textY, { width: columns[2].width - 12 });
-    doc.text(app.regNumber, columnX[3] + 6, textY, { width: columns[3].width - 12 });
-    doc.text(app.phoneNumber, columnX[4] + 6, textY, { width: columns[4].width - 12 });
+    // ---------- Closing ----------
+    const closingY = panelTop + panelHeight + 22;
+    doc.font(FONT.regular).fontSize(11.5).fillColor(INK);
+    doc.text("Thanking you in anticipation,", left, closingY);
+    doc.text("Yours faithfully,", left, closingY, { width, align: "right" });
 
-    // Move cursor below table
-    doc.y = tableTop + tableHeight + 12;
+    // Space above for the Principal's signature and seal
+    doc.font(FONT.bold).text("Principal", left, closingY + 54, { width, align: "right" });
+    doc.font(FONT.regular).fontSize(10.5).text("Karnataka (Govt.) Polytechnic, Mangaluru", left, doc.y, { width, align: "right" });
 
-    // ✅ Closing — "Thanking you" and "Yours sincerely" share a line,
-    // leaving space above "Principal" for the signature
-    const closingY = doc.y + 6;
-    doc.text("Thanking you in anticipation,", 60, closingY);
-    doc.text("Yours sincerely,", 60, closingY, { align: "right", width: doc.page.width - 110 });
+    doc.font(FONT.regular).fontSize(10.5).text(`Copy to: HOD / ${department}`, left, closingY + 92);
 
-    doc.text("Principal", 60, closingY + 48, { align: "right", width: doc.page.width - 110 });
+    // ---------- Footer ----------
+    const footerY = doc.page.height - 74;
+    doc.page.margins.bottom = 0; // footer sits in the margin, never on a new page
+    doc.strokeColor(NAVY).lineWidth(0.8).moveTo(40, footerY).lineTo(pageWidth - 40, footerY).stroke();
 
-    doc.moveDown(0.5);
-    doc.fontSize(9).text("Copy to: HOD / " + app.department.toUpperCase(), 60);
-
-    // ✅ Footer
+    const foot = { width: pageWidth, align: "center", lineBreak: false };
     doc
-      .moveTo(0, doc.page.height - 100)
-      .lineTo(650, doc.page.height - 100)
-      .stroke();
-    doc
+      .font(FONT.regular)
       .fontSize(9)
-      .fillColor("blue")
-      .text(
-        "Email: kptmng@gmail.com, kptplacements@gmail.com",
-        0,
-        doc.page.height - 90,
-        { align: "center" }
-      )
-      .fillColor("black")
-      .text(
-        "Website: https://gpt.karnataka.gov.in/kptmangalore/public/18/contact/en",
-        0,
-        doc.page.height - 80,
-        { align: "center" }
-      )
-      .fontSize(8)
-      .text(
-        "Contact: (0824) - 3516910, (0824) - 3542476, (0824) - 2211636, (0824) - 3515889",
-        0,
-        doc.page.height - 70,
-        { align: "center" }
-      )
-      .fillColor("gray")
-      .fontSize(6)
-      .text(
-        "Generated by KPT Mangaluru Internship Portal",
-        0,
-        doc.page.height - 60,
-        { align: "center" }
-      );
+      .fillColor(NAVY)
+      .text("Email: kptmng@gmail.com  |  kptplacements@gmail.com", 0, footerY + 8, foot)
+      .fillColor(MUTED)
+      .text("Website: https://gpt.karnataka.gov.in/kptmangalore/public/18/contact/en", 0, footerY + 20, foot)
+      .text("Phone: (0824) 3516910, 3542476, 2211636, 3515889", 0, footerY + 32, foot)
+      .font(FONT.italic)
+      .fontSize(7.5)
+      .text("Generated by KPT Mangaluru Internship Portal", 0, footerY + 46, foot);
 
     doc.end();
   } catch (err) {

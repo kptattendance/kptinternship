@@ -5,18 +5,7 @@ import mongoose from "mongoose";
 import PDFDocument from "pdfkit";
 import Application from "../../model/Application.js";
 import { canAccessApplication } from "../../middlewares/requireRole.js";
-import { fetchPhoto, getLogos } from "./pdfController.js";
-
-const DEPARTMENT_NAMES = {
-  at: "Automobile Engineering",
-  ch: "Chemical Engineering",
-  ce: "Civil Engineering",
-  cs: "Computer Science & Engineering",
-  ec: "Electronics & Communication Engineering",
-  eee: "Electrical & Electronics Engineering",
-  me: "Mechanical Engineering",
-  po: "Polymer Technology",
-};
+import { DEPARTMENT_NAMES, fetchPhoto, getLogos } from "./pdfController.js";
 
 // Plain, formal look: black text, one dark blue for the college name
 const COLORS = {

@@ -4,7 +4,7 @@ import Application from "../../model/Application.js";
 
 // The Principal has asked the Placement Cell to approve on his behalf, so a
 // placement approval also counts as the Principal's approval.
-const PRINCIPAL_BY_PLACEMENT = "Approved by Placement Cell on behalf of the Principal";
+const PRINCIPAL_BY_PLACEMENT = "Approved";
 
 /**
  * Return applications the current reviewer is allowed to see

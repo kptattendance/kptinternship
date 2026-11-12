@@ -158,11 +158,6 @@ export default function ReviewModal({
           placeholder="Write your comments here..."
           rows={3}
         />
-        {role === "placement" && (
-          <p className="mt-2 rounded-xl bg-violet-50 px-3 py-2 text-xs font-medium text-violet-700">
-            ✓ Approving here also approves for the Principal — no separate Principal approval is needed.
-          </p>
-        )}
       </div>
     </Modal>
   );

@@ -104,7 +104,6 @@ export const generateInternshipLetter = async (req, res) => {
     const INK = "#111111";
     const NAVY = "#1e3a8a";
     const MUTED = "#4b5563";
-    const RULE = "#9ca3af";
 
     const doc = new PDFDocument({ size: "A4", margins: { top: 40, bottom: 30, left: 56, right: 56 } });
     res.setHeader("Content-Type", "application/pdf");
@@ -214,9 +213,8 @@ export const generateInternshipLetter = async (req, res) => {
     // ---------- Student details: details on the left, photo on the right ----------
     const panelTop = doc.y + 12;
     const panelHeight = 112;
-    const photoBox = { w: 78, h: 94, x: left + width - 78 - 10, y: panelTop + 9 };
+    const photoBox = { w: 78, h: 94, x: left + width - 78, y: panelTop + 9 };
 
-    doc.lineWidth(0.8).strokeColor(RULE).roundedRect(left, panelTop, width, panelHeight, 4).stroke();
 
     const details = [
       ["Name of the Student", toTitleCase(app.name || "")],
@@ -225,7 +223,7 @@ export const generateInternshipLetter = async (req, res) => {
       ["Mobile Number", app.phoneNumber],
     ];
 
-    const labelX = left + 14;
+    const labelX = left + 28;
     const colonX = labelX + 118;
     const valueX = colonX + 12;
     const valueWidth = photoBox.x - valueX - 12;
@@ -265,7 +263,7 @@ export const generateInternshipLetter = async (req, res) => {
     const closingY = panelTop + panelHeight + 22;
     doc.font(FONT.regular).fontSize(11.5).fillColor(INK);
     doc.text("Thanking you in anticipation,", left, closingY);
-    doc.text("Yours faithfully,", left, closingY, { width, align: "right" });
+    doc.text("Yours sincerely,", left, closingY, { width, align: "right" });
 
     // Space above for the Principal's signature and seal
     doc.font(FONT.bold).text("Principal", left, closingY + 54, { width, align: "right" });

@@ -31,6 +31,24 @@ export const getLogos = () => {
   return logosPromise;
 };
 
+// Cloudinary can hand us a small JPEG (PDFs only accept JPEG / PNG)
+const photoUrl = (url) =>
+  url?.includes("res.cloudinary.com") && url.includes("/upload/")
+    ? url.replace("/upload/", "/upload/f_jpg,q_85,w_300,h_360,c_limit/")
+    : url;
+
+/** Student photo as an image buffer, or null if it cannot be loaded */
+export const fetchPhoto = async (url) => {
+  if (!url) return null;
+  try {
+    const response = await fetch(photoUrl(url));
+    if (!response.ok) return null;
+    return Buffer.from(await response.arrayBuffer());
+  } catch {
+    return null;
+  }
+};
+
 function toTitleCase(str = "") {
   return str
     .toLowerCase()
@@ -62,7 +80,10 @@ export const generateInternshipLetter = async (req, res) => {
       return res.status(403).json({ error: "Principal approval required" });
     }
 
-    const [logo3, logo4, logo5] = await getLogos();
+    const [[logo3, logo4, logo5], studentPhoto] = await Promise.all([
+      getLogos(),
+      fetchPhoto(app.image),
+    ]);
 
     // regNumber is typed by the student — keep only safe filename characters
     const safeRegNumber = app.regNumber.replace(/[^a-zA-Z0-9_-]/g, "");
@@ -180,7 +201,7 @@ doc
       .moveDown(1);
 
     // ✅ Body
-    const paragraphOptions = { align: "justify", lineGap: 6 };
+    const paragraphOptions = { align: "justify", lineGap: 3.5 };
     doc
       .font("Helvetica")
       .text(
@@ -231,79 +252,89 @@ doc
 
     const tableTop = doc.y + 10;
     const startX = 40;
-    const rowHeight = 25;
+    const headerHeight = 25;
+    const rowHeight = 76; // tall enough for the student's photo
 
-    // Column widths
-    const col1 = 60; // Sl No
-    const col2 = 180; // Name
-    const col3 = 160; // Register Number
-    const col4 = 140; // Mobile Number
+    // Column widths: Sl No | Photo | Name | Register Number | Mobile Number
+    const columns = [
+      { title: "Sl. No.", width: 50 },
+      { title: "Photo", width: 76 },
+      { title: "Name", width: 170 },
+      { title: "Register Number", width: 122 },
+      { title: "Mobile Number", width: 114 },
+    ];
+    const tableWidth = columns.reduce((sum, c) => sum + c.width, 0);
+    const tableHeight = headerHeight + rowHeight;
+    const columnX = columns.map((_, i) =>
+      columns.slice(0, i).reduce((x, c) => x + c.width, startX)
+    );
 
-    // Draw outer border
-    doc
-      .rect(startX, tableTop, col1 + col2 + col3 + col4, rowHeight * 2)
-      .stroke();
+    // Light shading on the header row
+    doc.rect(startX, tableTop, tableWidth, headerHeight).fill("#f1f5f9");
+    doc.fillColor("black").lineWidth(0.8).strokeColor("black");
 
-    // Column vertical lines
+    // Outer border, header line and column lines
+    doc.rect(startX, tableTop, tableWidth, tableHeight).stroke();
     doc
-      .moveTo(startX + col1, tableTop)
-      .lineTo(startX + col1, tableTop + rowHeight * 2)
+      .moveTo(startX, tableTop + headerHeight)
+      .lineTo(startX + tableWidth, tableTop + headerHeight)
       .stroke();
-    doc
-      .moveTo(startX + col1 + col2, tableTop)
-      .lineTo(startX + col1 + col2, tableTop + rowHeight * 2)
-      .stroke();
-    doc
-      .moveTo(startX + col1 + col2 + col3, tableTop)
-      .lineTo(startX + col1 + col2 + col3, tableTop + rowHeight * 2)
-      .stroke();
-
-    // Horizontal mid-line (between header & row)
-    doc
-      .moveTo(startX, tableTop + rowHeight)
-      .lineTo(startX + col1 + col2 + col3 + col4, tableTop + rowHeight)
-      .stroke();
+    columnX.slice(1).forEach((x) =>
+      doc.moveTo(x, tableTop).lineTo(x, tableTop + tableHeight).stroke()
+    );
 
     // Header text
-    doc.font("Helvetica-Bold");
-    doc.text("Sl. No.", startX + 10, tableTop + 7);
-    doc.text("Name", startX + col1 + 10, tableTop + 7);
-    doc.text("Register Number", startX + col1 + col2 + 10, tableTop + 7);
-    doc.text("Mobile Number", startX + col1 + col2 + col3 + 10, tableTop + 7);
+    doc.font("Helvetica-Bold").fontSize(10);
+    columns.forEach((c, i) =>
+      doc.text(c.title, columnX[i] + 6, tableTop + 8, {
+        width: c.width - 12,
+        align: i <= 1 ? "center" : "left",
+      })
+    );
 
-    // Row text
-    doc.font("Helvetica");
-    doc.text("1", startX + 10, tableTop + rowHeight + 7);
-    doc.text(app.name, startX + col1 + 10, tableTop + rowHeight + 7);
-    doc.text(
-      app.regNumber,
-      startX + col1 + col2 + 10,
-      tableTop + rowHeight + 7
-    );
-    doc.text(
-      app.phoneNumber,
-      startX + col1 + col2 + col3 + 10,
-      tableTop + rowHeight + 7
-    );
+    // Student photo, so the company can match the student who reports
+    const photo = { x: columnX[1] + 6, y: tableTop + headerHeight + 6, w: columns[1].width - 12, h: rowHeight - 12 };
+    let photoPlaced = false;
+    if (studentPhoto) {
+      try {
+        doc.image(studentPhoto, photo.x, photo.y, {
+          fit: [photo.w, photo.h],
+          align: "center",
+          valign: "center",
+        });
+        photoPlaced = true;
+      } catch {
+        photoPlaced = false;
+      }
+    }
+    if (!photoPlaced) {
+      doc
+        .font("Helvetica")
+        .fontSize(7.5)
+        .fillColor("gray")
+        .text("Affix photo", photo.x, photo.y + photo.h / 2 - 5, { width: photo.w, align: "center" })
+        .fillColor("black");
+    }
+
+    // Row text, vertically centred in the tall row
+    const textY = tableTop + headerHeight + rowHeight / 2 - 6;
+    doc.font("Helvetica").fontSize(11);
+    doc.text("1", columnX[0] + 6, textY, { width: columns[0].width - 12, align: "center" });
+    doc.text(app.name, columnX[2] + 6, textY, { width: columns[2].width - 12 });
+    doc.text(app.regNumber, columnX[3] + 6, textY, { width: columns[3].width - 12 });
+    doc.text(app.phoneNumber, columnX[4] + 6, textY, { width: columns[4].width - 12 });
 
     // Move cursor below table
-    doc.y = tableTop + rowHeight * 2 + 15;
+    doc.y = tableTop + tableHeight + 12;
 
-    // ✅ Closing
-    doc.moveDown(1);
-    doc.text("Thanking you in anticipation,", 150);
-    doc.moveDown(1);
-    doc.text("Yours sincerely,", { align: "right" });
+    // ✅ Closing — "Thanking you" and "Yours sincerely" share a line,
+    // leaving space above "Principal" for the signature
+    const closingY = doc.y + 6;
+    doc.text("Thanking you in anticipation,", 60, closingY);
+    doc.text("Yours sincerely,", 60, closingY, { align: "right", width: doc.page.width - 110 });
 
-    doc.moveDown(2);
-    doc.text("Principal", { align: "right" });
+    doc.text("Principal", 60, closingY + 48, { align: "right", width: doc.page.width - 110 });
 
-    // doc
-    //   .fontSize(10)
-    //   .fillColor("black")
-    //   .text("This is a digitally signed document by the Principal.", {
-    //     align: "right",
-    //   });
     doc.moveDown(0.5);
     doc.fontSize(9).text("Copy to: HOD / " + app.department.toUpperCase(), 60);
 

@@ -5,7 +5,7 @@ import mongoose from "mongoose";
 import PDFDocument from "pdfkit";
 import Application from "../../model/Application.js";
 import { canAccessApplication } from "../../middlewares/requireRole.js";
-import { getLogos } from "./pdfController.js";
+import { fetchPhoto, getLogos } from "./pdfController.js";
 
 const DEPARTMENT_NAMES = {
   at: "Automobile Engineering",
@@ -38,23 +38,6 @@ const academicYear = (date) => {
   const d = date ? new Date(date) : new Date();
   const start = d.getMonth() >= 5 ? d.getFullYear() : d.getFullYear() - 1;
   return `${start}-${String(start + 1).slice(-2)}`;
-};
-
-// Cloudinary can hand us a small JPEG (PDFs only accept JPEG / PNG)
-const photoUrl = (url) =>
-  url?.includes("res.cloudinary.com") && url.includes("/upload/")
-    ? url.replace("/upload/", "/upload/f_jpg,q_85,w_300,h_360,c_limit/")
-    : url;
-
-const fetchPhoto = async (url) => {
-  if (!url) return null;
-  try {
-    const response = await fetch(photoUrl(url));
-    if (!response.ok) return null;
-    return Buffer.from(await response.arrayBuffer());
-  } catch {
-    return null;
-  }
 };
 
 const toTitleCase = (str = "") =>

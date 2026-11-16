@@ -591,7 +591,8 @@ export default function ApplicationsManager({ canDelete = false }) {
           <HodReviewModal
             selected={selected}
             setSelected={setSelected}
-            canManage={canDelete}
+            canDelete={canDelete}
+            canAllowEdit={canDelete && ["placement", "principal"].includes(role)}
             onUpdated={(updated) =>
               setApps((prev) => prev.map((a) => (a._id === updated._id ? updated : a)))
             }

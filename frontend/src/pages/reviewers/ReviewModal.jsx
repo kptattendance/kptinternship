@@ -57,10 +57,6 @@ export default function ReviewModal({
     }
   };
 
-  const handleUpdate = (app) => {
-    toast.info("Update feature coming soon!");
-  };
-
   const handleDelete = async (id) => {
     if (!window.confirm("Delete this application permanently?\n\nThis removes the application, the student's photo, consent letter and internship photo. The student will be able to apply again.\n\nThis cannot be undone."))
       return;
@@ -77,15 +73,10 @@ export default function ReviewModal({
     }
   };
 
-  const canEditOrDelete =
-    role === "cohortOwner" &&
-    (selected.cohortOwner?.status === "pending" ||
-      selected.hod?.status === "rejected" ||
-      selected.placement?.status === "rejected" ||
-      selected.principal?.status === "rejected");
-
-  // Placement officer / principal can unlock editing or delete everything
-  const canManage = ["placement", "principal"].includes(role);
+  // Every reviewer can delete (the server limits HOD / cohort owner to their
+  // own department); only placement / principal can unlock student editing
+  const canDelete = ["cohortOwner", "hod", "placement", "principal"].includes(role);
+  const canAllowEdit = ["placement", "principal"].includes(role);
 
   const handleEditPermissionChange = (updated) => {
     setSelected(updated);
@@ -99,38 +90,20 @@ export default function ReviewModal({
       footer={
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex flex-wrap gap-2">
-            {canManage && (
-              <>
-                <EditPermissionButton
-                  application={selected}
-                  onChange={handleEditPermissionChange}
-                />
-                <button
-                  type="button"
-                  onClick={() => handleDelete(selected._id)}
-                  className="btn btn-danger"
-                >
-                  Delete
-                </button>
-              </>
+            {canAllowEdit && (
+              <EditPermissionButton
+                application={selected}
+                onChange={handleEditPermissionChange}
+              />
             )}
-            {canEditOrDelete && (
-              <>
-                <button
-                  type="button"
-                  onClick={() => handleUpdate(selected)}
-                  className="btn btn-secondary flex-1 sm:flex-none"
-                >
-                  Update
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleDelete(selected._id)}
-                  className="btn btn-danger flex-1 sm:flex-none"
-                >
-                  Delete
-                </button>
-              </>
+            {canDelete && (
+              <button
+                type="button"
+                onClick={() => handleDelete(selected._id)}
+                className="btn btn-danger"
+              >
+                Delete
+              </button>
             )}
           </div>
 

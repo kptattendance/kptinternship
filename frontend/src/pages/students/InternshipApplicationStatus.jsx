@@ -5,6 +5,7 @@ import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { FileCheck2 } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
+import MyPhotoCard from "../../components/MyPhotoCard";
 import { PageHeader, StatusBadge } from "../../components/ui";
 import { REVIEW_STAGES } from "../../constants";
 import {
@@ -604,6 +605,17 @@ const handleUploadInternshipImage = async () => {
             title="My Application"
             subtitle="Follow your approval progress, then upload the consent letter and your internship photo."
           />
+
+          {currentApplication && (
+            <MyPhotoCard
+              application={currentApplication}
+              onUpdated={(updated) =>
+                setApps((prev) =>
+                  prev.map((app) => (app._id === updated._id ? updated : app))
+                )
+              }
+            />
+          )}
 
           {/* =====================================================
               APPLICATION STATUS

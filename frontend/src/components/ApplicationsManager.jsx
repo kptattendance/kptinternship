@@ -223,11 +223,9 @@ export default function ApplicationsManager({ canDelete = false }) {
 
   const handleDelete = async (app) => {
     const confirmed = window.confirm(
-      `Delete this application?\n\nStudent: ${app.name}\nReg No: ${app.regNumber}\nCompany: ${
-        app.companyName || "-"
-      }\n\nThis cannot be undone.`
+      `Delete this application permanently?\n\nStudent: ${app.name}\nReg No: ${app.regNumber}\n\nThis removes the application, the student's photo, consent letter and internship photo. The student will be able to apply again.\n\nThis cannot be undone.`
     );
-    if (!confirmed) return;
+    if (!confirmed) return false;
 
     try {
       setDeletingId(app._id);
@@ -237,8 +235,10 @@ export default function ApplicationsManager({ canDelete = false }) {
       });
       removeFromList([app._id]);
       toast.success("Application deleted");
+      return true;
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to delete application");
+      return false;
     } finally {
       setDeletingId(null);
     }
@@ -587,7 +587,19 @@ export default function ApplicationsManager({ canDelete = false }) {
           </>
         )}
 
-        {selected && <HodReviewModal selected={selected} setSelected={setSelected} />}
+        {selected && (
+          <HodReviewModal
+            selected={selected}
+            setSelected={setSelected}
+            canManage={canDelete}
+            onUpdated={(updated) =>
+              setApps((prev) => prev.map((a) => (a._id === updated._id ? updated : a)))
+            }
+            onDelete={async (app) => {
+              if (await handleDelete(app)) setSelected(null);
+            }}
+          />
+        )}
       </Page>
     </>
   );

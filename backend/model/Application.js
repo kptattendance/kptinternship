@@ -54,6 +54,12 @@ const applicationSchema = new mongoose.Schema(
       trim: true,
     },
 
+    // Placement officer lets the student correct their application once
+    editAllowed: {
+      type: Boolean,
+      default: false,
+    },
+
     // Cloudinary public ID of the student image (needed to delete it later)
     imagePublicId: {
       type: String,

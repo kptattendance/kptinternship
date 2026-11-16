@@ -385,6 +385,64 @@ export default function InternshipApplicationForm() {
     };
   }, [isProject, form.department, getToken, backendUrl]);
 
+  // ---------- Edit mode: placement office allowed the student to correct ----------
+  // "idle" → no application yet (new form), "loading", "editing", "locked"
+  const [editState, setEditState] = useState("idle");
+  const editMode = editState === "editing";
+
+  useEffect(() => {
+    if (checkingApplication || !hasApplication) return;
+
+    let cancelled = false;
+    const loadForEdit = async () => {
+      try {
+        setEditState("loading");
+        const token = await getToken();
+        const res = await axios.get(`${backendUrl}/api/students/myApplications`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const app = res.data.data?.[0];
+        if (cancelled) return;
+
+        if (!app?.editAllowed) {
+          setEditState("locked");
+          return;
+        }
+
+        // Fill the form with the saved details (dates as yyyy-mm-dd)
+        const toInputDate = (value) => (value ? new Date(value).toISOString().slice(0, 10) : "");
+        const filled = { ...initialFormState };
+        for (const key of Object.keys(initialFormState)) {
+          if (key !== "image" && app[key] !== undefined && app[key] !== null) {
+            filled[key] = String(app[key]);
+          }
+        }
+        filled.startDate = toInputDate(app.startDate);
+        filled.endDate = toInputDate(app.endDate);
+        filled.image = "";
+
+        setForm(filled);
+        setImagePreview(app.image || "");
+        setEditState("editing");
+      } catch {
+        if (!cancelled) setEditState("locked");
+      }
+    };
+
+    loadForEdit();
+    return () => {
+      cancelled = true;
+    };
+  }, [checkingApplication, hasApplication, getToken, backendUrl]);
+
+  // A saved guide who is not in the list is shown in the "not in list" fields
+  useEffect(() => {
+    if (editMode && isProject && form.companyEmail && !guidesLoading) {
+      setManualGuide(!guides.some((g) => g.email === form.companyEmail));
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editMode, guides, guidesLoading]);
+
   const handleGuideSelect = (e) => {
     const email = e.target.value;
 
@@ -441,7 +499,7 @@ export default function InternshipApplicationForm() {
       regNumber: "Register Number",
       name: "Name",
       phoneNumber: "Phone Number",
-      image: "Student Image URL",
+      ...(editMode ? {} : { image: "Student Photograph" }),
       subName: "Subject Name",
       internhsipType: "Internship / Project",
       ...(isProject
@@ -495,6 +553,27 @@ export default function InternshipApplicationForm() {
 
       const token = await getToken();
 
+      if (editMode) {
+        // Save the corrected details; editing locks again afterwards
+        const { image, ...details } = form;
+        const res = await axios.put(`${backendUrl}/api/students/myApplications`, details, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // A newly chosen photo is saved separately
+        if (image instanceof File) {
+          const photo = new FormData();
+          photo.append("image", image);
+          await axios.put(`${backendUrl}/api/students/myApplications/photo`, photo, {
+            headers: { Authorization: `Bearer ${token}` },
+          });
+        }
+
+        toast.success(res.data.message || "Application updated", { position: "top-center" });
+        navigate("/internship-application-status");
+        return;
+      }
+
       const res = await axios.post(
         backendUrl + "/api/students/create",
         formData,
@@ -546,12 +625,12 @@ export default function InternshipApplicationForm() {
   // JSX
   // =============================================================
 
-  if (checkingApplication || hasApplication) {
+  if (checkingApplication || (hasApplication && !editMode)) {
     return (
       <>
         <StudentNavbar />
         <Page className="max-w-3xl">
-          {checkingApplication ? (
+          {checkingApplication || editState === "loading" || editState === "idle" ? (
             <Spinner label="Checking your application..." />
           ) : (
             <EmptyState
@@ -584,8 +663,12 @@ export default function InternshipApplicationForm() {
 
           <PageHeader
             icon={ClipboardList}
-            title="Internship Application"
-            subtitle="Fill in your details carefully — your application goes to the cohort owner, HOD, placement officer and principal for approval."
+            title={editMode ? "Edit My Application" : "Internship Application"}
+            subtitle={
+              editMode
+                ? "Correct your details and save. Editing will be locked again after you save."
+                : "Fill in your details carefully — your application goes to the cohort owner, HOD, placement officer and principal for approval."
+            }
           />
 
           <form
@@ -741,7 +824,7 @@ export default function InternshipApplicationForm() {
                             name="image"
                             accept="image/*"
                             onChange={handleImageChange}
-                            required
+                            required={!editMode}
                             className="block w-full text-sm text-slate-500
                             file:mr-3 file:py-2.5 file:px-4
                             file:rounded-xl file:border-0
@@ -1358,7 +1441,7 @@ export default function InternshipApplicationForm() {
                   <>
                     <span>✓</span>
 
-                    Submit {workLabel} Application
+                    {editMode ? "Save Changes" : `Submit ${workLabel} Application`}
                   </>
                 )}
 

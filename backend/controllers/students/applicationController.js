@@ -114,10 +114,19 @@ const pickEditableFields = (body = {}, currentType) => {
   return picked;
 };
 
+// ".../image/upload/v1712345678/folder/name.jpg" → "folder/name"
+const publicIdFromUrl = (url) => {
+  const match = /\/upload\/(?:[^/]*,[^/]*\/)*(?:v\d+\/)?(.+?)\.[a-z0-9]+$/i.exec(url || "");
+  return url?.includes("res.cloudinary.com") && match ? match[1] : "";
+};
+
+// Every Cloudinary image that belongs to an application
 const applicationImageIds = (application) => [
-  application.imagePublicId,
-  application.parentConsentLetter?.publicId,
-  application.internshipImage?.publicId,
+  application.imagePublicId || publicIdFromUrl(application.image),
+  application.parentConsentLetter?.publicId ||
+    publicIdFromUrl(application.parentConsentLetter?.imageUrl),
+  application.internshipImage?.publicId ||
+    publicIdFromUrl(application.internshipImage?.imageUrl),
 ];
 
 const validObjectIds = (ids) =>
@@ -319,7 +328,7 @@ export const bulkDeleteApplications = async (req, res) => {
     const applications = scope
       ? await Application.find(
           { _id: { $in: validObjectIds(requestedIds) }, ...scope },
-          "imagePublicId parentConsentLetter.publicId internshipImage.publicId"
+          "image imagePublicId parentConsentLetter internshipImage"
         ).lean()
       : [];
 
@@ -345,6 +354,133 @@ export const bulkDeleteApplications = async (req, res) => {
       message: "Failed to delete applications.",
       error: err.message,
     });
+  }
+};
+
+/**
+ * Student replaces only their own photo (allowed at any time).
+ * Every other detail stays locked.
+ */
+export const updateMyPhoto = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please choose a photo." });
+    }
+
+    const application = await Application.findOne({ studentId: req.userId });
+
+    if (!application) {
+      await destroyImages([req.file.filename]);
+      return res
+        .status(404)
+        .json({ success: false, message: "Internship application not found." });
+    }
+
+    const oldPhotoId =
+      application.imagePublicId || publicIdFromUrl(application.image);
+
+    application.image = req.file.path;
+    application.imagePublicId = req.file.filename;
+    await application.save();
+
+    // Remove the old photo only after the new one is saved
+    if (oldPhotoId && oldPhotoId !== req.file.filename) {
+      await destroyImages([oldPhotoId]);
+    }
+
+    return res.json({
+      success: true,
+      message: "Photo updated successfully.",
+      data: application,
+    });
+  } catch (err) {
+    console.error("❌ Photo update error:", err);
+    await destroyImages([req.file?.filename]);
+    return res
+      .status(500)
+      .json({ success: false, message: "Failed to update photo.", error: err.message });
+  }
+};
+
+/**
+ * Student edits their application — only after the placement officer
+ * allowed it. Editing is locked again once saved.
+ */
+export const updateMyApplication = async (req, res) => {
+  try {
+    const application = await Application.findOne({ studentId: req.userId });
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Internship application not found." });
+    }
+
+    if (!application.editAllowed) {
+      return res.status(403).json({
+        success: false,
+        message: "Editing is not enabled. Please contact the placement office.",
+      });
+    }
+
+    application.set(pickEditableFields(req.body, application.internhsipType));
+    application.editAllowed = false;
+    await application.save();
+
+    return res.json({
+      success: true,
+      message: "Application updated successfully.",
+      data: application,
+    });
+  } catch (err) {
+    console.error("❌ Student application edit error:", err);
+    return res.status(400).json({
+      success: false,
+      message: "Failed to update application.",
+      error: err.message,
+    });
+  }
+};
+
+/**
+ * Placement officer allows / stops a student editing their application
+ * body: { allowed: true | false }
+ */
+export const setEditPermission = async (req, res) => {
+  try {
+    const { allowed } = req.body || {};
+
+    if (typeof allowed !== "boolean") {
+      return res
+        .status(400)
+        .json({ success: false, message: "Please specify allowed: true or false." });
+    }
+
+    const application = mongoose.isValidObjectId(req.params.id)
+      ? await Application.findByIdAndUpdate(
+          req.params.id,
+          { $set: { editAllowed: allowed } },
+          { new: true }
+        )
+      : null;
+
+    if (!application) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Application not found" });
+    }
+
+    return res.json({
+      success: true,
+      message: allowed
+        ? "Student can now edit the application."
+        : "Editing turned off for this student.",
+      data: application,
+    });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
   }
 };
 

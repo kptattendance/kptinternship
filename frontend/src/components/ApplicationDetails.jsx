@@ -40,6 +40,9 @@ export default function ApplicationDetails({ app }) {
             {app.regNumber}
           </p>
           <p className="text-sm text-slate-600">📞 {app.phoneNumber || "-"}</p>
+          {app.editAllowed && (
+            <span className="badge badge-amber mt-1">✏️ Student can edit this application</span>
+          )}
           <p className="mt-1 text-xs text-slate-400">
             Applied on {formatDate(app.createdAt)} • {app.internhsipType || "-"}
             {app.subName && ` • ${app.subName}`}

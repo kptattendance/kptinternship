@@ -10,6 +10,9 @@ import {
   deleteApplication,
   bulkDeleteApplications,
   getMyApplications,
+  updateMyPhoto,
+  updateMyApplication,
+  setEditPermission,
   uploadParentConsentLetter,
   getDocumentApplications,
   uploadInternshipImage,
@@ -76,6 +79,24 @@ router.delete("/deleteApplication/:id", requireStaff, deleteApplication);
 
 // Get logged-in student's applications
 router.get("/myApplications", requireAuthMiddleware, getMyApplications);
+
+// Student changes only their photo (any time)
+router.put(
+  "/myApplications/photo",
+  requireAuthMiddleware,
+  upload.single("image"),
+  updateMyPhoto
+);
+
+// Student edits their application (only when the placement officer allowed it)
+router.put("/myApplications", requireAuthMiddleware, updateMyApplication);
+
+// Placement officer allows / stops a student editing their application
+router.put(
+  "/applications/:id/edit-permission",
+  requireRole(["placement", "principal", "admin"]),
+  setEditPermission
+);
 
 // Download internship letter (PDF) → owner or staff
 router.get("/download/:id", attachUserRole, generateInternshipLetter);

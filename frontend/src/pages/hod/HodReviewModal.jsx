@@ -1,7 +1,9 @@
 import Modal from "../../components/Modal";
 import ApplicationDetails from "../../components/ApplicationDetails";
+import EditPermissionButton from "../../components/EditPermissionButton";
 
-export default function HodReviewModal({ selected, setSelected }) {
+// canManage: placement / principal can unlock editing and delete
+export default function HodReviewModal({ selected, setSelected, canManage = false, onUpdated, onDelete }) {
   const close = () => setSelected(null);
 
   return (
@@ -9,7 +11,21 @@ export default function HodReviewModal({ selected, setSelected }) {
       title="Internship Application"
       onClose={close}
       footer={
-        <div className="flex justify-end">
+        <div className="flex flex-wrap justify-end gap-2">
+          {canManage && (
+            <>
+              <EditPermissionButton
+                application={selected}
+                onChange={(updated) => {
+                  setSelected(updated);
+                  onUpdated?.(updated);
+                }}
+              />
+              <button type="button" onClick={() => onDelete?.(selected)} className="btn btn-danger">
+                Delete
+              </button>
+            </>
+          )}
           <button type="button" onClick={close} className="btn btn-secondary">
             Close
           </button>

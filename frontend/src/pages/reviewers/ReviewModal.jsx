@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import Modal from "../../components/Modal";
 import ApplicationDetails from "../../components/ApplicationDetails";
+import EditPermissionButton from "../../components/EditPermissionButton";
 import { toast } from "react-toastify";
 
 export default function ReviewModal({
@@ -61,7 +62,7 @@ export default function ReviewModal({
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this application?"))
+    if (!window.confirm("Delete this application permanently?\n\nThis removes the application, the student's photo, consent letter and internship photo. The student will be able to apply again.\n\nThis cannot be undone."))
       return;
     try {
       const token = await getToken();
@@ -83,13 +84,36 @@ export default function ReviewModal({
       selected.placement?.status === "rejected" ||
       selected.principal?.status === "rejected");
 
+  // Placement officer / principal can unlock editing or delete everything
+  const canManage = ["placement", "principal"].includes(role);
+
+  const handleEditPermissionChange = (updated) => {
+    setSelected(updated);
+    setApps((prev) => prev.map((a) => (a._id === updated._id ? updated : a)));
+  };
+
   return (
     <Modal
       title="Internship Application Review"
       onClose={() => setSelected(null)}
       footer={
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
+            {canManage && (
+              <>
+                <EditPermissionButton
+                  application={selected}
+                  onChange={handleEditPermissionChange}
+                />
+                <button
+                  type="button"
+                  onClick={() => handleDelete(selected._id)}
+                  className="btn btn-danger"
+                >
+                  Delete
+                </button>
+              </>
+            )}
             {canEditOrDelete && (
               <>
                 <button

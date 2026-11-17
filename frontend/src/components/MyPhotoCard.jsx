@@ -6,11 +6,11 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@clerk/clerk-react";
 import axios from "axios";
 import { toast } from "react-toastify";
-import { Camera, Loader2, PencilLine } from "lucide-react";
+import { Camera, Eye, Loader2, PencilLine } from "lucide-react";
 import { Avatar } from "./ui";
 import { IMAGE_PRESETS, compressImage } from "../utils/compressImage";
 
-export default function MyPhotoCard({ application, onUpdated }) {
+export default function MyPhotoCard({ application, onUpdated, onView }) {
   const { getToken } = useAuth();
   const navigate = useNavigate();
   const inputRef = useRef(null);
@@ -66,15 +66,22 @@ export default function MyPhotoCard({ application, onUpdated }) {
           </p>
         </div>
 
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          disabled={uploading}
-          className="btn btn-secondary w-full sm:w-auto"
-        >
-          <Camera className="h-4 w-4" />
-          {uploading ? "Uploading..." : "Change photo"}
-        </button>
+        <div className="flex w-full flex-col gap-2 sm:w-auto">
+          {onView && (
+            <button type="button" onClick={onView} className="btn btn-primary w-full sm:w-auto">
+              <Eye className="h-4 w-4" /> View my application
+            </button>
+          )}
+          <button
+            type="button"
+            onClick={() => inputRef.current?.click()}
+            disabled={uploading}
+            className="btn btn-secondary w-full sm:w-auto"
+          >
+            <Camera className="h-4 w-4" />
+            {uploading ? "Uploading..." : "Change photo"}
+          </button>
+        </div>
         <input
           ref={inputRef}
           type="file"

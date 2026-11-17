@@ -176,7 +176,7 @@ export const generateInternshipLetter = async (req, res) => {
     doc.font(FONT.regular);
     // Address on as few lines as possible
     doc.text(`${addressParts.join(", ")}.`, { width: width / 1.6 });
-    if (app.contactPerson) doc.text(`Ph: ${app.contactPerson}`);
+    if (app.companyContact) doc.text(`Ph: ${app.companyContact}`);
 
     // ---------- Subject ----------
     doc.moveDown(0.9);

@@ -6,6 +6,8 @@ import axios from "axios";
 import { FileCheck2 } from "lucide-react";
 import StudentNavbar from "../../components/StudentNavbar";
 import MyPhotoCard from "../../components/MyPhotoCard";
+import Modal from "../../components/Modal";
+import ApplicationDetails from "../../components/ApplicationDetails";
 import { PageHeader, StatusBadge } from "../../components/ui";
 import { REVIEW_STAGES } from "../../constants";
 import {
@@ -137,6 +139,9 @@ const internshipImageInputRef = useRef(null);
   // ---------------------------------------------------------
 
   const [downloadingUndertaking, setDownloadingUndertaking] = useState(false);
+
+  // Read-only view of everything the student submitted
+  const [viewingApplication, setViewingApplication] = useState(false);
 
   const handleDownloadUndertaking = async (application) => {
     try {
@@ -606,9 +611,30 @@ const handleUploadInternshipImage = async () => {
             subtitle="Follow your approval progress, then upload the consent letter and your internship photo."
           />
 
+          {viewingApplication && currentApplication && (
+            <Modal
+              title="My Application"
+              onClose={() => setViewingApplication(false)}
+              footer={
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setViewingApplication(false)}
+                    className="btn btn-secondary"
+                  >
+                    Close
+                  </button>
+                </div>
+              }
+            >
+              <ApplicationDetails app={currentApplication} />
+            </Modal>
+          )}
+
           {currentApplication && (
             <MyPhotoCard
               application={currentApplication}
+              onView={() => setViewingApplication(true)}
               onUpdated={(updated) =>
                 setApps((prev) =>
                   prev.map((app) => (app._id === updated._id ? updated : app))

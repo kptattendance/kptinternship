@@ -9,7 +9,7 @@ import MyPhotoCard from "../../components/MyPhotoCard";
 import Modal from "../../components/Modal";
 import ApplicationDetails from "../../components/ApplicationDetails";
 import { PageHeader, StatusBadge } from "../../components/ui";
-import { REVIEW_STAGES } from "../../constants";
+import { REVIEW_STAGES, cloudinaryThumb } from "../../constants";
 import {
   IMAGE_PRESETS,
   compressImage,
@@ -23,6 +23,8 @@ export default function InternshipApplicationStatus() {
   const [loading, setLoading] = useState(true);
 
   const [selectedFile, setSelectedFile] = useState(null);
+  const [consentReplaceUntil, setConsentReplaceUntil] = useState(null);
+  const [replacingConsent, setReplacingConsent] = useState(false);
   const [previewUrl, setPreviewUrl] = useState("");
   const [uploading, setUploading] = useState(false);
   const [uploadMessage, setUploadMessage] = useState("");
@@ -68,6 +70,7 @@ const internshipImageInputRef = useRef(null);
 
       if (res.data.success) {
         setApps(res.data.data || []);
+        setConsentReplaceUntil(res.data.consentReplaceUntil || null);
       } else {
         setApps([]);
       }
@@ -190,6 +193,20 @@ const internshipImageInputRef = useRef(null);
   const consentUploaded =
     consentLetter?.submitted &&
     consentLetter?.imageUrl;
+
+  // Students may replace the uploaded letter until the date set by the office
+  const canReplaceConsent =
+    Boolean(consentReplaceUntil) && Date.now() <= new Date(consentReplaceUntil).getTime();
+  const replaceUntilLabel = consentReplaceUntil
+    ? new Date(consentReplaceUntil).toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      })
+    : "";
+
+  // Uploaded view, unless the student chose to replace the letter
+  const showConsentSubmitted = consentUploaded && !replacingConsent;
 
     const internshipImage =
   currentApplication?.internshipImage || null;
@@ -462,6 +479,7 @@ const handleUploadInternshipImage = async () => {
 
         setSelectedFile(null);
         setPreviewUrl("");
+        setReplacingConsent(false);
 
         if (fileInputRef.current) {
           fileInputRef.current.value = "";
@@ -979,9 +997,25 @@ const handleUploadInternshipImage = async () => {
           ALREADY SUBMITTED
       ================================================= */}
 
-      {consentUploaded ? (
+      {showConsentSubmitted ? (
 
         <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 sm:p-5">
+
+          {/* Picture of the uploaded letter */}
+          <a
+            href={consentLetter.imageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-4 block overflow-hidden rounded-xl border border-emerald-100 bg-white"
+            title="Open full size"
+          >
+            <img
+              loading="lazy"
+              src={cloudinaryThumb(consentLetter.imageUrl, 900)}
+              alt="Uploaded consent letter"
+              className="mx-auto max-h-96 w-full object-contain"
+            />
+          </a>
 
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
@@ -1016,17 +1050,37 @@ const handleUploadInternshipImage = async () => {
             </div>
 
 
-            {/* VIEW ONLY */}
-            <a
-              href={consentLetter.imageUrl}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-sm font-semibold transition"
-            >
-              👁 View Letter
-            </a>
+            <div className="flex w-full flex-col gap-2 sm:w-auto">
+              <a
+                href={consentLetter.imageUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-sm font-semibold transition"
+              >
+                👁 Open full size
+              </a>
+              {canReplaceConsent && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setUploadMessage("");
+                    setUploadError("");
+                    setReplacingConsent(true);
+                  }}
+                  className="btn btn-secondary w-full sm:w-auto"
+                >
+                  🔄 Replace letter
+                </button>
+              )}
+            </div>
 
           </div>
+
+          {canReplaceConsent && (
+            <p className="mt-3 text-xs text-emerald-700">
+              You can replace this letter until {replaceUntilLabel}.
+            </p>
+          )}
 
         </div>
 
@@ -1088,6 +1142,22 @@ const handleUploadInternshipImage = async () => {
             </div>
           )}
 
+
+          {replacingConsent && (
+            <div className="mb-4 flex flex-col gap-2 rounded-xl bg-amber-50 p-3 text-sm text-amber-800 sm:flex-row sm:items-center sm:justify-between">
+              <span>Choose the new signed letter. Your current letter stays until the new one is uploaded.</span>
+              <button
+                type="button"
+                onClick={() => {
+                  handleRemoveSelectedFile();
+                  setReplacingConsent(false);
+                }}
+                className="btn btn-secondary btn-sm"
+              >
+                Keep current letter
+              </button>
+            </div>
+          )}
 
           {/* =================================================
               SELECTED FILE PREVIEW
@@ -1322,6 +1392,22 @@ const handleUploadInternshipImage = async () => {
 
         <div className="rounded-2xl bg-emerald-50 border border-emerald-100 p-4 sm:p-5">
 
+          {/* Picture of the uploaded internship photo */}
+          <a
+            href={internshipImage.imageUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="mb-4 block overflow-hidden rounded-xl border border-emerald-100 bg-white"
+            title="Open full size"
+          >
+            <img
+              loading="lazy"
+              src={cloudinaryThumb(internshipImage.imageUrl, 900)}
+              alt="Uploaded internship photo"
+              className="mx-auto max-h-96 w-full object-contain"
+            />
+          </a>
+
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
 
             {/* Status */}
@@ -1371,7 +1457,7 @@ const handleUploadInternshipImage = async () => {
               rel="noopener noreferrer"
               className="w-full sm:w-auto inline-flex justify-center items-center gap-2 px-5 py-2.5 rounded-xl bg-white border border-emerald-200 text-emerald-700 hover:bg-emerald-100 text-sm font-semibold transition"
             >
-              👁 View Image
+              👁 Open full size
             </a>
 
           </div>

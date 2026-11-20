@@ -65,6 +65,13 @@ const PUBLIC_FIELDS = [
   "principal.status",
 ].join(" ");
 
+// Students may replace an already-uploaded consent letter until this time.
+// Change CONSENT_REPLACE_UNTIL in the backend .env to open the window again.
+const consentReplaceUntil = () =>
+  new Date(process.env.CONSENT_REPLACE_UNTIL || "2026-11-27T23:59:59+05:30");
+
+const canReplaceConsent = () => Date.now() <= consentReplaceUntil().getTime();
+
 const EMPTY_DOCUMENT = {
   submitted: false,
   imageUrl: "",
@@ -496,6 +503,7 @@ export const getMyApplications = async (req, res) => {
       success: true,
       count: apps.length,
       data: apps,
+      consentReplaceUntil: consentReplaceUntil().toISOString(),
     });
   } catch (err) {
     return res.status(500).json({
@@ -538,6 +546,15 @@ export const uploadParentConsentLetter = async (req, res) => {
      * we will delete the old image after saving the new one.
      */
     const oldPublicId = application.parentConsentLetter?.publicId || "";
+
+    // Replacing an uploaded letter is only allowed for a limited time
+    if (application.parentConsentLetter?.submitted && !canReplaceConsent()) {
+      await destroyImages([req.file.filename]);
+      return res.status(403).json({
+        success: false,
+        message: "The consent letter can no longer be changed. Please contact the placement office.",
+      });
+    }
 
     /*
      * multer-storage-cloudinary has already uploaded
@@ -807,6 +824,14 @@ const deleteOwnDocument = (field, label) => async (req, res) => {
     }
 
     const publicId = application[field]?.publicId;
+
+    // Same time limit as replacing the consent letter
+    if (field === "parentConsentLetter" && publicId && !canReplaceConsent()) {
+      return res.status(403).json({
+        success: false,
+        message: "The consent letter can no longer be changed. Please contact the placement office.",
+      });
+    }
 
     if (!publicId) {
       return res.status(404).json({
